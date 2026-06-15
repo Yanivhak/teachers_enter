@@ -81,6 +81,20 @@ input:focus{border-color:var(--gold); outline:none;}
 .bar.is-correct .name{color:var(--gold);}
 .bar .n{color:#fff; text-align:left; font-weight:800;}
 .host-bar{position:fixed; bottom:14px; right:14px; z-index:80; display:flex; gap:8px;}
+.banner{font-weight:800; font-size:clamp(20px,2.6vw,30px); border-radius:12px; padding:10px 22px; max-width:90vw; text-shadow:0 1px 6px rgba(0,0,0,.4);}
+.banner.gold{background:var(--gold); color:#1a2342;}
+.banner.teal{background:var(--teal); color:#06231f;}
+.banner.violet{background:var(--violet); color:#0b0b2a;}
+.confetti-piece{position:fixed; top:-20px; font-size:22px; animation:fall linear forwards; z-index:60; pointer-events:none;}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);}}
+.spark{position:fixed; width:10px; height:10px; border-radius:50%; z-index:69; pointer-events:none; transition:transform 1.3s cubic-bezier(.1,.8,.3,1), opacity 1.3s ease;}
+#fw{position:fixed; inset:0; z-index:70; display:none; align-items:center; justify-content:center; pointer-events:none;}
+#fw.on{display:flex;}
+.fwtext{font-family:'Secular One'; font-size:clamp(30px,5vw,60px); color:var(--gold); text-align:center; text-shadow:0 3px 16px rgba(0,0,0,.9);}
+.fwtext small{display:block; font-family:'Heebo'; font-size:clamp(18px,2.4vw,28px); color:#fff; font-weight:700; margin-top:6px;}
+#game-bg{position:fixed; inset:0; z-index:0; display:none; background-size:cover; background-position:center;}
+#game-bg.on{display:block;}
+#game-bg::after{content:''; position:absolute; inset:0; background:rgba(5,8,15,.70);}
 .host-bar button{font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:9px 14px; cursor:pointer;}
 
 /* משחק - שחקן */
@@ -108,7 +122,9 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v5</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v10</span></div>
+<div id="fw"><div class="fwtext" id="fw-text"></div></div>
+<div id="game-bg"></div>
 
 <!-- ============ מסך בית ============ -->
 <div class="screen on" id="home">
@@ -157,6 +173,14 @@ input:focus{border-color:var(--gold); outline:none;}
         <option value="4">4 קבוצות</option>
       </select>
       <div id="team-names" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="field">
+      <label>רקע למסך החידון (לא חובה)</label>
+      <button class="btn ghost sm" onclick="$('bg-input').click()" id="bg-btn" style="width:100%;">🖼️ בחירת תמונת רקע מהמחשב</button>
+      <input type="file" id="bg-input" accept="image/*" style="display:none" onchange="bgChosen(this.files)">
+      <button class="btn ghost sm" onclick="clearBg()" id="bg-clear" style="width:100%; margin-top:8px; display:none;">↩️ חזרה לרקע הכחול</button>
+      <div style="font-size:13px; color:var(--ink-dim); margin-top:6px;">אם תבחרו תמונה, נחשיך אותה מעט כדי שהטקסט יישאר קריא. נטענת מהמחשב ולא נשמרת, אז צריך לבחור מחדש בכל פעם.</div>
     </div>
 
     <div class="field">
@@ -217,10 +241,12 @@ input:focus{border-color:var(--gold); outline:none;}
 
 <!-- ============ מארח: חשיפה ============ -->
 <div class="screen" id="hr">
+  <div id="hr-banners" style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px; width:100%; align-items:center;"></div>
   <p class="correct-line">התשובה הנכונה:</p>
   <h2 class="winner-name" id="hr-answer"></h2>
   <div id="hr-bars" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
   <div id="hr-teams" style="margin-top:18px; font-size:clamp(20px,2.4vw,28px); color:var(--gold); font-weight:700;"></div>
+  <button class="btn teal" onclick="nextQ()" style="margin-top:22px;">ממשיכים ◂</button>
 </div>
 
 <!-- ============ מארח: סיום ============ -->
@@ -228,8 +254,10 @@ input:focus{border-color:var(--gold); outline:none;}
   <div class="wrap">
     <h1>🎉 סיימנו!</h1>
     <div class="podium" id="podium"></div>
-    <div id="team-final" style="margin:14px 0; font-size:20px; color:var(--gold); font-weight:700;"></div>
+    <div id="team-final" style="margin:14px 0; font-size:clamp(18px,2.4vw,26px); color:var(--gold); font-weight:700;"></div>
+    <div id="fun-cards" style="display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin:18px 0;"></div>
     <div class="row">
+      <button class="btn teal sm" onclick="restartGame()">🔄 התחלה מחדש</button>
       <button class="btn ghost sm" onclick="backToEditor()">→ חזרה לעריכה</button>
     </div>
   </div>
@@ -305,6 +333,7 @@ input:focus{border-color:var(--gold); outline:none;}
 <div class="host-bar" id="host-bar" style="display:none;">
   <button onclick="hostSkip()">⏭️ הבא</button>
   <button onclick="hostToggleMusic()" id="music-toggle">🔊 מוזיקה</button>
+  <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🖼️ רקע</button>
   <button onclick="hostJumpFinish()">🏁 סיום</button>
 </div>
 
@@ -495,6 +524,7 @@ function quizReady(){
 let role = null, myId = Math.random().toString(36).slice(2,10);
 let playCode = null, gameRef = null, topic = null;
 let players = {}, seq = 0, curQ = null, answers = {}, revealed = false, hostTimer = null, qIndex = -1, qShownAt = 0;
+let bestMs = Infinity, bestName = '', maxStreak = 0, streakKing = '';
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
 
 function goPlay(){
@@ -566,9 +596,40 @@ function renderJoined(){
 
 function hostStart(){
   $('host-bar').style.display = 'flex';
+  $('bg-toggle').style.display = bgUrl ? 'inline-block' : 'none';
+  applyGameBg(true);
+  bestMs = Infinity; bestName = ''; maxStreak = 0; streakKing = '';
   playGameMusic();
   qIndex = -1;
   nextQ();
+}
+
+/* רקע למסך החידון (בצד המארח, לא נשמר) */
+let bgUrl = null;
+function bgChosen(files){
+  if (!files || !files.length) return;
+  if (bgUrl) URL.revokeObjectURL(bgUrl);
+  bgUrl = URL.createObjectURL(files[0]);
+  $('game-bg').style.backgroundImage = 'url(' + bgUrl + ')';
+  $('bg-btn').textContent = '🖼️ תמונת רקע נבחרה ✓ (לחיצה מחליפה)';
+  $('bg-clear').style.display = 'block';
+  $('bg-input').value = '';
+}
+function clearBg(){
+  if (bgUrl){ URL.revokeObjectURL(bgUrl); bgUrl = null; }
+  $('game-bg').style.backgroundImage = '';
+  $('game-bg').classList.remove('on');
+  $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
+  $('bg-clear').style.display = 'none';
+}
+function applyGameBg(on){
+  if (on && bgUrl) $('game-bg').classList.add('on');
+  else $('game-bg').classList.remove('on');
+}
+function hostToggleBg(){
+  // מחליף בין רקע הכחול לתמונה בזמן המשחק
+  if ($('game-bg').classList.contains('on')) $('game-bg').classList.remove('on');
+  else if (bgUrl) $('game-bg').classList.add('on');
 }
 
 /* מוזיקת רקע (בצד המארח, לא נשמרת ב-Firebase) */
@@ -642,6 +703,7 @@ function revealQ(){
   const dist = {}; opts.forEach(o => dist[o.i]=0);
   let teamCorrect = {};
   if (quiz.teamCount>0) for (let i=0;i<quiz.teamCount;i++) teamCorrect[i]=0;
+  let fastestMs = Infinity, fastestName = '', newStreakRecord = false;
   Object.entries(answers).forEach(([id,a]) => {
     if (a.pick in dist) dist[a.pick]++;
     const p = players[id];
@@ -654,8 +716,24 @@ function revealQ(){
       p.score += pts + streakBonus;
       p.correct++;
       if (p.team>=0) teamCorrect[p.team]++;
+      if (a.dt < fastestMs){ fastestMs = a.dt; fastestName = p.name; }
+      if (p.streak >= 3 && p.streak > maxStreak){ maxStreak = p.streak; streakKing = p.name; newStreakRecord = true; }
     } else if (p){ p.streak = 0; }
   });
+
+  // באנרים: שיא מהירות, שיא רצף
+  const banners = $('hr-banners'); banners.innerHTML = '';
+  let newRecord = false;
+  if (fastestMs < Infinity){
+    if (bestName === '' || fastestMs < bestMs){ bestMs = fastestMs; bestName = fastestName; newRecord = (qIndex>0); }
+  }
+  if (newRecord){
+    addBanner(banners, 'gold', '🚀 שיא מהירות חדש: ' + bestName + ' · ' + (bestMs/1000).toFixed(2) + ' שניות!');
+    fireworks('🚀 שיא מהירות חדש!<small>' + bestName + ' · ' + (bestMs/1000).toFixed(2) + ' שניות</small>');
+  }
+  if (newStreakRecord && streakKing){
+    addBanner(banners, 'teal', '🔥 ' + streakKing + ' ברצף של ' + maxStreak + ' תשובות נכונות!');
+  }
 
   $('hr-answer').textContent = correctText;
   const box = $('hr-bars'); box.innerHTML='';
@@ -669,7 +747,63 @@ function revealQ(){
 
   // עדכון רצף/תוצאות לשחקנים
   send({ t:'rev', i:seq, correctIdx: curQ.correct, correctText, scores: scoreboard() });
+
+  // מצב הקבוצות על הלוח
+  if (quiz.teamCount>0){
+    const tSum = {}; for(let i=0;i<quiz.teamCount;i++) tSum[i]=0;
+    Object.values(players).forEach(p => { if (p.team>=0) tSum[p.team]+=p.score; });
+    $('hr-teams').textContent = '⚔️ ' + Object.keys(tSum).map(k=>quiz.teamNames[k]+' '+tSum[k]).join(' · ');
+  } else $('hr-teams').textContent = '';
   show('hr');
+}
+
+function addBanner(box, kind, text){
+  const d = document.createElement('div');
+  d.className = 'banner ' + kind;
+  d.textContent = text;
+  box.appendChild(d);
+}
+
+function fireworks(html, dur){
+  $('fw-text').innerHTML = html || '';
+  $('fw').classList.add('on');
+  const colors = ['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#f7f4ec'];
+  for (let b=0; b<6; b++){
+    setTimeout(()=>{
+      const cx = (15 + Math.random()*70) + 'vw';
+      const cy = (15 + Math.random()*55) + 'vh';
+      for (let p=0; p<22; p++){
+        const s = document.createElement('span');
+        s.className = 'spark';
+        s.style.left = cx; s.style.top = cy;
+        s.style.background = colors[Math.floor(Math.random()*colors.length)];
+        document.body.appendChild(s);
+        const ang = Math.random()*Math.PI*2, dist = 60 + Math.random()*140;
+        requestAnimationFrame(()=>requestAnimationFrame(()=>{
+          s.style.transform = 'translate(' + Math.cos(ang)*dist + 'px,' + Math.sin(ang)*dist + 'px) scale(.2)';
+          s.style.opacity = '0';
+        }));
+        setTimeout(()=>s.remove(), 1500);
+      }
+    }, b*350);
+  }
+  setTimeout(()=>$('fw').classList.remove('on'), dur || 4200);
+}
+
+function confetti(){
+  const glyphs = ['🎉','✨','🎓','⭐','🎊'];
+  for (let i=0; i<60; i++){
+    setTimeout(()=>{
+      const s = document.createElement('span');
+      s.className = 'confetti-piece';
+      s.textContent = glyphs[Math.floor(Math.random()*glyphs.length)];
+      s.style.left = Math.random()*100 + 'vw';
+      s.style.animationDuration = (2.5 + Math.random()*3) + 's';
+      s.style.fontSize = (16 + Math.random()*18) + 'px';
+      document.body.appendChild(s);
+      setTimeout(()=>s.remove(), 6000);
+    }, i*90);
+  }
 }
 
 function scoreboard(){
@@ -703,13 +837,34 @@ function hostFinish(){
     txt += winners.length>1 ? ' · תיקו!' : ' · ' + quiz.teamNames[winners[0]] + ' ניצחו!';
     $('team-final').textContent = txt;
   } else $('team-final').textContent='';
+
+  // כרטיסי כיף: המנצח, הכי מהיר, מלך הרצף, הכי הרבה תשובות נכונות
+  const fc = $('fun-cards'); fc.innerHTML='';
+  if (board[0]) funCard(fc, '🏆', 'המנצח/ת', board[0].name, board[0].score + ' נקודות');
+  if (bestName) funCard(fc, '🚀', 'התשובה הכי מהירה', bestName, (bestMs/1000).toFixed(2) + ' שניות');
+  if (streakKing) funCard(fc, '🔥', 'מלך/ת הרצף', streakKing, maxStreak + ' ברצף');
+  const byCorrect = board.slice().sort((a,b)=>b.correct-a.correct)[0];
+  if (byCorrect && byCorrect.correct>0) funCard(fc, '🎯', 'הכי הרבה תשובות נכונות', byCorrect.name, byCorrect.correct + ' תשובות');
+
   send({ t:'end', scores: board });
   show('hfin');
+  confetti();
+}
+
+function funCard(box, ic, title, big, small){
+  const d = document.createElement('div');
+  d.style.cssText = 'background:var(--card); border-radius:16px; padding:16px 20px; min-width:150px; max-width:220px;';
+  d.innerHTML = '<div style="font-size:34px;">'+ic+'</div>'+
+                '<div style="font-size:14px; color:var(--ink-dim); margin:4px 0;">'+title+'</div>'+
+                '<div style="font-size:20px; font-weight:900; color:var(--gold);">'+big+'</div>'+
+                '<div style="font-size:14px; color:var(--teal);">'+small+'</div>';
+  box.appendChild(d);
 }
 
 function hostSkip(){ if (!revealed && curQ){ revealQ(); } else { nextQ(); } }
 function hostJumpFinish(){ clearInterval(hostTimer); hostFinish(); }
-function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); $('host-bar').style.display='none'; renderEditor(); show('editor'); }
+function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; renderEditor(); show('editor'); }
+function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; goPlay(); }
 
 /* ---- שחקן ---- */
 let myName='', myTeam=-1, joined=false, pTimer=null, sentThisQ=false, lastPick=-1;
