@@ -51,7 +51,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .moncap{position:fixed; bottom:42px; left:0; right:0; text-align:center; z-index:4; font-family:'Secular One'; font-size:clamp(28px,4vw,52px); color:var(--gold); text-shadow:0 2px 14px rgba(0,0,0,.9);}
 #mon-progress{position:fixed; bottom:0; left:0; right:0; height:14px; background:rgba(0,0,0,.55); z-index:5;}
 #mon-progress i{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #ffe9a8); transition:width .5s linear; box-shadow:0 0 12px var(--gold);}
-#mon-controls{position:fixed; top:16px; right:16px; z-index:6; display:flex; gap:8px;}
+#mon-controls{position:fixed; top:16px; right:16px; z-index:6; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
 #mon-controls button{font-family:'Heebo'; font-size:15px; font-weight:700; color:var(--ink); background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:9px 16px; cursor:pointer;}
 #mon-controls button:active{transform:translateY(1px);}
 </style>
@@ -92,8 +92,10 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
   <div class="moncap" id="moncap"></div>
   <div id="mon-progress"><i id="mon-progress-fill"></i></div>
   <div id="mon-controls">
-    <button onclick="togglePause()" id="mon-pause">⏸️ עצור</button>
-    <button onclick="finishShow()">✖️ סיום</button>
+    <button onclick="toggleMontageMusic()" id="mon-music">🔊 מוזיקה</button>
+    <button onclick="togglePause()" id="mon-pause">⏸️ עצירה</button>
+    <button onclick="finishToLast()">⏭️ סיום</button>
+    <button onclick="backToSetup()">✏️ חזרה לעריכה</button>
   </div>
 </div>
 
@@ -163,33 +165,39 @@ function playMusic(){
 
 /* ---------- המצגת ---------- */
 let monIv = null, paused = false, stepFn = null, intervalMs = 4500;
+let monOrder = [], monImgA = null, monImgB = null, monFlip = false, monMusicMuted = false;
+
 function startShow(){
   if (!pics.length) return;
   const cap = $('cap-text').value.trim();
   $('moncap').textContent = cap;
   show('show');
   playIdx = 0;
+  monMusicMuted = false;
+  $('mon-music').textContent = '🔊 מוזיקה';
   playMusic();
 
   const wrap = $('monwrap');
   wrap.innerHTML = '';
   const a = document.createElement('img'), b = document.createElement('img');
   wrap.appendChild(a); wrap.appendChild(b);
+  monImgA = a; monImgB = b; monFlip = false;
 
   // ערבוב חד-פעמי: עוברים על כל התמונות פעם אחת בלי כפילויות
-  const order = pics.slice();
-  shuffle(order);
+  monOrder = pics.slice();
+  shuffle(monOrder);
+  const order = monOrder;
 
   const SLIDE_MS = 4500;
-  let idx = 0, flip = false;
+  let idx = 0;
   const fill = $('mon-progress-fill');
 
   function step(){
     if (idx >= order.length){ idx = 0; shuffle(order); }
-    const cur = flip ? b : a, prev = flip ? a : b;
+    const cur = monFlip ? b : a, prev = monFlip ? a : b;
     cur.src = order[idx];
     cur.classList.add('vis'); prev.classList.remove('vis');
-    flip = !flip;
+    monFlip = !monFlip;
     idx++;
     fill.style.width = Math.round((idx / order.length) * 100) + '%';
   }
@@ -199,7 +207,7 @@ function startShow(){
   paused = false;
   stepFn = step;
   intervalMs = SLIDE_MS;
-  $('mon-pause').textContent = '⏸️ עצור';
+  $('mon-pause').textContent = '⏸️ עצירה';
 }
 
 function shuffle(arr){
@@ -217,12 +225,40 @@ function togglePause(){
     $('mon-pause').textContent = '▶️ המשך';
   } else {
     if (stepFn) monIv = setInterval(stepFn, intervalMs);
-    if (audio){ audio.play().catch(()=>{}); }
-    $('mon-pause').textContent = '⏸️ עצור';
+    if (audio && !monMusicMuted){ audio.play().catch(()=>{}); }
+    $('mon-pause').textContent = '⏸️ עצירה';
   }
 }
 
-function finishShow(){
+/* סיום: קפיצה לתמונה האחרונה ועצירת הכול (תמונות + מוזיקה) */
+function finishToLast(){
+  clearInterval(monIv);
+  if (audio){ try{ audio.pause(); }catch(e){} }
+  if (monOrder.length && monImgA && monImgB){
+    const last = monOrder[monOrder.length-1];
+    const cur = monFlip ? monImgB : monImgA, prev = monFlip ? monImgA : monImgB;
+    cur.src = last;
+    cur.classList.add('vis'); prev.classList.remove('vis');
+  }
+  $('mon-progress-fill').style.width = '100%';
+  paused = true;
+  $('mon-pause').textContent = '▶️ המשך';
+}
+
+/* מוזיקה: השתקה/החזרה */
+function toggleMontageMusic(){
+  monMusicMuted = !monMusicMuted;
+  if (monMusicMuted){
+    if (audio){ try{ audio.pause(); }catch(e){} }
+    $('mon-music').textContent = '🔇 מוזיקה';
+  } else {
+    if (audio && !paused){ audio.play().catch(()=>{}); } else if (!audio){ playMusic(); }
+    $('mon-music').textContent = '🔊 מוזיקה';
+  }
+}
+
+/* חזרה לעריכה: למסך ההגדרות */
+function backToSetup(){
   clearInterval(monIv);
   if (audio){ try{ audio.pause(); }catch(e){} }
   show('setup');
