@@ -84,6 +84,9 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 
   <p class="note">📷 התמונות והשירים נטענים מהמחשב הזה בלבד ואינם עולים לרשת.</p>
   <p class="note">טיפ: שיר אחד באורך 3-4 דקות מספיק — הוא יתנגן בלולאה. אפשר להוסיף עוד שירים.</p>
+  <div style="margin-top:14px;">
+    <a href="index.html" target="_top" id="main-menu-link" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a>
+  </div>
 </div>
 
 <!-- מסך המצגת -->
@@ -102,6 +105,14 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 <script>
 function $(id){ return document.getElementById(id); }
 function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList.remove('on')); $(id).classList.add('on'); }
+
+// בתוך הקומבו (embed=1) מסתירים את הקישור לתפריט הראשי, כי יש סרגל למעלה
+(function(){
+  if (new URLSearchParams(location.search).get('embed') === '1'){
+    const link = $('main-menu-link');
+    if (link) link.style.display = 'none';
+  }
+})();
 
 /* ---------- בחירת תמונות ---------- */
 let pics = [];
