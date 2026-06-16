@@ -46,14 +46,25 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 /* מסך המצגת */
 #show{padding:0;}
 .monwrap{position:fixed; inset:0; background:#000; z-index:3;}
-.monwrap img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0; transition:opacity 1.8s ease;}
+.monwrap img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0; transition:opacity 1.8s ease, transform 1.8s ease;}
 .monwrap img.vis{opacity:1;}
+/* מעבר החלקה */
+.monwrap.t-slide img{transform:translateX(8%);}
+.monwrap.t-slide img.vis{transform:translateX(0);}
+/* מעבר התקרבות */
+.monwrap.t-zoom img{transform:scale(1.12);}
+.monwrap.t-zoom img.vis{transform:scale(1);}
+/* תנועה עדינה על התמונה (קן ברנס) */
+@keyframes kenburns{0%{transform:scale(1) translate(0,0);}100%{transform:scale(1.12) translate(-2%,-1%);}}
+.monwrap.motion img.vis{animation:kenburns 7s ease-out forwards;}
+.trans-btn.on, .motion-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
 .moncap{position:fixed; bottom:42px; left:0; right:0; text-align:center; z-index:4; font-family:'Secular One'; font-size:clamp(28px,4vw,52px); color:var(--gold); text-shadow:0 2px 14px rgba(0,0,0,.9);}
 #mon-progress{position:fixed; bottom:0; left:0; right:0; height:14px; background:rgba(0,0,0,.55); z-index:5;}
 #mon-progress i{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #ffe9a8); transition:width .5s linear; box-shadow:0 0 12px var(--gold);}
 #mon-controls{position:fixed; top:16px; right:16px; z-index:6; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
 #mon-controls button{font-family:'Heebo'; font-size:15px; font-weight:700; color:var(--ink); background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:9px 16px; cursor:pointer;}
 #mon-controls button:active{transform:translateY(1px);}
+.fx-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
 </style>
 </head>
 <body>
@@ -76,6 +87,10 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
     <input type="text" id="cap-text" maxlength="60" placeholder="כיתוב שיופיע על המצגת (לא חובה)">
   </div>
 
+  <div class="row" style="margin:16px 0;">
+    <button class="btn ghost" onclick="openFxPanel()">✨ אפקטים ומעברים</button>
+  </div>
+
   <div class="list" id="music-list"></div>
 
   <div class="row" style="margin-top:18px;">
@@ -93,11 +108,13 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 <!-- מסך המצגת -->
 <div class="screen" id="show">
   <div class="monwrap" id="monwrap"></div>
+  <canvas id="fx-canvas" style="position:fixed; inset:0; z-index:5; pointer-events:none;"></canvas>
   <div class="moncap" id="moncap"></div>
   <div id="mon-progress"><i id="mon-progress-fill"></i></div>
   <div id="mon-controls">
     <button onclick="toggleMontageMusic()" id="mon-music">🔊 מוזיקה</button>
     <button onclick="togglePause()" id="mon-pause">⏸️ עצירה</button>
+    <button onclick="openFxPanel()" id="mon-fx">✨ אפקטים</button>
     <button onclick="finishToLast()">⏭️ סיום</button>
     <button onclick="backToSetup()">✏️ חזרה לעריכה</button>
   </div>
@@ -193,6 +210,8 @@ function startShow(){
   monMusicMuted = false;
   $('mon-music').textContent = '🔊 מוזיקה';
   playMusic();
+  startFx();
+  applyMonwrapClasses();
 
   const wrap = $('monwrap');
   wrap.innerHTML = '';
@@ -278,7 +297,150 @@ function toggleMontageMusic(){
 function backToSetup(){
   clearInterval(monIv);
   if (audio){ try{ audio.pause(); }catch(e){} }
+  stopFx();
   show('setup');
+}
+
+/* ===== אפקטים: שלג, גשם, זיקוקים, לבבות ===== */
+const fxActive = { snow:false, rain:false, fireworks:false, hearts:false };
+let fxRAF = null, fxParticles = [], fxCanvas = null, fxCtx = null, fxFwTimer = null;
+
+/* בחירת מעבר ותנועה (הבחירה נעשית בחלון האפקטים) */
+let transStyle = 'fade', motionOn = false;
+function applyMonwrapClasses(){
+  const w = $('monwrap'); if (!w) return;
+  w.classList.remove('t-slide','t-zoom','motion');
+  if (transStyle==='slide') w.classList.add('t-slide');
+  if (transStyle==='zoom') w.classList.add('t-zoom');
+  if (motionOn) w.classList.add('motion');
+}
+
+function toggleFx(name, btn){
+  fxActive[name] = !fxActive[name];
+  if (btn) btn.classList.toggle('on', fxActive[name]);
+  // סנכרון כפתורים אם פתוח גם בתוך המצגת
+  document.querySelectorAll('.fx-btn[data-fx="'+name+'"]').forEach(b=>b.classList.toggle('on', fxActive[name]));
+}
+
+function anyFx(){ return Object.values(fxActive).some(v=>v); }
+
+function startFx(){
+  fxCanvas = $('fx-canvas'); if (!fxCanvas) return;
+  fxCtx = fxCanvas.getContext('2d');
+  resizeFx();
+  window.addEventListener('resize', resizeFx);
+  fxParticles = [];
+  fxFwTimer = 0;
+  if (fxRAF) cancelAnimationFrame(fxRAF);
+  fxLoop();
+}
+function resizeFx(){ if(fxCanvas){ fxCanvas.width = innerWidth; fxCanvas.height = innerHeight; } }
+function stopFx(){
+  if (fxRAF){ cancelAnimationFrame(fxRAF); fxRAF=null; }
+  if (fxCtx && fxCanvas){ fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height); }
+  fxParticles = [];
+}
+
+function fxLoop(){
+  fxRAF = requestAnimationFrame(fxLoop);
+  if (paused){ return; } // עוצר עם המצגת
+  const W = fxCanvas.width, H = fxCanvas.height;
+  fxCtx.clearRect(0,0,W,H);
+
+  // הולדת חלקיקים
+  if (fxActive.snow && Math.random()<0.4) fxParticles.push({type:'snow', x:Math.random()*W, y:-10, r:2+Math.random()*4, sp:1+Math.random()*1.5, sw:Math.random()*1});
+  if (fxActive.rain && Math.random()<0.9) for(let i=0;i<2;i++) fxParticles.push({type:'rain', x:Math.random()*W, y:-10, len:12+Math.random()*16, sp:9+Math.random()*6});
+  if (fxActive.hearts && Math.random()<0.08) fxParticles.push({type:'heart', x:Math.random()*W, y:H+10, sp:1+Math.random()*1.5, sz:14+Math.random()*16, sway:Math.random()*2});
+  if (fxActive.fireworks){
+    fxFwTimer--;
+    if (fxFwTimer<=0){ spawnFirework(W,H); fxFwTimer = 40+Math.random()*50; }
+  }
+
+  for (let i=fxParticles.length-1;i>=0;i--){
+    const p = fxParticles[i];
+    if (p.type==='snow'){
+      p.y+=p.sp; p.x+=Math.sin(p.y/40)*p.sw;
+      fxCtx.globalAlpha=0.85; fxCtx.fillStyle='#fff';
+      fxCtx.beginPath(); fxCtx.arc(p.x,p.y,p.r,0,7); fxCtx.fill();
+      if (p.y>H+10) fxParticles.splice(i,1);
+    } else if (p.type==='rain'){
+      p.y+=p.sp;
+      fxCtx.globalAlpha=0.5; fxCtx.strokeStyle='#9cc3ff'; fxCtx.lineWidth=2;
+      fxCtx.beginPath(); fxCtx.moveTo(p.x,p.y); fxCtx.lineTo(p.x,p.y+p.len); fxCtx.stroke();
+      if (p.y>H+10) fxParticles.splice(i,1);
+    } else if (p.type==='heart'){
+      p.y-=p.sp; p.x+=Math.sin(p.y/30)*p.sway;
+      fxCtx.globalAlpha=0.85; fxCtx.font=p.sz+'px serif'; fxCtx.fillText('💛',p.x,p.y);
+      if (p.y<-20) fxParticles.splice(i,1);
+    } else if (p.type==='spark'){
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.04; p.life--;
+      fxCtx.globalAlpha=Math.max(0,p.life/p.max); fxCtx.fillStyle=p.color;
+      fxCtx.beginPath(); fxCtx.arc(p.x,p.y,2.4,0,7); fxCtx.fill();
+      if (p.life<=0) fxParticles.splice(i,1);
+    }
+  }
+  fxCtx.globalAlpha=1;
+}
+
+function spawnFirework(W,H){
+  const cx=W*0.15+Math.random()*W*0.7, cy=H*0.15+Math.random()*H*0.45;
+  const colors=['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ffffff','#ff9f1c'];
+  const col=colors[Math.floor(Math.random()*colors.length)];
+  const n=26+Math.floor(Math.random()*14);
+  for(let i=0;i<n;i++){
+    const ang=(Math.PI*2*i)/n, sp=2+Math.random()*3.2;
+    fxParticles.push({type:'spark', x:cx,y:cy, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp, life:50+Math.random()*25, max:75, color:col});
+  }
+}
+
+function openFxPanel(){
+  let ov = $('fx-overlay');
+  if (ov){ ov.remove(); return; } // לחיצה שנייה סוגרת
+  ov = document.createElement('div'); ov.id='fx-overlay';
+  ov.style.cssText='position:fixed; inset:0; z-index:9; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:18px;';
+  ov.onclick = (e)=>{ if (e.target===ov) ov.remove(); };
+
+  const box = document.createElement('div');
+  box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:440px; width:100%; max-height:86vh; overflow:auto; text-align:right;';
+  box.innerHTML = '<div style="font-family:\'Secular One\'; font-size:24px; color:var(--gold); margin-bottom:4px;">אפקטים ומעברים</div>'+
+    '<div style="font-size:13px; color:var(--ink-dim); margin-bottom:16px;">בחרו מה שתרצו. ברירת המחדל: דהייה רכה, בלי תנועה ובלי אפקטים.</div>';
+
+  function group(title){ const d=document.createElement('div'); d.style.margin='14px 0'; d.innerHTML='<div style="font-size:14px; color:var(--ink-dim); margin-bottom:8px; font-weight:700;">'+title+'</div>'; const r=document.createElement('div'); r.style.cssText='display:flex; flex-wrap:wrap; gap:8px;'; d.appendChild(r); box.appendChild(d); return r; }
+
+  // מעבר בין תמונות
+  const tRow = group('מעבר בין תמונות');
+  [['fade','🌫️ דהייה'],['slide','➡️ החלקה'],['zoom','🔍 התקרבות']].forEach(([t,label])=>{
+    const b=document.createElement('button'); b.className='btn ghost sm'+(transStyle===t?' on':''); b.textContent=label;
+    b.style.cssText += (transStyle===t?'background:var(--gold);color:#1a2342;border-color:var(--gold);':'');
+    b.onclick=()=>{ transStyle=t; [...tRow.children].forEach(c=>{c.classList.remove('on'); c.style.background='';c.style.color='';}); b.classList.add('on'); b.style.background='var(--gold)'; b.style.color='#1a2342'; applyMonwrapClasses(); };
+    tRow.appendChild(b);
+  });
+
+  // תנועה
+  const mRow = group('תנועה על התמונה');
+  [['off','בלי תנועה'],['on','✨ תנועה עדינה']].forEach(([m,label])=>{
+    const active = (m==='on')===motionOn;
+    const b=document.createElement('button'); b.className='btn ghost sm'+(active?' on':''); b.textContent=label;
+    if(active){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
+    b.onclick=()=>{ motionOn=(m==='on'); [...mRow.children].forEach(c=>{c.style.background='';c.style.color='';}); b.style.background='var(--gold)'; b.style.color='#1a2342'; applyMonwrapClasses(); };
+    mRow.appendChild(b);
+  });
+
+  // אפקטים מרחפים
+  const fRow = group('אפקטים על המסך (אפשר כמה)');
+  [['snow','❄️ שלג'],['rain','🌧️ גשם'],['fireworks','🎆 זיקוקים'],['hearts','💛 לבבות']].forEach(([fx,label])=>{
+    const b=document.createElement('button'); b.className='btn ghost sm'+(fxActive[fx]?' on':''); b.textContent=label;
+    if(fxActive[fx]){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
+    b.onclick=()=>{ fxActive[fx]=!fxActive[fx]; if(fxActive[fx]){b.style.background='var(--gold)';b.style.color='#1a2342';}else{b.style.background='';b.style.color='';} };
+    fRow.appendChild(b);
+  });
+
+  const close=document.createElement('button'); close.className='btn'; close.textContent='✓ סגירה'; close.style.cssText+='margin-top:14px; width:100%;';
+  close.onclick=()=>ov.remove();
+  box.appendChild(close);
+
+  ov.appendChild(box);
+  document.body.appendChild(ov);
 }
 </script>
 </body>
