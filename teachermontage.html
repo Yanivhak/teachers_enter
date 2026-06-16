@@ -81,6 +81,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
   <div class="row" style="margin-top:18px;">
     <button class="btn" id="start-btn" onclick="startShow()" disabled>▶️ התחלת המצגת</button>
   </div>
+  <p class="note" id="start-hint" style="color:var(--gold);">כדי להתחיל, בחרו קודם תמונות (חובה). מוזיקה היא רשות.</p>
 
   <p class="note">📷 התמונות והשירים נטענים מהמחשב הזה בלבד ואינם עולים לרשת.</p>
   <p class="note">טיפ: שיר אחד באורך 3-4 דקות מספיק — הוא יתנגן בלולאה. אפשר להוסיף עוד שירים.</p>
@@ -163,6 +164,11 @@ function toggleCap(){
 
 function refreshStart(){
   $('start-btn').disabled = pics.length === 0;
+  const hint = $('start-hint');
+  if (hint){
+    if (pics.length === 0){ hint.textContent = 'כדי להתחיל, בחרו קודם תמונות (חובה). מוזיקה היא רשות.'; hint.style.color = 'var(--gold)'; }
+    else { hint.textContent = 'מצוין! נבחרו ' + pics.length + ' תמונות. אפשר להתחיל (או להוסיף מוזיקה).'; hint.style.color = 'var(--ink-dim)'; }
+  }
 }
 
 /* ---------- ניגון מוזיקה ---------- */
