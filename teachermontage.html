@@ -230,6 +230,11 @@ function startShow(){
 
   function step(){
     if (idx >= order.length){ idx = 0; shuffle(order); }
+    // בחירת מעבר לתמונה הזו: אם נבחר אחד — קבוע; אם כמה — מתחלפים
+    const sel = selectedTransitions();
+    const t = sel.length ? sel[transCycle % sel.length] : 'fade';
+    transCycle++;
+    setTransitionClass(t);
     const cur = monFlip ? b : a, prev = monFlip ? a : b;
     cur.src = order[idx];
     cur.classList.add('vis'); prev.classList.remove('vis');
@@ -304,15 +309,23 @@ function backToSetup(){
 /* ===== אפקטים: שלג, גשם, זיקוקים, לבבות ===== */
 const fxActive = { snow:false, rain:false, fireworks:false, hearts:false };
 let fxRAF = null, fxParticles = [], fxCanvas = null, fxCtx = null, fxFwTimer = null;
+let fxSwitchTimer = 0, fxShownIdx = 0;
 
-/* בחירת מעבר ותנועה (הבחירה נעשית בחלון האפקטים) */
-let transStyle = 'fade', motionOn = false;
+/* בחירת מעבר ותנועה (הבחירה נעשית בחלון האפקטים). אפשר לבחור כמה מעברים — והם יתחלפו. */
+let transSel = { fade:true, slide:false, zoom:false };
+let motionOn = false;
+let transCycle = 0;
+function selectedTransitions(){ return Object.keys(transSel).filter(k=>transSel[k]); }
 function applyMonwrapClasses(){
+  // נשאר לתאימות; קובע מעבר בודד לפי הראשון שנבחר (משמש כברירת מחדל לפני שמתחילים)
+  setTransitionClass(selectedTransitions()[0] || 'fade');
+}
+function setTransitionClass(t){
   const w = $('monwrap'); if (!w) return;
-  w.classList.remove('t-slide','t-zoom','motion');
-  if (transStyle==='slide') w.classList.add('t-slide');
-  if (transStyle==='zoom') w.classList.add('t-zoom');
-  if (motionOn) w.classList.add('motion');
+  w.classList.remove('t-slide','t-zoom');
+  if (t==='slide') w.classList.add('t-slide');
+  if (t==='zoom') w.classList.add('t-zoom');
+  w.classList.toggle('motion', motionOn);
 }
 
 function toggleFx(name, btn){
@@ -347,11 +360,21 @@ function fxLoop(){
   const W = fxCanvas.width, H = fxCanvas.height;
   fxCtx.clearRect(0,0,W,H);
 
+  // אילו אפקטים פעילים כעת: אם נבחר אחד — תמיד; אם כמה — מתחלפים כל ~12 שניות
+  const sel = Object.keys(fxActive).filter(k=>fxActive[k]);
+  let shown = {};
+  if (sel.length <= 1){ sel.forEach(k=>shown[k]=true); }
+  else {
+    fxSwitchTimer++;
+    if (fxSwitchTimer > 12*60){ fxSwitchTimer = 0; fxShownIdx = (fxShownIdx+1) % sel.length; }
+    shown[sel[fxShownIdx % sel.length]] = true;
+  }
+
   // הולדת חלקיקים
-  if (fxActive.snow && Math.random()<0.4) fxParticles.push({type:'snow', x:Math.random()*W, y:-10, r:2+Math.random()*4, sp:1+Math.random()*1.5, sw:Math.random()*1});
-  if (fxActive.rain && Math.random()<0.9) for(let i=0;i<2;i++) fxParticles.push({type:'rain', x:Math.random()*W, y:-10, len:12+Math.random()*16, sp:9+Math.random()*6});
-  if (fxActive.hearts && Math.random()<0.08) fxParticles.push({type:'heart', x:Math.random()*W, y:H+10, sp:1+Math.random()*1.5, sz:14+Math.random()*16, sway:Math.random()*2});
-  if (fxActive.fireworks){
+  if (shown.snow && Math.random()<0.4) fxParticles.push({type:'snow', x:Math.random()*W, y:-10, r:2+Math.random()*4, sp:1+Math.random()*1.5, sw:Math.random()*1});
+  if (shown.rain && Math.random()<0.9) for(let i=0;i<2;i++) fxParticles.push({type:'rain', x:Math.random()*W, y:-10, len:12+Math.random()*16, sp:9+Math.random()*6});
+  if (shown.hearts && Math.random()<0.08) fxParticles.push({type:'heart', x:Math.random()*W, y:H+10, sp:1+Math.random()*1.5, sz:14+Math.random()*16, sway:Math.random()*2});
+  if (shown.fireworks){
     fxFwTimer--;
     if (fxFwTimer<=0){ spawnFirework(W,H); fxFwTimer = 40+Math.random()*50; }
   }
@@ -407,12 +430,18 @@ function openFxPanel(){
 
   function group(title){ const d=document.createElement('div'); d.style.margin='14px 0'; d.innerHTML='<div style="font-size:14px; color:var(--ink-dim); margin-bottom:8px; font-weight:700;">'+title+'</div>'; const r=document.createElement('div'); r.style.cssText='display:flex; flex-wrap:wrap; gap:8px;'; d.appendChild(r); box.appendChild(d); return r; }
 
-  // מעבר בין תמונות
-  const tRow = group('מעבר בין תמונות');
+  // מעבר בין תמונות (אפשר לבחור כמה — מתחלפים)
+  const tRow = group('מעבר בין תמונות (אפשר כמה — יתחלפו)');
   [['fade','🌫️ דהייה'],['slide','➡️ החלקה'],['zoom','🔍 התקרבות']].forEach(([t,label])=>{
-    const b=document.createElement('button'); b.className='btn ghost sm'+(transStyle===t?' on':''); b.textContent=label;
-    b.style.cssText += (transStyle===t?'background:var(--gold);color:#1a2342;border-color:var(--gold);':'');
-    b.onclick=()=>{ transStyle=t; [...tRow.children].forEach(c=>{c.classList.remove('on'); c.style.background='';c.style.color='';}); b.classList.add('on'); b.style.background='var(--gold)'; b.style.color='#1a2342'; applyMonwrapClasses(); };
+    const b=document.createElement('button'); b.className='btn ghost sm'; b.textContent=label;
+    if(transSel[t]){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
+    b.onclick=()=>{
+      transSel[t]=!transSel[t];
+      // לפחות מעבר אחד חייב להישאר פעיל
+      if (selectedTransitions().length===0){ transSel[t]=true; return; }
+      if(transSel[t]){b.style.background='var(--gold)';b.style.color='#1a2342';}else{b.style.background='';b.style.color='';}
+      applyMonwrapClasses();
+    };
     tRow.appendChild(b);
   });
 
