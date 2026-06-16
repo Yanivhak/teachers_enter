@@ -122,7 +122,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v10</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v11</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div id="game-bg"></div>
 
@@ -131,17 +131,39 @@ input:focus{border-color:var(--gold); outline:none;}
   <div class="wrap">
     <h1>🧠 בונה חידונים</h1>
     <p class="sub">בנו חידון טריוויה משלכם, והתלמידים משחקים מהטלפון. בלי התקנה.</p>
-    <div class="row" style="margin-bottom:22px;">
-      <button class="btn" onclick="newQuiz()">➕ בניית חידון חדש</button>
+
+    <div class="field" style="max-width:380px; margin:0 auto 6px;">
+      <label>המייל שלכם</label>
+      <input type="email" id="email-input" placeholder="name@example.com" inputmode="email">
+      <div style="font-size:13px; color:var(--ink-dim); margin-top:6px;">המייל משמש רק לזיהוי ולשמירת החידונים שלכם. לא נשלח אליו דואר.</div>
     </div>
-    <div class="field" style="max-width:360px; margin:0 auto;">
-      <label>יש לכם כבר חידון? הקלידו את מספר העריכה שלו:</label>
-      <input type="text" id="open-code" inputmode="numeric" maxlength="6" placeholder="לדוגמה 4827">
-    </div>
-    <div class="row">
-      <button class="btn ghost" onclick="openQuiz()">📂 פתיחת חידון קיים</button>
+    <div class="row" style="margin:14px 0 4px;">
+      <button class="btn" onclick="loginEmail()">📂 הצגת החידונים שלי</button>
     </div>
     <p id="home-msg" style="color:var(--coral); min-height:20px; margin-top:12px;"></p>
+
+    <div id="credit-box" style="margin-top:30px; padding-top:22px; border-top:1px solid rgba(255,255,255,.12);">
+      <div style="font-size:15px; color:var(--ink-dim);">נבנה על ידי</div>
+      <div style="font-family:'Secular One'; font-size:22px; color:var(--gold); margin:4px 0 12px;">ד״ר יניב חכים</div>
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; align-items:center;">
+        <a href="mailto:yanivhpro@gmail.com" style="color:var(--ink); text-decoration:none; background:var(--card); border-radius:10px; padding:9px 16px; font-size:14px;">✉️ yanivhpro@gmail.com</a>
+        <a href="https://wa.me/972544617463" target="_blank" rel="noopener" style="color:var(--ink); text-decoration:none; background:var(--card); border-radius:10px; padding:9px 16px; font-size:14px;">💬 וואטסאפ</a>
+        <a href="tel:+972544617463" style="color:var(--ink); text-decoration:none; background:var(--card); border-radius:10px; padding:9px 16px; font-size:14px;">📞 חיוג</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ רשימת החידונים של המורה ============ -->
+<div class="screen" id="mylist">
+  <div class="wrap">
+    <h2 id="mylist-title">החידונים שלי</h2>
+    <div class="row" style="margin-bottom:18px;">
+      <button class="btn teal" onclick="newQuiz()">➕ בניית חידון חדש</button>
+      <button class="btn ghost sm" onclick="show('home')">→ חזרה</button>
+    </div>
+    <div id="quiz-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+    <p id="mylist-msg" style="color:var(--ink-dim); margin-top:14px;"></p>
   </div>
 </div>
 
@@ -225,6 +247,25 @@ input:focus{border-color:var(--gold); outline:none;}
       <button class="btn teal" id="go-btn" onclick="hostStart()" disabled>🚀 מתחילים!</button>
       <button class="btn ghost sm" onclick="backToEditor()">→ חזרה לעריכה</button>
     </div>
+  </div>
+</div>
+
+<!-- ============ מארח: הפסקת ביניים (הסתכלו ללוח) ============ -->
+<div class="screen" id="hint">
+  <div class="wrap">
+    <div style="font-size:60px;">👀</div>
+    <h1 style="color:var(--gold);">הסתכלו ללוח!</h1>
+    <div id="hint-text" style="font-size:clamp(26px,3.6vw,42px); font-weight:800; color:#fff; margin:18px 0; text-shadow:0 2px 12px rgba(0,0,0,.85);"></div>
+    <button class="btn teal" onclick="nextQ()" style="margin-top:14px;">ממשיכים ◂</button>
+  </div>
+</div>
+
+<!-- ============ שחקן: הסתכלו ללוח ============ -->
+<div class="screen" id="plook">
+  <div class="pwrap">
+    <p class="big-emoji">👀</p>
+    <h2>הסתכלו ללוח!</h2>
+    <p class="sub">רגע של הפסקה — המורה מראה משהו על המסך הגדול.</p>
   </div>
 </div>
 
@@ -336,6 +377,7 @@ input:focus{border-color:var(--gold); outline:none;}
   <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🖼️ רקע</button>
   <button onclick="hostJumpFinish()">🏁 סיום</button>
 </div>
+<div id="ingame-credit" style="position:fixed; bottom:10px; left:14px; z-index:55; font-size:13px; color:rgba(170,180,207,.55); display:none;">נבנה על ידי ד״ר יניב חכים</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -360,13 +402,56 @@ fdb.ref('.info/connected').on('value', s => setConn(s.val()===true));
 
 /* ============================================================
    חלק 1: בניית החידון (המורה)
-   הנתונים נשמרים תחת quizzes/{editCode}
+   הנתונים נשמרים תחת teachers/{emailKey}/{editCode}
+   המייל משמש כזיהוי כדי שחידונים של מורים שונים לא יידרסו.
    ============================================================ */
-let quiz = null;        // {title, time, teamCount, teamNames[], questions:[{text, answers:[], correct}]}
+let quiz = null;        // {title, time, teamCount, teamNames[], questions:[...]}
 let editCode = null;
 let saveTimer = null;
+let myEmail = '', myEmailKey = '';
 
 function genCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
+function emailToKey(e){ return e.trim().toLowerCase().replace(/[.#$\[\]\/@]/g, '_'); }
+function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+function loginEmail(){
+  const e = $('email-input').value.trim();
+  if (!validEmail(e)){ $('home-msg').textContent = 'נא להקליד כתובת מייל תקינה.'; return; }
+  myEmail = e.toLowerCase(); myEmailKey = emailToKey(e);
+  $('home-msg').textContent = 'טוען...';
+  // רישום המייל ברשימת המורים (לעתיד) + טעינת החידונים שלו
+  fdb.ref('teacher_emails/'+myEmailKey).set({ email: myEmail, last: Date.now() }).catch(()=>{});
+  fdb.ref('teachers/'+myEmailKey).once('value').then(snap => {
+    $('home-msg').textContent = '';
+    renderQuizList(snap.val() || {});
+    show('mylist');
+  }).catch(()=>{ $('home-msg').textContent = 'תקלה בטעינה, נסו שוב.'; });
+}
+
+function renderQuizList(all){
+  const box = $('quiz-list'); box.innerHTML = '';
+  const codes = Object.keys(all);
+  $('mylist-title').textContent = 'החידונים של ' + myEmail;
+  if (!codes.length){ $('mylist-msg').textContent = 'עוד אין חידונים. לחצו "בניית חידון חדש" כדי להתחיל.'; return; }
+  $('mylist-msg').textContent = '';
+  // מיון לפי זמן עדכון אחרון (חדש קודם)
+  codes.sort((a,b)=>(all[b].updated||0)-(all[a].updated||0));
+  codes.forEach(code => {
+    const q = all[code];
+    const row = document.createElement('div');
+    row.style.cssText = 'background:var(--card); border-radius:12px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;';
+    const info = document.createElement('div'); info.style.textAlign='right';
+    info.innerHTML = '<div style="font-weight:800; font-size:18px;">' + (q.title || 'חידון ללא שם') + '</div>' +
+                     '<div style="font-size:13px; color:var(--ink-dim);">מספר ' + code + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>';
+    const btns = document.createElement('div'); btns.style.cssText='display:flex; gap:8px;';
+    const open = document.createElement('button'); open.className='btn teal sm'; open.textContent='פתיחה'; open.onclick=()=>openExisting(code, q);
+    const del = document.createElement('button'); del.className='btn ghost sm'; del.textContent='🗑'; del.title='מחיקת החידון';
+    del.onclick=()=>{ if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myEmailKey+'/'+code).remove().then(()=>refreshMyList()); } };
+    btns.appendChild(open); btns.appendChild(del);
+    row.appendChild(info); row.appendChild(btns);
+    box.appendChild(row);
+  });
+}
 
 function newQuiz(){
   editCode = genCode();
@@ -378,26 +463,16 @@ function newQuiz(){
   saveQuiz();
 }
 
-function openQuiz(){
-  const code = $('open-code').value.trim();
-  if (!/^\d{4}$/.test(code)){ $('home-msg').textContent = 'הקוד הוא 4 ספרות.'; return; }
-  $('home-msg').textContent = 'טוען...';
-  fdb.ref('quizzes/'+code).once('value').then(snap => {
-    const data = snap.val();
-    if (!data){ $('home-msg').textContent = 'לא נמצא חידון עם הקוד הזה.'; return; }
-    editCode = code;
-    quiz = {
-      title: data.title || '',
-      time: data.time || 20,
-      teamCount: data.teamCount || 0,
-      teamNames: data.teamNames || [],
-      questions: data.questions || []
-    };
-    $('edit-code').textContent = editCode;
-    $('home-msg').textContent = '';
-    renderEditor();
-    show('editor');
-  }).catch(() => { $('home-msg').textContent = 'תקלה בטעינה, נסו שוב.'; });
+function openExisting(code, data){
+  editCode = code;
+  quiz = {
+    title: data.title || '', time: data.time || 20,
+    teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
+    questions: data.questions || []
+  };
+  $('edit-code').textContent = editCode;
+  renderEditor();
+  show('editor');
 }
 
 function renderEditor(){
@@ -491,15 +566,23 @@ function touch(){
   saveTimer = setTimeout(saveQuiz, 600);
 }
 function saveQuiz(){
-  if (!editCode || !quiz) return;
-  fdb.ref('quizzes/'+editCode).set(quiz).then(() => {
+  if (!editCode || !quiz || !myEmailKey) return;
+  const payload = Object.assign({}, quiz, { updated: Date.now(), ownerEmail: myEmail });
+  fdb.ref('teachers/'+myEmailKey+'/'+editCode).set(payload).then(() => {
     $('save-state').textContent = 'נשמר אוטומטית ✓';
   }).catch(() => {
     $('save-state').textContent = 'תקלה בשמירה';
   });
 }
 
-function backHome(){ show('home'); }
+function refreshMyList(){
+  if (!myEmailKey){ show('home'); return; }
+  fdb.ref('teachers/'+myEmailKey).once('value').then(snap => {
+    renderQuizList(snap.val() || {});
+    show('mylist');
+  });
+}
+function backHome(){ refreshMyList(); }
 
 /* validation before play */
 function quizReady(){
@@ -525,6 +608,7 @@ let role = null, myId = Math.random().toString(36).slice(2,10);
 let playCode = null, gameRef = null, topic = null;
 let players = {}, seq = 0, curQ = null, answers = {}, revealed = false, hostTimer = null, qIndex = -1, qShownAt = 0;
 let bestMs = Infinity, bestName = '', maxStreak = 0, streakKing = '';
+let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
 
 function goPlay(){
@@ -596,9 +680,11 @@ function renderJoined(){
 
 function hostStart(){
   $('host-bar').style.display = 'flex';
+  $('ingame-credit').style.display = 'block';
   $('bg-toggle').style.display = bgUrl ? 'inline-block' : 'none';
   applyGameBg(true);
   bestMs = Infinity; bestName = ''; maxStreak = 0; streakKing = '';
+  intermissionDone = new Set();
   playGameMusic();
   qIndex = -1;
   nextQ();
@@ -670,6 +756,17 @@ function nextQ(){
   revealed = false; answers = {};
   qIndex++;
   if (qIndex >= quiz.questions.length){ hostFinish(); return; }
+
+  // הפסקת ביניים "הסתכלו ללוח" בנקודות מסוימות (אמצע, ושני שליש), אם יש מספיק שאלות ושחקנים
+  const total = quiz.questions.length;
+  const mid = Math.floor(total/2), twoThirds = Math.floor(total*2/3);
+  if (!intermissionDone.has(qIndex) && Object.keys(players).length > 0 && total >= 6 &&
+      (qIndex === mid || (qIndex === twoThirds && twoThirds >= mid + 2))){
+    intermissionDone.add(qIndex);
+    showIntermission();
+    return; // נמשיך לשאלה כשהמורה ילחץ "ממשיכים"
+  }
+
   seq++;
   curQ = quiz.questions[qIndex];
   const opts = cleanAnswers(curQ);
@@ -691,6 +788,46 @@ function nextQ(){
     if (t<=5) $('hq-timer').classList.add('low');
     if (t<=0) revealQ();
   },1000);
+}
+
+/* הפסקת ביניים: בוחר סטטיסטיקה כיפית ומציג על הלוח, ושולח לשחקנים "הסתכלו ללוח" */
+function showIntermission(){
+  qIndex--; // נחזיר אחורה כדי שהשאלה הבאה תוצג כשנלחץ "ממשיכים"
+  const board = scoreboard();
+  const done = qIndex + 1;
+  const total = quiz.questions.length;
+  const stats = [];
+  if (board[0] && board[0].score > 0){
+    stats.push('עברנו ' + done + ' מתוך ' + total + ' שאלות! המוביל/ה: ' + board[0].name + ' עם ' + board[0].score + ' נקודות');
+  }
+  const top3 = board.filter(p=>p.score>0).slice(0,3);
+  if (top3.length >= 2){
+    stats.push('שלושת המובילים כרגע: ' + top3.map(p=>p.name).join(', '));
+  }
+  const totalCorrect = Object.values(players).reduce((s,p)=>s+p.correct,0);
+  if (totalCorrect > 0){
+    stats.push('עד עכשיו ענינו נכון ' + totalCorrect + ' פעמים ביחד!');
+  }
+  if (streakKing){
+    stats.push(streakKing + ' בכושר — הרצף הכי ארוך עד כה');
+  }
+  if (quiz.teamCount > 0){
+    const tSum = {}; for(let i=0;i<quiz.teamCount;i++) tSum[i]=0;
+    board.forEach(p=>{ if(p.team>=0) tSum[p.team]+=p.score; });
+    const best = Math.max(...Object.values(tSum));
+    if (best > 0){
+      const lead = Object.keys(tSum).filter(k=>tSum[k]===best);
+      stats.push('הקבוצה המובילה: ' + quiz.teamNames[lead[0]] + '!');
+    }
+  }
+  const remaining = total - done;
+  if (remaining > 0 && remaining <= 3){
+    stats.push('נשארו רק ' + remaining + ' שאלות! עוד הכול יכול להשתנות');
+  }
+  const text = stats.length ? stats[Math.floor(Math.random()*stats.length)] : 'יופי! ממשיכים לחלק הבא';
+  $('hint-text').textContent = text;
+  show('hint');
+  send({ t:'look' });
 }
 
 function revealQ(){
@@ -814,7 +951,9 @@ function scoreboard(){
 function hostFinish(){
   clearInterval(hostTimer);
   stopGameMusic();
+  applyGameBg(false);
   $('host-bar').style.display='none';
+  $('ingame-credit').style.display='none';
   const board = scoreboard();
   // פודיום
   const pod = $('podium'); pod.innerHTML='';
@@ -861,10 +1000,13 @@ function funCard(box, ic, title, big, small){
   box.appendChild(d);
 }
 
-function hostSkip(){ if (!revealed && curQ){ revealQ(); } else { nextQ(); } }
+function hostSkip(){
+  if ($('hint').classList.contains('on')){ nextQ(); return; }
+  if (!revealed && curQ){ revealQ(); } else { nextQ(); }
+}
 function hostJumpFinish(){ clearInterval(hostTimer); hostFinish(); }
-function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; renderEditor(); show('editor'); }
-function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; goPlay(); }
+function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('ingame-credit').style.display='none'; renderEditor(); show('editor'); }
+function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('ingame-credit').style.display='none'; goPlay(); }
 
 /* ---- שחקן ---- */
 let myName='', myTeam=-1, joined=false, pTimer=null, sentThisQ=false, lastPick=-1;
@@ -923,6 +1065,7 @@ function joinGame(){
 function playerMsg(m){
   if (m.t==='welcome' && m.id===myId){ joined=true; show('pwait'); }
   if (m.t==='q'){ showPQ(m); }
+  if (m.t==='look'){ show('plook'); }
   if (m.t==='rev'){ showFeedback(m); }
   if (m.t==='end'){ showPFin(m); }
 }
