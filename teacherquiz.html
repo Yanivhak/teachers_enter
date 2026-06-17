@@ -125,7 +125,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v30</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v31</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div id="game-bg"></div>
 
@@ -515,13 +515,26 @@ function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 /* ===== התחברות Google (לא חובה) ===== */
 function signInGoogle(){
   const provider = new firebase.auth.GoogleAuthProvider();
-  fauth.signInWithPopup(provider).catch(err => {
-    $('home-msg').textContent = 'ההתחברות נכשלה או בוטלה. אפשר לנסות שוב, או להמשיך עם מייל.';
+  $('home-msg').textContent = 'פותח חלון התחברות...';
+  // ננסה חלון קופץ; אם הדפדפן חוסם אותו — נעבור להפניה (redirect)
+  fauth.signInWithPopup(provider).then(() => {
+    $('home-msg').textContent = '';
+  }).catch(err => {
+    const code = err && err.code ? err.code : '';
+    if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request' || code === 'auth/operation-not-supported-in-this-environment'){
+      // מעבר להתחברות בהפניה — עובד גם כשחלונות קופצים חסומים
+      $('home-msg').textContent = 'מעביר אתכם להתחברות...';
+      fauth.signInWithRedirect(provider);
+    } else {
+      $('home-msg').textContent = 'ההתחברות נכשלה. נסו שוב, או המשיכו עם מייל.';
+    }
   });
 }
 function signOutGoogle(){
   fauth.signOut();
 }
+// אם חזרנו מהתחברות בהפניה — נטפל בתוצאה
+fauth.getRedirectResult().catch(()=>{});
 // מאזין למצב ההתחברות — שומר זהות גם אחרי רענון
 fauth.onAuthStateChanged(user => {
   if (user){
