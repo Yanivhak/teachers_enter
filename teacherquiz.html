@@ -125,7 +125,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v38</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v39</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div id="game-bg"></div>
 
@@ -246,27 +246,32 @@ input:focus{border-color:var(--gold); outline:none;}
       <div id="team-names" style="margin-top:10px;"></div>
     </div>
 
-    <div class="field">
-      <label>רקע למסך החידון (לא חובה) <span class="info-i" onclick="showInfo(event, 'אפשר לבחור רקע מוכן מהגלריה (נטען מיד), או להעלות תמונה מהמחשב (לא נשמרת, צריך לבחור מחדש בכל פעם). בזמן המשחק יש כפתור רקע שמאפשר להוריד את הרקע אם הוא מפריע לקריאה.')">i</span></label>
-      <button class="btn ghost sm" onclick="openBgGallery()" id="bg-gallery-btn" style="width:100%;">🎨 בחירת רקע מהגלריה</button>
-      <button class="btn ghost sm" onclick="$('bg-input').click()" id="bg-btn" style="width:100%; margin-top:8px;">🖼️ בחירת תמונת רקע מהמחשב</button>
-      <input type="file" id="bg-input" accept="image/*" style="display:none" onchange="bgChosen(this.files)">
-      <div id="bg-chip" style="display:none; align-items:center; gap:10px; justify-content:center; margin-top:10px;"></div>
-      <button class="btn ghost sm" onclick="clearBg()" id="bg-clear" style="width:100%; margin-top:8px; display:none;">↩️ חזרה לרקע הכחול</button>
-    </div>
-
-    <div class="field">
-      <label>מוזיקת רקע (לא חובה) <span class="info-i" onclick="showInfo(event, 'אפשר לבחור מוזיקה מהגלריה המובנית, או להעלות קובץ מהמחשב (לא נשמר, צריך לבחור מחדש בכל פעם). המוזיקה מתנגנת בשקט בזמן החידון, ויש כפתור להשתקה בזמן המשחק.')">i</span></label>
-      <button class="btn ghost sm" onclick="openMusicGallery()" style="width:100%;">🎼 בחירת מוזיקה מהגלריה</button>
-      <button class="btn ghost sm" onclick="$('music-input').click()" id="music-btn" style="width:100%; margin-top:8px;">🎵 בחירת מוזיקה מהמחשב</button>
-      <input type="file" id="music-input" accept="audio/*" multiple style="display:none" onchange="musicChosen(this.files)">
-      <div id="music-list" style="display:flex; flex-direction:column; gap:6px; margin-top:8px; font-size:14px;"></div>
-    </div>
-
     <h2 style="margin-top:24px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
     <button class="btn ghost" onclick="openImport()" style="margin-bottom:12px; background:rgba(141,141,242,.18);">🤖 יצירת חידון באמצעות בינה מלאכותית</button>
     <div id="q-list"></div>
     <button class="btn ghost" onclick="addQuestion()" style="margin-top:6px;">➕ הוספת שאלה</button>
+
+    <div style="margin-top:24px; padding-top:18px; border-top:1px solid rgba(255,255,255,.12);">
+      <h2 style="margin-top:0;">🎨 עיצוב ואווירה (לא חובה)</h2>
+      <p style="font-size:13px; color:var(--ink-dim); margin-top:-6px; margin-bottom:14px;">תוספות שמשדרגות את המשחק — אפשר לדלג עליהן ולהוסיף בהמשך.</p>
+
+      <div class="field">
+        <label>רקע למסך החידון <span class="info-i" onclick="showInfo(event, 'אפשר לבחור רקע מוכן מהגלריה (נטען מיד), או להעלות תמונה מהמחשב (לא נשמרת, צריך לבחור מחדש בכל פעם). בזמן המשחק יש כפתור רקע שמאפשר להוריד את הרקע אם הוא מפריע לקריאה.')">i</span></label>
+        <button class="btn ghost sm" onclick="openBgGallery()" id="bg-gallery-btn" style="width:100%;">🎨 בחירת רקע מהגלריה</button>
+        <button class="btn ghost sm" onclick="$('bg-input').click()" id="bg-btn" style="width:100%; margin-top:8px;">🖼️ בחירת תמונת רקע מהמחשב</button>
+        <input type="file" id="bg-input" accept="image/*" style="display:none" onchange="bgChosen(this.files)">
+        <div id="bg-chip" style="display:none; align-items:center; gap:10px; justify-content:center; margin-top:10px;"></div>
+        <button class="btn ghost sm" onclick="clearBg()" id="bg-clear" style="width:100%; margin-top:8px; display:none;">↩️ חזרה לרקע הכחול</button>
+      </div>
+
+      <div class="field">
+        <label>מוזיקת רקע <span class="info-i" onclick="showInfo(event, 'אפשר לבחור מוזיקה מהגלריה המובנית, או להעלות קובץ מהמחשב (לא נשמר, צריך לבחור מחדש בכל פעם). המוזיקה מתנגנת בשקט בזמן החידון, ויש כפתור להשתקה בזמן המשחק.')">i</span></label>
+        <button class="btn ghost sm" onclick="openMusicGallery()" style="width:100%;">🎼 בחירת מוזיקה מהגלריה</button>
+        <button class="btn ghost sm" onclick="$('music-input').click()" id="music-btn" style="width:100%; margin-top:8px;">🎵 בחירת מוזיקה מהמחשב</button>
+        <input type="file" id="music-input" accept="audio/*" multiple style="display:none" onchange="musicChosen(this.files)">
+        <div id="music-list" style="display:flex; flex-direction:column; gap:6px; margin-top:8px; font-size:14px;"></div>
+      </div>
+    </div>
 
     <p class="save-state" id="save-state">נשמר אוטומטית ✓</p>
 
