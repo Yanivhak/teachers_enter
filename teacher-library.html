@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>ספריית חידונים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{ --bg1:#05080f; --bg2:#0a1020; --ink:#f7f4ec; --ink-dim:#aab4cf; --gold:#ffd166; --teal:#2ec4b6; --coral:#ff6b6b; --violet:#8d8df2; --card:#22325c; --card-hi:#2c3f72; }
+*{box-sizing:border-box;}
+html,body{margin:0; padding:0;}
+body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); color:var(--ink); min-height:100vh; padding:30px 18px; line-height:1.6;}
+.wrap{max-width:760px; margin:0 auto;}
+h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold); text-align:center; margin:0 0 6px;}
+.sub{text-align:center; color:var(--ink-dim); margin:0 0 22px;}
+.authbar{display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:20px; flex-wrap:wrap; font-size:14px; color:var(--ink-dim);}
+.btn{font-family:'Heebo'; font-weight:700; border:none; border-radius:10px; padding:9px 16px; cursor:pointer; font-size:14px;}
+.btn.g{background:#fff; color:#1a2342; display:inline-flex; align-items:center; gap:8px;}
+.btn.ghost{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 2px rgba(255,255,255,.2);}
+.search{width:100%; max-width:480px; display:block; margin:0 auto 22px; font-family:Heebo; font-size:16px; padding:12px 16px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center;}
+.search:focus{border-color:var(--gold); outline:none;}
+.qz{background:var(--card); border-radius:16px; padding:18px 20px; margin-bottom:14px;}
+.qz h3{font-family:'Secular One'; font-size:21px; color:var(--ink); margin:0 0 4px;}
+.qz .meta{font-size:13px; color:var(--ink-dim); margin-bottom:8px;}
+.qz .desc{font-size:15px; margin-bottom:14px;}
+.qz .stats{display:flex; gap:16px; font-size:14px; color:var(--ink-dim); margin-bottom:14px; flex-wrap:wrap;}
+.qz .actions{display:flex; gap:8px; flex-wrap:wrap;}
+.qz .actions button{font-family:'Heebo'; font-weight:700; border:none; border-radius:10px; padding:8px 14px; cursor:pointer; font-size:14px; background:rgba(255,255,255,.1); color:var(--ink);}
+.qz .actions .copy{background:var(--teal); color:#06231f;}
+.qz .actions .like.on{background:#2e7d52; color:#fff;}
+.qz .actions .dislike.on{background:#7d3a3a; color:#fff;}
+#msg{text-align:center; color:var(--ink-dim); margin:30px 0;}
+.gate{text-align:center; margin:30px 0;}
+.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decoration:none; font-size:15px;}
+.toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 20px; font-size:15px; box-shadow:0 10px 30px rgba(0,0,0,.5); z-index:100; opacity:0; transition:opacity .3s; pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📚 ספריית חידונים</h1>
+  <p class="sub">חידונים ששיתפו מורים אחרים. אפשר להעתיק אותם לעצמכם בלחיצה.</p>
+
+  <div class="authbar" id="authbar">
+    <span id="auth-state">לא מחוברים</span>
+    <button class="btn g" id="auth-btn" onclick="signIn()"><span style="font-weight:800; color:#4285F4;">G</span> התחברות עם Google</button>
+  </div>
+
+  <input type="text" class="search" id="search" placeholder="🔍 חיפוש לפי שם או תיאור" oninput="renderList()">
+
+  <div id="list"></div>
+  <p id="msg">טוען...</p>
+
+  <div style="text-align:center;">
+    <a class="back" href="index.html">→ חזרה לתפריט הראשי</a>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCImwbGG-lLQTuij-JzNSXcrLQk-i-TQGE",
+  authDomain: "teachers-6e0bb.firebaseapp.com",
+  databaseURL: "https://teachers-6e0bb-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "teachers-6e0bb",
+  storageBucket: "teachers-6e0bb.firebasestorage.app",
+  messagingSenderId: "568740581492",
+  appId: "1:568740581492:web:ae703d6df4efce79ba4121"
+};
+firebase.initializeApp(firebaseConfig);
+const fdb = firebase.database();
+const fauth = firebase.auth();
+
+let myUid = null, myName = '', myEmail = '';
+let library = [];          // כל החידונים הציבוריים
+let myVotes = {};          // ההצבעות שלי: quizId -> 'like'|'dislike'
+let myReports = {};        // הדיווחים שלי: quizId -> true
+
+function $(id){ return document.getElementById(id); }
+function emailToKey(e){ return e.trim().toLowerCase().replace(/[.#$\[\]\/@]/g, '_'); }
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2200); }
+
+function signIn(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  fauth.signInWithPopup(provider).catch(err=>{
+    const code = err && err.code ? err.code : '';
+    if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request' || code === 'auth/operation-not-supported-in-this-environment'){
+      fauth.signInWithRedirect(provider);
+    } else { toast('ההתחברות נכשלה. נסו שוב.'); }
+  });
+}
+function signOut(){ fauth.signOut(); }
+fauth.getRedirectResult().catch(()=>{});
+
+fauth.onAuthStateChanged(user => {
+  if (user){
+    myUid = user.uid; myName = user.displayName || ''; myEmail = (user.email||'').toLowerCase();
+    $('auth-state').innerHTML = 'מחוברים כ־<b style="color:var(--gold)">'+(myName||myEmail)+'</b>';
+    $('auth-btn').textContent = 'התנתקות';
+    $('auth-btn').onclick = signOut;
+    $('auth-btn').classList.remove('g');
+    $('auth-btn').classList.add('ghost');
+    loadMyVotes();
+  } else {
+    myUid = null; myName=''; myEmail='';
+    $('auth-state').textContent = 'לא מחוברים';
+    $('auth-btn').innerHTML = '<span style="font-weight:800; color:#4285F4;">G</span> התחברות עם Google';
+    $('auth-btn').onclick = signIn;
+    $('auth-btn').classList.add('g');
+    $('auth-btn').classList.remove('ghost');
+    myVotes = {}; myReports = {};
+    renderList();
+  }
+});
+
+function loadMyVotes(){
+  if (!myUid) return;
+  fdb.ref('lib_user/'+myUid).once('value').then(s=>{
+    const d = s.val() || {};
+    myVotes = d.votes || {};
+    myReports = d.reports || {};
+    renderList();
+  }).catch(()=>{});
+}
+
+// טוענים את כל הספרייה ומאזינים לשינויים
+fdb.ref('library').on('value', snap => {
+  const data = snap.val() || {};
+  library = Object.keys(data).map(k => data[k]);
+  $('msg').textContent = library.length ? '' : 'הספרייה עדיין ריקה. כשמורים יפרסמו חידונים, הם יופיעו כאן.';
+  renderList();
+}, err => { $('msg').textContent = 'תקלה בטעינה.'; });
+
+function score(q){ return (q.likes||0) - (q.dislikes||0); }
+
+function renderList(){
+  const term = ($('search').value || '').trim().toLowerCase();
+  let items = library.slice();
+  if (term){
+    items = items.filter(q =>
+      (q.title||'').toLowerCase().includes(term) ||
+      (q.description||'').toLowerCase().includes(term)
+    );
+  }
+  // מיון: דירוג חיובי, ואז הורדות, ואז תאריך
+  items.sort((a,b)=>{
+    if (score(b) !== score(a)) return score(b)-score(a);
+    if ((b.downloads||0) !== (a.downloads||0)) return (b.downloads||0)-(a.downloads||0);
+    return (b.publishDate||0)-(a.publishDate||0);
+  });
+
+  const list = $('list');
+  list.innerHTML = '';
+  if (!items.length && library.length){ list.innerHTML = '<p style="text-align:center; color:var(--ink-dim);">לא נמצאו חידונים שמתאימים לחיפוש.</p>'; return; }
+
+  items.forEach(q => {
+    const card = document.createElement('div'); card.className='qz';
+    const myVote = myVotes[q.quizId];
+    card.innerHTML =
+      '<h3></h3>' +
+      '<div class="meta"></div>' +
+      '<div class="desc"></div>' +
+      '<div class="stats">' +
+        '<span>❓ <span class="n-q"></span> שאלות</span>' +
+        '<span>📥 <span class="n-d"></span> הורדות</span>' +
+        '<span>⭐ ציון: <span class="n-s"></span></span>' +
+      '</div>';
+    card.querySelector('h3').textContent = q.title || 'חידון';
+    card.querySelector('.meta').textContent = 'מאת ' + (q.ownerName || 'מורה');
+    card.querySelector('.desc').textContent = q.description || '';
+    card.querySelector('.n-q').textContent = q.questionCount || (q.quiz && q.quiz.questions ? q.quiz.questions.length : 0);
+    card.querySelector('.n-d').textContent = q.downloads || 0;
+    card.querySelector('.n-s').textContent = score(q);
+
+    const actions = document.createElement('div'); actions.className='actions';
+
+    const copy = document.createElement('button'); copy.className='copy'; copy.textContent='📥 העתק לחידונים שלי';
+    copy.onclick = () => copyToMine(q);
+    actions.appendChild(copy);
+
+    const like = document.createElement('button'); like.className='like'+(myVote==='like'?' on':''); like.textContent='👍 שימושי';
+    like.onclick = () => vote(q.quizId, 'like');
+    actions.appendChild(like);
+
+    const dislike = document.createElement('button'); dislike.className='dislike'+(myVote==='dislike'?' on':''); dislike.textContent='👎 לא שימושי';
+    dislike.onclick = () => vote(q.quizId, 'dislike');
+    actions.appendChild(dislike);
+
+    const report = document.createElement('button'); report.textContent = myReports[q.quizId] ? '🚩 דווח' : '🚩 דיווח';
+    report.onclick = () => reportQuiz(q.quizId);
+    actions.appendChild(report);
+
+    card.appendChild(actions);
+    list.appendChild(card);
+  });
+}
+
+function copyToMine(q){
+  if (!myUid){ toast('צריך להתחבר עם Google כדי להעתיק.'); return; }
+  const myKey = myEmail ? emailToKey(myEmail) : ('uid_'+myUid);
+  // מספר חדש כדי לא להתנגש
+  const newCode = String(Math.floor(1000 + Math.random()*9000));
+  const src = q.quiz || {};
+  const copy = {
+    title: (src.title || q.title || 'חידון') + ' (עותק)',
+    time: src.time || 20,
+    teamCount: src.teamCount || 0,
+    teamNames: src.teamNames || [],
+    questions: src.questions || [],
+    updated: Date.now(),
+    ownerEmail: myEmail
+  };
+  fdb.ref('teachers/'+myKey+'/'+newCode).set(copy).then(()=>{
+    // גם עותק שיתוף לפי מספר
+    fdb.ref('shared/'+newCode).set(copy).catch(()=>{});
+    // מונה הורדות +1
+    fdb.ref('library/'+q.quizId+'/downloads').transaction(d => (d||0)+1).catch(()=>{});
+    toast('✅ הועתק! החידון נמצא עכשיו ברשימת החידונים שלך (מספר '+newCode+').');
+  }).catch(()=>{ toast('תקלה בהעתקה. נסו שוב.'); });
+}
+
+function vote(quizId, kind){
+  if (!myUid){ toast('צריך להתחבר עם Google כדי להצביע.'); return; }
+  const prev = myVotes[quizId]; // 'like' | 'dislike' | undefined
+  if (prev === kind){ toast('כבר הצבעת.'); return; }
+
+  const likeRef = fdb.ref('library/'+quizId+'/likes');
+  const dislikeRef = fdb.ref('library/'+quizId+'/dislikes');
+  const ops = [];
+  if (kind === 'like'){
+    ops.push(likeRef.transaction(v=>(v||0)+1));
+    if (prev === 'dislike') ops.push(dislikeRef.transaction(v=>Math.max(0,(v||0)-1)));
+  } else {
+    ops.push(dislikeRef.transaction(v=>(v||0)+1));
+    if (prev === 'like') ops.push(likeRef.transaction(v=>Math.max(0,(v||0)-1)));
+  }
+  myVotes[quizId] = kind;
+  fdb.ref('lib_user/'+myUid+'/votes/'+quizId).set(kind).catch(()=>{});
+  Promise.all(ops).then(()=>{ /* הרשימה תתעדכן מהמאזין */ }).catch(()=>{});
+}
+
+function reportQuiz(quizId){
+  if (!myUid){ toast('צריך להתחבר עם Google כדי לדווח.'); return; }
+  if (myReports[quizId]){ toast('כבר דיווחת על החידון הזה.'); return; }
+  if (!confirm('לדווח על החידון הזה כלא ראוי?')) return;
+  myReports[quizId] = true;
+  fdb.ref('lib_user/'+myUid+'/reports/'+quizId).set(true).catch(()=>{});
+  fdb.ref('library/'+quizId+'/reports').transaction(v => (v||0)+1).then(res => {
+    const val = res.snapshot.val() || 0;
+    if (val >= 3){
+      // הסרה אוטומטית מהספרייה (החידון המקורי של היוצר נשאר)
+      fdb.ref('library/'+quizId).remove().catch(()=>{});
+    }
+    toast('הדיווח נשלח. תודה.');
+  }).catch(()=>{ toast('תקלה בדיווח.'); });
+}
+</script>
+</body>
+</html>

@@ -125,7 +125,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v32</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v33</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div id="game-bg"></div>
 
@@ -175,7 +175,10 @@ input:focus{border-color:var(--gold); outline:none;}
       <button class="btn ghost sm" onclick="importShared()" style="margin-top:10px; width:100%;">📥 פתיחת חידון משותף</button>
       <div style="font-size:13px; color:var(--ink-dim); margin-top:6px;">תקבלו עותק משלכם לרשימה, שאפשר לערוך ולשחק בלי לפגוע במקור.</div>
     </div>
-    <div style="margin-top:6px;">
+    <div style="margin-top:14px;">
+      <a href="teacher-library.html" style="display:inline-block; color:var(--gold); font-size:15px; text-decoration:none; background:var(--card); border-radius:10px; padding:10px 18px;">📚 ספריית חידונים מוכנים</a>
+    </div>
+    <div style="margin-top:12px;">
       <a href="index.html" target="_top" id="main-menu-link" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a>
     </div>
 
@@ -264,6 +267,24 @@ input:focus{border-color:var(--gold); outline:none;}
     <div class="row" style="margin-top:10px;">
       <button class="btn ghost sm" onclick="saveNow()">💾 שמירה</button>
       <button class="btn ghost sm" onclick="backHome()">→ חזרה לרשימה</button>
+    </div>
+
+    <div id="publish-box" style="margin-top:20px; padding-top:18px; border-top:1px solid rgba(255,255,255,.12);">
+      <label style="display:flex; align-items:center; gap:8px; cursor:pointer; justify-content:center;">
+        <input type="checkbox" id="pub-check" onchange="togglePublishFields()" style="width:18px; height:18px;">
+        <span>📚 פרסום החידון בספרייה הציבורית</span>
+        <span class="info-i" onclick="event.preventDefault(); showInfo(event, 'פרסום משתף את החידון עם כל המורים בספרייה. הם יוכלו להעתיק אותו לעצמם. צריך להיות מחובר עם Google כדי לפרסם. אפשר להסיר את הפרסום בכל עת.')">i</span>
+      </label>
+      <div id="pub-fields" style="display:none; max-width:420px; margin:14px auto 0;">
+        <div class="field">
+          <label>תיאור קצר לחידון (חובה, לפחות 30 תווים)</label>
+          <textarea id="pub-desc" maxlength="300" rows="3" oninput="updatePubCount()" placeholder="כתבו במשפט או שניים על מה החידון, לאיזה גיל הוא מתאים, ולמה הוא טוב." style="width:100%; font-family:Heebo; font-size:15px; padding:10px 12px; border-radius:10px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); resize:vertical;"></textarea>
+          <div style="font-size:13px; color:var(--ink-dim); margin-top:4px;" id="pub-desc-count">0 תווים</div>
+        </div>
+        <button class="btn teal sm" onclick="publishToLibrary()" style="width:100%;">📤 פרסום בספרייה</button>
+        <button class="btn ghost sm" onclick="unpublishFromLibrary()" id="unpub-btn" style="width:100%; margin-top:8px; display:none;">הסרת הפרסום מהספרייה</button>
+        <div id="pub-msg" style="font-size:14px; min-height:20px; margin-top:8px; text-align:center;"></div>
+      </div>
     </div>
     <p class="help">איך זה עובד: מלאו שאלות, ולכל שאלה סמנו את התשובה הנכונה בעיגול הירוק. הכול נשמר אוטומטית. רוצים לראות איך זה ייראה? לחצו "בדיקה" ותעברו על השאלות בעצמכם, בלי שאף תלמיד צריך להיכנס. כשתרצו לשחק עם הכיתה, לחצו "התחלת משחק" ותקבלו קוד שאותו נותנים לתלמידים.</p>
   </div>
@@ -744,6 +765,25 @@ function renderEditor(){
   $('team-count').value = String(quiz.teamCount);
   renderTeamNames();
   renderQuestions();
+  // אזור הפרסום — מוסתר לאורח, מאופס למחוברים
+  if ($('publish-box')) $('publish-box').style.display = (myUid ? 'block' : 'none');
+  if ($('pub-check')){ $('pub-check').checked = false; }
+  if ($('pub-fields')) $('pub-fields').style.display = 'none';
+  if ($('pub-msg')) $('pub-msg').textContent = '';
+  if ($('unpub-btn')) $('unpub-btn').style.display = 'none';
+  // בדיקה אם החידון כבר מפורסם
+  if (myUid && editCode){
+    fdb.ref('library/'+editCode).once('value').then(s=>{
+      if (s.exists()){
+        const d = s.val();
+        $('pub-check').checked = true;
+        $('pub-fields').style.display = 'block';
+        $('pub-desc').value = d.description || '';
+        updatePubCount();
+        $('unpub-btn').style.display = 'block';
+      }
+    }).catch(()=>{});
+  }
 }
 
 function teamCountChanged(){
@@ -1039,8 +1079,75 @@ function saveQuiz(){
   fdb.ref('shared/'+editCode).set(payload).catch(()=>{});
 }
 
+/* ===== ספריית חידונים ציבורית — פרסום ===== */
+function togglePublishFields(){
+  const on = $('pub-check').checked;
+  if (on && !myUid){
+    $('pub-check').checked = false;
+    $('pub-msg').style.color = 'var(--coral)';
+    $('pub-msg').textContent = 'צריך להתחבר עם Google כדי לפרסם בספרייה.';
+    $('pub-fields').style.display = 'block';
+    return;
+  }
+  $('pub-fields').style.display = on ? 'block' : 'none';
+  $('pub-msg').textContent = '';
+}
+function updatePubCount(){
+  const n = ($('pub-desc').value || '').trim().length;
+  $('pub-desc-count').textContent = n + ' תווים';
+}
+function publishToLibrary(){
+  if (!myUid){ $('pub-msg').style.color='var(--coral)'; $('pub-msg').textContent='צריך להתחבר עם Google כדי לפרסם.'; return; }
+  if (!editCode || !quiz){ return; }
+  const desc = ($('pub-desc').value || '').trim();
+  if (desc.length < 30){ $('pub-msg').style.color='var(--coral)'; $('pub-msg').textContent='התיאור חייב להכיל לפחות 30 תווים.'; return; }
+  const title = (quiz.title || '').trim();
+  if (!title){ $('pub-msg').style.color='var(--coral)'; $('pub-msg').textContent='תנו שם לחידון לפני הפרסום.'; return; }
+  if (!quiz.questions || !quiz.questions.length){ $('pub-msg').style.color='var(--coral)'; $('pub-msg').textContent='אי אפשר לפרסם חידון בלי שאלות.'; return; }
+
+  const entry = {
+    quizId: editCode,
+    ownerUid: myUid,
+    ownerName: myAuthName || myEmail || 'מורה',
+    title: title,
+    description: desc,
+    questionCount: quiz.questions.length,
+    publishDate: Date.now(),
+    downloads: 0,
+    likes: 0,
+    dislikes: 0,
+    reports: 0,
+    quiz: {
+      title: quiz.title || '', time: quiz.time || 20,
+      teamCount: quiz.teamCount || 0, teamNames: quiz.teamNames || [],
+      questions: quiz.questions || []
+    }
+  };
+  $('pub-msg').style.color = 'var(--ink-dim)';
+  $('pub-msg').textContent = 'מפרסם...';
+  fdb.ref('library/'+editCode).set(entry).then(()=>{
+    $('pub-msg').style.color = 'var(--teal)';
+    $('pub-msg').textContent = '✅ החידון פורסם בספרייה! תודה ששיתפת.';
+    $('unpub-btn').style.display = 'block';
+  }).catch(()=>{
+    $('pub-msg').style.color = 'var(--coral)';
+    $('pub-msg').textContent = 'תקלה בפרסום. נסו שוב.';
+  });
+}
+function unpublishFromLibrary(){
+  if (!editCode) return;
+  if (!confirm('להסיר את החידון מהספרייה הציבורית? (החידון עצמו יישאר אצלך)')) return;
+  fdb.ref('library/'+editCode).remove().then(()=>{
+    $('pub-msg').style.color = 'var(--ink-dim)';
+    $('pub-msg').textContent = 'הפרסום הוסר.';
+    $('unpub-btn').style.display = 'none';
+    $('pub-check').checked = false;
+    $('pub-fields').style.display = 'none';
+  }).catch(()=>{ $('pub-msg').textContent = 'תקלה בהסרה.'; });
+}
+
 function importShared(){
-  if (!ensureEmail()) return;
+  if (!myUid || !myEmailKey){ $('home-msg').textContent = 'יש להתחבר עם Google כדי לפתוח חידון משותף ולשמור אותו אצלך.'; return; }
   const code = $('share-input').value.trim();
   if (!/^\d{4}$/.test(code)){ $('home-msg').textContent = 'מספר החידון הוא 4 ספרות.'; return; }
   $('home-msg').textContent = 'מחפש...';
