@@ -216,6 +216,13 @@ input:focus{border-color:var(--gold); outline:none;}
       <div style="font-size:14px; color:var(--ink); margin-bottom:10px;">העבודה שלכם תימחק כשתסגרו את הדף. כדי לשמור את החידון לצמיתות ולהציג אותו שוב בעתיד — התחברו עם חשבון Google.</div>
       <button class="btn teal sm" onclick="guestSaveWithGoogle()">🔐 התחברו עם Google ושמרו</button>
     </div>
+    <div id="ai-suggest-card" style="display:none; position:relative; background:rgba(46,196,182,.12); border:2px solid var(--teal); border-radius:14px; padding:18px 20px; margin-bottom:18px; text-align:center;">
+      <button onclick="dismissAiCard()" title="סגירה" style="position:absolute; top:8px; left:10px; background:none; border:none; color:var(--ink-dim); font-size:20px; cursor:pointer; line-height:1; padding:2px 6px;">✕</button>
+      <div style="font-size:18px; font-weight:800; color:var(--teal); margin-bottom:6px;">⏱️ רוצים לחסוך זמן?</div>
+      <div style="font-size:14px; color:var(--ink); margin-bottom:14px; line-height:1.5;">תנו לבינה מלאכותית לבנות עבורכם חידון מלא תוך פחות מדקה.</div>
+      <button class="btn teal" onclick="openImport()" style="font-size:16px;">🤖 יצירת חידון באמצעות בינה מלאכותית</button>
+      <div style="font-size:13px; color:var(--ink-dim); margin-top:12px;">או בנו את החידון בעצמכם בהמשך העמוד.</div>
+    </div>
     <div style="background:var(--card-hi); border-radius:12px; padding:14px; margin-bottom:18px; text-align:center;">
       <div style="font-size:14px; color:var(--ink-dim);">מספר החידון לשיתוף <span class="info-i" onclick="showInfo(event, 'אפשר להעביר את המספר הזה למורה אחר. הוא יקבל עותק משלו לעריכה ולמשחק — והחידון המקורי שלכם יישאר אצלכם, ללא שינוי. החידון נשמר אוטומטית.')">i</span></div>
       <span class="codepill" id="edit-code">----</span>
@@ -247,6 +254,7 @@ input:focus{border-color:var(--gold); outline:none;}
       <button class="btn ghost sm" onclick="openBgGallery()" id="bg-gallery-btn" style="width:100%;">🎨 בחירת רקע מהגלריה</button>
       <button class="btn ghost sm" onclick="$('bg-input').click()" id="bg-btn" style="width:100%; margin-top:8px;">🖼️ בחירת תמונת רקע מהמחשב</button>
       <input type="file" id="bg-input" accept="image/*" style="display:none" onchange="bgChosen(this.files)">
+      <div id="bg-chip" style="display:none; align-items:center; gap:10px; justify-content:center; margin-top:10px;"></div>
       <button class="btn ghost sm" onclick="clearBg()" id="bg-clear" style="width:100%; margin-top:8px; display:none;">↩️ חזרה לרקע הכחול</button>
     </div>
 
@@ -259,7 +267,7 @@ input:focus{border-color:var(--gold); outline:none;}
     </div>
 
     <h2 style="margin-top:24px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
-    <button class="btn ghost" onclick="openImport()" style="margin-bottom:12px; background:rgba(141,141,242,.18);">🤖 ייבוא חידון מ-ChatGPT</button>
+    <button class="btn ghost" onclick="openImport()" style="margin-bottom:12px; background:rgba(141,141,242,.18);">🤖 יצירת חידון באמצעות בינה מלאכותית</button>
     <div id="q-list"></div>
     <button class="btn ghost" onclick="addQuestion()" style="margin-top:6px;">➕ הוספת שאלה</button>
 
@@ -423,18 +431,18 @@ input:focus{border-color:var(--gold); outline:none;}
   <div class="pwrap">
     <h2>הצטרפות לחידון</h2>
     <div class="field">
-      <label>קוד המשחק</label>
-      <input type="text" id="j-code" inputmode="numeric" maxlength="6" placeholder="הקוד מהמסך">
+      <label>הקלידו את הקוד שמופיע על הלוח</label>
+      <input type="text" id="j-code" inputmode="numeric" maxlength="6" placeholder="קוד המשחק">
     </div>
     <div class="field">
-      <label>השם שלך</label>
+      <label>שם שיוצג למורה</label>
       <input type="text" id="j-name" maxlength="14" placeholder="שם או כינוי">
     </div>
     <div id="j-teams" class="field" style="display:none;">
       <label>בחרו קבוצה</label>
       <div id="j-team-btns" class="row" style="justify-content:flex-start;"></div>
     </div>
-    <button class="btn" onclick="joinGame()">כניסה 🚀</button>
+    <button class="btn" id="j-btn" onclick="joinGame()">כניסה 🚀</button>
     <p id="j-msg" style="color:var(--coral); min-height:20px; margin-top:10px;"></p>
   </div>
 </div>
@@ -491,6 +499,13 @@ input:focus{border-color:var(--gold); outline:none;}
   <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🖼️ רקע</button>
   <button onclick="hostJumpFinish()">🏁 סיום</button>
 </div>
+<!-- סרגל מצב בדיקה — זהה במראה לסרגל המשחק, אבל עם חזרה לעריכה זמינה תמיד -->
+<div class="host-bar" id="solo-bar" style="display:none;">
+  <button onclick="hostToggleMusic()" id="solo-music-toggle">🔊 מוזיקה</button>
+  <button onclick="soloToggleBg()" id="solo-bg-toggle" style="display:none;">🖼️ רקע</button>
+  <button onclick="backToEditor()">← חזרה לעריכה</button>
+</div>
+<div id="solo-badge" style="position:fixed; top:10px; left:14px; z-index:55; font-size:14px; font-weight:800; color:#1a2342; background:var(--gold); border-radius:10px; padding:6px 14px; display:none;">👁️ מצב בדיקה</div>
 <div id="ingame-credit" style="position:fixed; bottom:10px; left:14px; z-index:55; font-size:13px; color:rgba(170,180,207,.55); display:none;">נבנה על ידי ד״ר יניב חכים</div>
 
 <!-- חלון תזכורת חוסם: אורח שמתחיל משחק -->
@@ -800,6 +815,7 @@ function renderQuizList(all){
 async function newQuiz(){
   editCode = await genUniqueCode();
   quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[] };
+  aiCardDismissed = false;   // חידון חדש — הכרטיס יוצג שוב
   $('edit-code').textContent = editCode;
   renderEditor();
   addQuestion();
@@ -814,6 +830,7 @@ function openExisting(code, data){
     teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
     questions: data.questions || []
   };
+  aiCardDismissed = false;   // פתיחת חידון — מאפסים; אם יש בו תוכן הכרטיס ממילא לא יוצג
   $('edit-code').textContent = editCode;
   renderEditor();
   show('editor');
@@ -852,6 +869,29 @@ function testExisting(code, data){
   previewQuiz();    // עוברים ישר לבדיקה (ללא תלמידים)
 }
 
+// כרטיס "חסכו זמן" — מוצג רק כשאין עדיין תוכן אמיתי בחידון.
+// "תוכן אמיתי" = יש שאלה עם טקסט, או לפחות תשובה אחת שאינה ריקה (לא רק אובייקט שאלה ריק).
+function quizHasRealContent(){
+  if (!quiz || !quiz.questions) return false;
+  return quiz.questions.some(q => (q.text && q.text.trim()) || (q.answers && q.answers.some(a => a && a.trim())));
+}
+// דגל "נחשף" — חי בתוך החידון הנוכחי בלבד (לא נשמר, לא localStorage).
+// מתאפס בכל פתיחת חידון. נדלק כשהמורה כתב תוכן או סגר את הכרטיס ב-X.
+let aiCardDismissed = false;
+function updateAiCard(){
+  const card = $('ai-suggest-card');
+  if (!card) return;
+  // ברגע שיש תוכן אמיתי — מסמנים שנחשף, כדי שלא יחזור אם ימחקו הכול
+  if (quizHasRealContent()) aiCardDismissed = true;
+  card.style.display = (aiCardDismissed || quizHasRealContent()) ? 'none' : 'block';
+}
+// סגירת הכרטיס ידנית (כפתור X) — לא יחזור באותו חידון
+function dismissAiCard(){
+  aiCardDismissed = true;
+  const card = $('ai-suggest-card');
+  if (card) card.style.display = 'none';
+}
+
 function renderEditor(){
   $('quiz-title').value = quiz.title;
   $('quiz-time').value = quiz.time;
@@ -860,6 +900,7 @@ function renderEditor(){
   renderQuestions();
   // פס אזהרת מצב אורח — מוצג רק לאורח
   if ($('guest-editor-banner')) $('guest-editor-banner').style.display = (isGuest ? 'block' : 'none');
+  updateAiCard();
   // אזור הפרסום — מוסתר לאורח, מאופס למחוברים
   if ($('publish-box')) $('publish-box').style.display = (myUid ? 'block' : 'none');
   if ($('pub-check')){ $('pub-check').checked = false; }
@@ -907,10 +948,45 @@ function addQuestion(){
   touch();
 }
 
-/* ===== ייבוא חידון מ-ChatGPT ===== */
+/* ===== יצירת חידון באמצעות בינה מלאכותית ===== */
 let impQCount = 10, impACount = 4;
 let impTopics = new Set(), impGoals = new Set();
 let impAge = '', impTraits = new Set();
+let impTrack = 'study';        // 'study' = לימודים, 'fun' = פעילות וגיבוש
+let impOpenSection = 'topics'; // איזה סעיף פתוח באקורדיון
+
+/* תוכן שני המסלולים — כל מסלול עם אותם שדות אבל ערכים שונים */
+const IMP_CONTENT = {
+  study: {
+    topicsTitle: '📚 נושאים',
+    topics: ['תנ"ך','היסטוריה','גאוגרפיה','אזרחות','ספרות','לשון','אנגלית','מתמטיקה','מדעים','ביולוגיה','כימיה','פיזיקה','מחשבים'],
+    topicFree: 'נושא מותאם אישית (לא חובה)',
+    ageTitle: '🎒 שכבת גיל',
+    ages: ['יסודי (א׳-ו׳)','חטיבת ביניים (ז׳-ט׳)','תיכון (י׳-י״ב)','בוגרים'],
+    ageFree: 'אחר (לדוגמה: סטודנטים, הכשרת עובדים)',
+    traitsTitle: '👥 מאפייני הלומדים',
+    traits: ['כיתה רגילה','כיתת תקשורת','חינוך מיוחד','זקוקים לתמיכה','רמה בסיסית','רמה מתקדמת','מחוננים','עולים חדשים','רב-לשוני','כיתה הטרוגנית'],
+    traitFree: 'מידע נוסף על הלומדים (לא חובה)',
+    goalsTitle: '🎯 מטרת החידון',
+    goals: ['חזרה למבחן','פתיחת שיעור','סיכום נושא','העמקה בנושא','תרגול'],
+    goalFree: 'מטרה אחרת (לא חובה)'
+  },
+  fun: {
+    topicsTitle: '🎉 נושאים',
+    topics: ['ידע כללי','מוזיקה','סרטים וסדרות','ספורט','ישראל','תרבות פופולרית','אוכל','טיולים','חגים ומועדים','נוסטלגיה'],
+    topicFree: 'נושא אחר (לא חובה)',
+    ageTitle: '🎈 קהל יעד',
+    ages: ['ילדים','בני נוער','מבוגרים','משפחות','צוות עובדים','צוות מורים','קבוצה מעורבת'],
+    ageFree: 'אחר (לא חובה)',
+    traitsTitle: '👥 מאפייני המשתתפים',
+    traits: ['מכירים היטב','מכירים חלקית','לא מכירים כלל','קבוצה קטנה','קבוצה גדולה','קבוצה רב-גילאית'],
+    traitFree: 'מידע נוסף על המשתתפים (לא חובה)',
+    goalsTitle: '🎯 מטרת הפעילות',
+    goals: ['מסיבת סיום','יום הולדת','גיבוש','ערב צוות','פעילות משפחתית','יום שיא','טקס','אירוע קהילתי','ערב היכרות'],
+    goalFree: 'מטרה אחרת (לא חובה)'
+  }
+};
+
 function buildImportPrompt(){
   const topics = [...impTopics];
   const free = ($('imp-topic-free') ? $('imp-topic-free').value.trim() : '');
@@ -927,9 +1003,10 @@ function buildImportPrompt(){
   let p = 'צור חידון טריוויה בעברית';
   p += topics.length ? ' בנושא: ' + topics.join(', ') : ' בנושא שאבחר';
   p += '. ' + impQCount + ' שאלות, ולכל שאלה ' + impACount + ' תשובות.';
-  if (age) p += ' קהל היעד: ' + age + '.';
-  if (traits.length) p += ' מאפייני הלומדים: ' + traits.join(', ') + '. התאם את רמת השאלות, אורך הניסוח ומורכבות התשובות בהתאם.';
+  if (age) p += (impTrack==='fun' ? ' קהל היעד: ' : ' שכבת הגיל: ') + age + '.';
+  if (traits.length) p += ' מאפייני המשתתפים: ' + traits.join(', ') + '. התאם את רמת השאלות, אורך הניסוח ומורכבות התשובות בהתאם.';
   if (goals.length) p += ' מטרת החידון: ' + goals.join(', ') + '. התאם את אופי החידון למטרה.';
+  if (impTrack==='fun') p += ' החידון נועד לפעילות חברתית — שמור על אווירה קלילה ומהנה.';
   p += '\n\nהחזר אך ורק טקסט בפורמט הבא, בלי שום הסבר נוסף, בלי מספור, ובלי כותרות:\n\n' +
     'שאלה: <נוסח השאלה>\n' +
     'נכונה: <התשובה הנכונה>\n' +
@@ -941,6 +1018,7 @@ function buildImportPrompt(){
   return p;
 }
 
+/* שורת צ'יפים לבחירה מרובה */
 function impChipRow(parent, items, set, refresh){
   const row = document.createElement('div'); row.style.cssText='display:flex; flex-wrap:wrap; gap:6px;';
   items.forEach(label=>{
@@ -951,16 +1029,45 @@ function impChipRow(parent, items, set, refresh){
   });
   parent.appendChild(row);
 }
-function impGroupTitle(parent, text, info){
-  const d = document.createElement('div'); d.style.cssText='font-size:14px; color:var(--ink); font-weight:700; margin:14px 0 6px;';
-  d.innerHTML = text + (info ? ' <span class="info-i" onclick="showInfo(event, \'' + info.replace(/'/g,"\\'") + '\')">i</span>' : '');
-  parent.appendChild(d);
-}
 function impFreeInput(parent, id, placeholder){
   const inp = document.createElement('input'); inp.type='text'; inp.id=id; inp.placeholder=placeholder;
   inp.style.cssText='width:100%; margin-top:8px; padding:9px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); font-family:Heebo; font-size:14px;';
   inp.oninput = ()=>{ $('imp-prompt').value = buildImportPrompt(); };
   parent.appendChild(inp);
+}
+
+/* בונה סעיף אקורדיון: כותרת שנלחצת + תוכן שנפתח/נסגר */
+function impAccordionSection(parent, key, title, buildBody){
+  const section = document.createElement('div');
+  section.style.cssText='border:1px solid rgba(255,255,255,.12); border-radius:12px; margin-bottom:8px; overflow:hidden;';
+
+  const head = document.createElement('button');
+  head.style.cssText='width:100%; text-align:right; background:rgba(255,255,255,.04); border:none; color:var(--ink); font-family:Heebo; font-size:15px; font-weight:700; padding:13px 16px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;';
+  const isOpen = (impOpenSection === key);
+  head.innerHTML = '<span>'+title+'</span><span style="color:var(--gold); font-size:13px;">'+(isOpen?'▼':'▶')+'</span>';
+
+  const body = document.createElement('div');
+  body.style.cssText='padding:'+(isOpen?'14px 16px':'0 16px')+'; max-height:'+(isOpen?'1000px':'0')+'; overflow:hidden; transition:max-height .25s ease, padding .25s ease;';
+  buildBody(body);
+
+  head.onclick = ()=>{
+    impOpenSection = (impOpenSection === key) ? '' : key;
+    // סוגרים את כל הסעיפים ופותחים רק את הפעיל
+    [...parent.children].forEach(sec=>{
+      const b = sec.querySelector('.acc-body'); const arr = sec.querySelector('.acc-arrow');
+      if (!b) return;
+      const open = (sec.dataset.key === impOpenSection);
+      b.style.maxHeight = open ? '1000px' : '0';
+      b.style.padding = open ? '14px 16px' : '0 16px';
+      if (arr) arr.textContent = open ? '▼' : '▶';
+    });
+  };
+
+  body.className='acc-body';
+  head.querySelector('span:last-child').className='acc-arrow';
+  section.dataset.key = key;
+  section.appendChild(head); section.appendChild(body);
+  parent.appendChild(section);
 }
 
 function openImport(){
@@ -973,70 +1080,112 @@ function openImport(){
   const box = document.createElement('div');
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:580px; width:100%; text-align:right; margin:auto;';
   box.innerHTML =
-    '<div style="font-family:\'Secular One\'; font-size:24px; color:var(--gold); margin-bottom:6px;">🤖 ייבוא חידון מ-ChatGPT</div>' +
-    '<div style="font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:8px;">' +
-    'בחרו את הפרטים למטה, העתיקו את הטקסט המוכן, והדביקו אותו ב-ChatGPT (או בקלוד). העתיקו את התשובה שתקבלו, הדביקו כאן למטה, ולחצו "ייבוא".' +
+    '<div style="font-family:\'Secular One\'; font-size:24px; color:var(--gold); margin-bottom:6px;">🤖 יצירת חידון באמצעות בינה מלאכותית</div>' +
+    '<div style="font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;">' +
+    'בחרו את סוג החידון ואת הפרטים, העתיקו את הטקסט המוכן לכלי בינה מלאכותית (ChatGPT, Claude, Gemini ועוד), והדביקו כאן בחזרה את התשובה. המערכת תבנה את החידון לבד.' +
     '</div>';
 
   const refresh = ()=>{ $('imp-prompt').value = buildImportPrompt(); };
 
-  // נושאים
-  impGroupTitle(box, '📚 נושאים — מקצועות לימוד', 'בחרו נושא אחד או כמה, או הקלידו נושא משלכם. ChatGPT ייצור שאלות על הנושאים שתבחרו.');
-  impChipRow(box, ['תנ"ך','היסטוריה','גאוגרפיה','אזרחות','ספרות','לשון','אנגלית','מתמטיקה','מדעים','ביולוגיה','כימיה','פיזיקה','מחשבים'], impTopics, refresh);
-  impGroupTitle(box, '🎉 נושאים — העשרה ופעילות חברתית', '');
-  impChipRow(box, ['ידע כללי','ספורט','מוזיקה','קולנוע','ישראל','חגים ומועדים','סוף שנה','היכרות וגיבוש','בטיחות ברשת','תזונה ובריאות'], impTopics, refresh);
-  impFreeInput(box, 'imp-topic-free', 'נושא מותאם אישית (לא חובה)');
-
-  // שכבת גיל
-  impGroupTitle(box, '🎒 שכבת גיל', 'בחירת שכבת הגיל עוזרת ל-ChatGPT להתאים את רמת השאלות ואת אורך הניסוח לגיל הלומדים.');
-  const ageRow = document.createElement('div'); ageRow.style.cssText='display:flex; flex-wrap:wrap; gap:6px;';
-  ['יסודי (א׳-ו׳)','חטיבת ביניים (ז׳-ט׳)','תיכון (י׳-י״ב)','בוגרים'].forEach(label=>{
-    const b=document.createElement('button'); b.className='btn ghost sm'; b.textContent=label;
-    b.onclick=()=>{ impAge = (impAge===label?'':label); [...ageRow.children].forEach(c=>{c.style.background='';c.style.color='';}); if(impAge){ b.style.background='var(--gold)'; b.style.color='#1a2342'; } refresh(); };
-    ageRow.appendChild(b);
+  // ===== בורר סוג החידון =====
+  const trackTitle = document.createElement('div'); trackTitle.style.cssText='font-size:14px; color:var(--ink); font-weight:700; margin-bottom:8px;'; trackTitle.textContent='סוג החידון';
+  box.appendChild(trackTitle);
+  const trackRow = document.createElement('div'); trackRow.style.cssText='display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;';
+  const tracks = [ {key:'study', label:'📚 לימודים'}, {key:'fun', label:'🎉 פעילות, גיבוש ואירועים'} ];
+  tracks.forEach(t=>{
+    const b=document.createElement('button'); b.className='btn ghost'; b.textContent=t.label; b.style.flex='1 1 auto';
+    if (impTrack===t.key){ b.style.background='var(--teal)'; b.style.color='#06231f'; }
+    b.onclick=()=>{
+      if (impTrack===t.key) return;
+      impTrack=t.key;
+      // איפוס הבחירות כשמחליפים מסלול (כי התוכן שונה)
+      impTopics.clear(); impGoals.clear(); impTraits.clear(); impAge='';
+      impOpenSection='topics';
+      const cur = $('imp-overlay'); if (cur) cur.remove();
+      openImport(); // בנייה מחדש עם המסלול החדש
+    };
+    trackRow.appendChild(b);
   });
-  box.appendChild(ageRow);
-  impFreeInput(box, 'imp-age-free', 'אחר (לדוגמה: סטודנטים, הכשרת עובדים)');
+  box.appendChild(trackRow);
 
-  // מאפייני הלומדים
-  impGroupTitle(box, '👥 מאפייני הלומדים', 'מידע זה מסייע להתאים את רמת השאלות, אורך הניסוח, מורכבות התשובות ואופי החידון לקבוצת הלומדים.');
-  impChipRow(box, ['כיתה רגילה','כיתת תקשורת','חינוך מיוחד','תלמידים מתקשים','תלמידים חזקים','מחוננים','עולים חדשים','רב-לשוני','כיתה הטרוגנית'], impTraits, refresh);
-  impFreeInput(box, 'imp-trait-free', 'מידע נוסף על הלומדים (לא חובה)');
+  const C = IMP_CONTENT[impTrack];
 
-  // מטרת החידון
-  impGroupTitle(box, '🎯 מטרת החידון (אפשר כמה)', 'מטרת החידון משנה את אופיו: חידון לחזרה למבחן יהיה רציני ומעמיק, וחידון למסיבת סיום יהיה קליל ומהנה.');
-  impChipRow(box, ['חזרה למבחן','פתיחת שיעור','סיכום נושא','פעילות חברתית','מסיבת סיום','יום שיא','גיבוש כיתה'], impGoals, refresh);
-  impFreeInput(box, 'imp-goal-free', 'מטרה אחרת (לא חובה)');
+  // ===== אקורדיון =====
+  const acc = document.createElement('div'); box.appendChild(acc);
 
-  // כמות שאלות ותשובות
+  // סעיף נושאים
+  impAccordionSection(acc, 'topics', C.topicsTitle, (body)=>{
+    impChipRow(body, C.topics, impTopics, refresh);
+    impFreeInput(body, 'imp-topic-free', C.topicFree);
+  });
+  // סעיף גיל / קהל יעד
+  impAccordionSection(acc, 'age', C.ageTitle, (body)=>{
+    const ageRow = document.createElement('div'); ageRow.style.cssText='display:flex; flex-wrap:wrap; gap:6px;';
+    C.ages.forEach(label=>{
+      const b=document.createElement('button'); b.className='btn ghost sm'; b.textContent=label;
+      if (impAge===label){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
+      b.onclick=()=>{ impAge = (impAge===label?'':label); [...ageRow.children].forEach(c=>{c.style.background='';c.style.color='';}); if(impAge===label){ b.style.background='var(--gold)'; b.style.color='#1a2342'; } refresh(); };
+      ageRow.appendChild(b);
+    });
+    body.appendChild(ageRow);
+    impFreeInput(body, 'imp-age-free', C.ageFree);
+  });
+  // סעיף מאפיינים
+  impAccordionSection(acc, 'traits', C.traitsTitle, (body)=>{
+    impChipRow(body, C.traits, impTraits, refresh);
+    impFreeInput(body, 'imp-trait-free', C.traitFree);
+  });
+  // סעיף מטרה
+  impAccordionSection(acc, 'goals', C.goalsTitle, (body)=>{
+    impChipRow(body, C.goals, impGoals, refresh);
+    impFreeInput(body, 'imp-goal-free', C.goalFree);
+  });
+
+  // ===== כמות שאלות ותשובות =====
   const sel = document.createElement('div'); sel.style.cssText='display:flex; gap:18px; flex-wrap:wrap; margin:16px 0 6px;';
   sel.innerHTML =
     '<div><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">כמה שאלות?</div><div id="imp-q-row" style="display:flex; gap:6px;"></div></div>' +
     '<div><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">כמה תשובות?</div><div id="imp-a-row" style="display:flex; gap:6px;"></div></div>';
   box.appendChild(sel);
 
-  // טקסט מוכן
-  const hr1 = document.createElement('div'); hr1.style.cssText='border-top:1px solid rgba(255,255,255,.12); margin:16px 0;'; box.appendChild(hr1);
-  const promptLabel = document.createElement('div'); promptLabel.style.cssText='font-size:14px; color:var(--gold); font-weight:700; margin-bottom:6px;'; promptLabel.textContent='1. העתיקו את הטקסט הזה ל-ChatGPT:';
-  box.appendChild(promptLabel);
+  // ===== שלבים ממוספרים =====
+  const hr1 = document.createElement('div'); hr1.style.cssText='border-top:1px solid rgba(255,255,255,.12); margin:18px 0 14px;'; box.appendChild(hr1);
+
+  // שלב 1
+  const step1 = document.createElement('div'); step1.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin-bottom:4px;'; step1.textContent='שלב 1 — העתיקו את הטקסט';
+  box.appendChild(step1);
+  const step1sub = document.createElement('div'); step1sub.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:8px; line-height:1.5;'; step1sub.textContent='העתיקו את הטקסט הבא והדביקו אותו ב-ChatGPT, Claude, Gemini או כל כלי בינה מלאכותית אחר.';
+  box.appendChild(step1sub);
   const promptBox = document.createElement('textarea'); promptBox.id='imp-prompt'; promptBox.readOnly=true;
   promptBox.style.cssText='width:100%; height:150px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:10px; font-family:Heebo; font-size:14px; resize:vertical;';
   box.appendChild(promptBox);
-  const copyBtn = document.createElement('button'); copyBtn.className='btn ghost sm'; copyBtn.textContent='📋 העתקת הטקסט'; copyBtn.style.cssText='margin:8px 0 16px;';
-  copyBtn.onclick = ()=>{ promptBox.select(); try{ document.execCommand('copy'); }catch(e){} copyBtn.textContent='הועתק ✓'; setTimeout(()=>copyBtn.textContent='📋 העתקת הטקסט',1500); };
+  // כפתור העתקה ראשי גדול
+  const copyBtn = document.createElement('button'); copyBtn.className='btn teal'; copyBtn.textContent='📋 העתקת הפרומפט'; copyBtn.style.cssText='width:100%; margin:10px 0 18px; font-size:17px; padding:13px;';
+  copyBtn.onclick = ()=>{ promptBox.select(); try{ document.execCommand('copy'); }catch(e){} copyBtn.textContent='✓ הועתק!'; setTimeout(()=>copyBtn.textContent='📋 העתקת הפרומפט',1500); };
   box.appendChild(copyBtn);
 
-  // הדבקת תשובה
-  const pasteLabel = document.createElement('div'); pasteLabel.style.cssText='font-size:14px; color:var(--gold); font-weight:700; margin-bottom:6px;'; pasteLabel.textContent='2. הדביקו כאן את התשובה מ-ChatGPT:';
-  box.appendChild(pasteLabel);
+  // שלב 2
+  const step2 = document.createElement('div'); step2.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin-bottom:4px;'; step2.textContent='שלב 2 — שלחו לבינה המלאכותית';
+  box.appendChild(step2);
+  const step2sub = document.createElement('div'); step2sub.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5;'; step2sub.textContent='הדביקו את הטקסט בכלי הבינה המלאכותית ושלחו. המתינו לתשובה.';
+  box.appendChild(step2sub);
+
+  // שלב 3
+  const step3 = document.createElement('div'); step3.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin-bottom:4px;'; step3.textContent='שלב 3 — הדביקו את התשובה כאן';
+  box.appendChild(step3);
+  const step3sub = document.createElement('div'); step3sub.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:8px; line-height:1.5;'; step3sub.textContent='העתיקו את התשובה שקיבלתם, והדביקו אותה כאן למטה.';
+  box.appendChild(step3sub);
   const pasteBox = document.createElement('textarea'); pasteBox.id='imp-paste';
   pasteBox.style.cssText='width:100%; height:140px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:10px; font-family:Heebo; font-size:14px; resize:vertical;';
   box.appendChild(pasteBox);
   const msg = document.createElement('div'); msg.id='imp-msg'; msg.style.cssText='color:var(--coral); font-size:14px; min-height:20px; margin-top:8px;';
   box.appendChild(msg);
 
-  const actions = document.createElement('div'); actions.style.cssText='display:flex; gap:10px; margin-top:8px;';
-  const doBtn = document.createElement('button'); doBtn.className='btn teal'; doBtn.textContent='✓ ייבוא';
+  // שלב 4
+  const step4 = document.createElement('div'); step4.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin:6px 0 8px;'; step4.textContent='שלב 4 — יצירת החידון';
+  box.appendChild(step4);
+  const actions = document.createElement('div'); actions.style.cssText='display:flex; gap:10px;';
+  const doBtn = document.createElement('button'); doBtn.className='btn teal'; doBtn.textContent='✓ יצירת החידון'; doBtn.style.flex='1';
   doBtn.onclick = ()=>parseImport();
   const closeBtn = document.createElement('button'); closeBtn.className='btn ghost sm'; closeBtn.textContent='ביטול';
   closeBtn.onclick = ()=>ov.remove();
@@ -1066,7 +1215,7 @@ function openImport(){
 
 function parseImport(){
   const raw = $('imp-paste').value.trim();
-  if (!raw){ $('imp-msg').textContent='נא להדביק את הטקסט מ-ChatGPT.'; return; }
+  if (!raw){ $('imp-msg').textContent='נא להדביק את הטקסט מהבינה המלאכותית.'; return; }
   const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l);
   const parsed = [];
   let cur = null;
@@ -1092,6 +1241,18 @@ function parseImport(){
   const valid = parsed.filter(q => q.text && q.answers.filter(a=>a).length>=2)
                       .map(q => ({ text:q.text, answers:q.answers.slice(0,4), correct: Math.min(q.correct, q.answers.length-1) }));
 
+  // ערבוב התשובות בכל שאלה — כדי שהתשובה הנכונה לא תהיה תמיד ראשונה.
+  // שומרים את הטקסט של התשובה הנכונה, מערבבים, ומאתרים מחדש את האינדקס שלה.
+  valid.forEach(q => {
+    const correctText = q.answers[q.correct];
+    for (let i = q.answers.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = q.answers[i]; q.answers[i] = q.answers[j]; q.answers[j] = tmp;
+    }
+    q.correct = q.answers.indexOf(correctText);
+    if (q.correct < 0) q.correct = 0;
+  });
+
   if (!valid.length){
     $('imp-msg').textContent = 'לא הצלחתי לקרוא את הטקסט. ודאו שהוא בפורמט שמופיע למעלה (שאלה / נכונה / תשובה).';
     return;
@@ -1102,7 +1263,7 @@ function parseImport(){
   valid.forEach(q => quiz.questions.push(q));
   renderQuestions(); touch(); saveQuiz();
   const ov = $('imp-overlay'); if (ov) ov.remove();
-  alert('יובאו ' + valid.length + ' שאלות בהצלחה! אפשר לערוך אותן כרגיל.');
+  alert('נוצרו ' + valid.length + ' שאלות בהצלחה! אפשר לערוך אותן כרגיל.');
 }
 function delQuestion(i){
   quiz.questions.splice(i,1);
@@ -1157,6 +1318,7 @@ function renderQuestions(){
 function touch(){
   quiz.title = $('quiz-title').value;
   quiz.time = parseInt($('quiz-time').value,10) || 20;
+  updateAiCard();
   if (isGuest){ $('save-state').textContent = 'מצב אורח — לא נשמר. התחברו עם Google כדי לשמור.'; return; }
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveQuiz, 600);
@@ -1402,18 +1564,31 @@ function bgChosen(files){
   $('game-bg').style.backgroundImage = 'url(' + bgUrl + ')';
   $('game-bg').style.backgroundSize = 'cover';
   $('game-bg').style.backgroundPosition = 'center';
-  $('bg-btn').textContent = '🖼️ תמונת רקע נבחרה ✓ (לחיצה מחליפה)';
+  $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
   $('bg-clear').style.display = 'block';
+  renderBgChip('תמונה מהמחשב');
   if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ תמונת רקע נבחרה ✓ (לחיצה מחליפה)';
   $('bg-input').value = '';
 }
-function setGalleryBg(css){
+// מציג "צ'יפ" של הרקע שנבחר (כמו ברשימת המוזיקה), עם כפתור ביטול
+function renderBgChip(name){
+  const chip = $('bg-chip'); if (!chip) return;
+  if (!name){ chip.style.display='none'; chip.innerHTML=''; return; }
+  chip.innerHTML='';
+  const t=document.createElement('span'); t.textContent='🖼️ '+name;
+  const x=document.createElement('button'); x.textContent='✕'; x.style.cssText='background:none; border:1px solid rgba(255,255,255,.3); color:var(--coral); border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:13px;';
+  x.onclick=()=>clearBg();
+  chip.appendChild(t); chip.appendChild(x);
+  chip.style.display='flex';
+}
+function setGalleryBg(css, name){
   if (bgUrl){ URL.revokeObjectURL(bgUrl); bgUrl = null; }
   bgUrl = 'gallery'; // סימון שיש רקע פעיל
   $('game-bg').style.backgroundImage = '';
   $('game-bg').style.background = css;
-  $('bg-btn').textContent = '🖼️ נבחר רקע מהגלריה (לחיצה מחליפה)';
+  $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
   $('bg-clear').style.display = 'block';
+  renderBgChip('רקע נבחר: ' + (name || 'מהגלריה'));
   if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ נבחר רקע מהגלריה';
 }
 function clearBg(){
@@ -1424,6 +1599,8 @@ function clearBg(){
   $('game-bg').classList.remove('on');
   $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
   $('bg-clear').style.display = 'none';
+  renderBgChip(null);
+  if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
 }
 function applyGameBg(on){
   if (on && bgUrl) $('game-bg').classList.add('on');
@@ -1459,12 +1636,21 @@ function openBgGallery(){
   const box=document.createElement('div');
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:520px; width:100%; margin:auto;';
   box.innerHTML='<div style="font-family:\'Secular One\'; font-size:22px; color:var(--gold); margin-bottom:14px;">בחירת רקע מהגלריה</div>';
-  const grid=document.createElement('div'); grid.style.cssText='display:grid; grid-template-columns:repeat(3,1fr); gap:10px;';
+  const grid=document.createElement('div'); grid.style.cssText='display:grid; grid-template-columns:repeat(3,1fr); gap:12px;';
   BG_GALLERY.forEach(bg=>{
     const cell=document.createElement('button');
-    cell.style.cssText='border:2px solid rgba(255,255,255,.15); border-radius:12px; height:80px; cursor:pointer; color:#fff; font-size:14px; font-weight:700; text-shadow:0 1px 4px rgba(0,0,0,.6); background:'+bg.css;
-    cell.textContent=bg.name;
-    cell.onclick=()=>{ setGalleryBg(bg.css); ov.remove(); };
+    cell.style.cssText='border:2px solid rgba(255,255,255,.15); border-radius:12px; padding:0; cursor:pointer; background:transparent; overflow:hidden; display:flex; flex-direction:column;';
+    // משבצת תצוגה מקדימה אמיתית של הרקע
+    const swatch=document.createElement('div');
+    swatch.style.cssText='height:72px; width:100%; background:'+bg.css+';';
+    // שם הרקע מתחת למשבצת
+    const label=document.createElement('div');
+    label.style.cssText='padding:7px 4px; font-size:14px; font-weight:700; color:var(--ink); background:rgba(255,255,255,.04);';
+    label.textContent=bg.name;
+    cell.appendChild(swatch); cell.appendChild(label);
+    cell.onmouseenter=()=>{ cell.style.borderColor='var(--gold)'; };
+    cell.onmouseleave=()=>{ cell.style.borderColor='rgba(255,255,255,.15)'; };
+    cell.onclick=()=>{ setGalleryBg(bg.css, bg.name); ov.remove(); };
     grid.appendChild(cell);
   });
   box.appendChild(grid);
@@ -1831,9 +2017,9 @@ function hostSkip(){
   if (!revealed && curQ){ revealQ(); } else { nextQ(); }
 }
 function hostJumpFinish(){ clearInterval(hostTimer); hostFinish(); }
-function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('ingame-credit').style.display='none'; renderEditor(); show('editor'); }
-function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('ingame-credit').style.display='none'; goPlay(); }
-function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('ingame-credit').style.display='none'; refreshMyList(); }
+function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; renderEditor(); show('editor'); }
+function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; goPlay(); }
+function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; refreshMyList(); }
 
 function saveNow(){
   if (!myStoreKey){ alert('יש להתחבר עם Google כדי לשמור.'); return; }
@@ -1858,11 +2044,18 @@ function previewQuiz(){
   bestMs = Infinity; bestName=''; maxStreak=0; streakKing='';
   intermissionDone = new Set();
   $('host-bar').style.display='none';
+  // סרגל בדיקה + תג בדיקה + מוזיקה — כדי שהבדיקה תרגיש כמו המשחק האמיתי
+  $('solo-bar').style.display='flex';
+  $('solo-badge').style.display='block';
+  $('solo-bg-toggle').style.display = bgUrl ? 'inline-block' : 'none';
   $('ingame-credit').style.display='none';
   applyGameBg(true);
+  playGameMusic();
   qIndex = -1;
   soloNextQ();
 }
+// החלפת רקע בזמן בדיקה (כמו במשחק)
+function soloToggleBg(){ hostToggleBg(); }
 
 function soloNextQ(){
   revealed = false; answers = {};
@@ -1954,8 +2147,11 @@ function soloReveal(){
 
 function soloFinish(){
   clearInterval(hostTimer);
+  stopGameMusic();
   if ($('solo-answers')) $('solo-answers').style.display='none';
   if ($('solo-next')) $('solo-next').style.display='none';
+  $('solo-bar').style.display='none';
+  $('solo-badge').style.display='none';
   applyGameBg(false);
   solo = false;
   // מסך סיום קצר שמסביר שזו הייתה בדיקה
@@ -2011,21 +2207,30 @@ function joinGame(){
   myName = $('j-name').value.trim();
   if (!/^\d{4}$/.test(code)){ $('j-msg').textContent='קוד המשחק הוא 4 ספרות.'; return; }
   if (!myName){ $('j-msg').textContent='כתבו שם.'; return; }
+  // נעילת הכפתור + חיווי "מתחבר" כדי שהתלמיד לא ילחץ שוב ולא יחשוב שנתקע
+  const btn = $('j-btn');
+  const resetBtn = ()=>{ if(btn){ btn.disabled=false; btn.textContent='כניסה 🚀'; } };
+  if (btn){ btn.disabled=true; btn.textContent='מתחבר למשחק…'; }
+  $('j-msg').textContent='';
   fdb.ref('games/'+code+'/meta').once('value').then(s=>{
     const meta = s.val();
-    if (!meta){ $('j-msg').textContent='לא נמצא משחק פעיל עם הקוד הזה.'; return; }
-    if (meta.teamCount>0 && myTeam<0){ $('j-msg').textContent='בחרו קבוצה.'; return; }
+    if (!meta){ $('j-msg').textContent='לא נמצא משחק פעיל עם הקוד הזה.'; resetBtn(); return; }
+    if (meta.teamCount>0 && myTeam<0){ $('j-msg').textContent='בחרו קבוצה.'; resetBtn(); return; }
     role='player';
     listenGame(code, () => {
       send({ t:'join', id:myId, name:myName, team:myTeam });
       joined=false;
       let tries=0;
       const iv=setInterval(()=>{
-        if (joined || tries++>5){ clearInterval(iv); if(!joined) $('j-msg').textContent='לא הצלחנו להתחבר. בדקו את הקוד ושמסך המורה פתוח.'; return; }
+        if (joined || tries++>5){
+          clearInterval(iv);
+          if(!joined){ $('j-msg').textContent='לא הצלחנו להתחבר. בדקו את הקוד ושמסך המורה פתוח.'; resetBtn(); }
+          return;
+        }
         send({ t:'join', id:myId, name:myName, team:myTeam });
       },1500);
     });
-  });
+  }).catch(()=>{ $('j-msg').textContent='תקלת חיבור. בדקו את האינטרנט ונסו שוב.'; resetBtn(); });
 }
 
 function playerMsg(m){
