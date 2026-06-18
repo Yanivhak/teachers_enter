@@ -125,7 +125,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v33</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v34</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div id="game-bg"></div>
 
@@ -211,6 +211,11 @@ input:focus{border-color:var(--gold); outline:none;}
 <div class="screen" id="editor">
   <div class="wrap">
     <h2>✏️ עריכת החידון</h2>
+    <div id="guest-editor-banner" style="display:none; background:rgba(192,57,43,.18); border:2px solid #e74c3c; border-radius:14px; padding:14px 18px; margin-bottom:18px; text-align:center;">
+      <div style="font-size:16px; font-weight:800; color:#ff9a8d; margin-bottom:4px;">⚠️ מצב אורח — החידון לא נשמר</div>
+      <div style="font-size:14px; color:var(--ink); margin-bottom:10px;">העבודה שלכם תימחק כשתסגרו את הדף. כדי לשמור את החידון לצמיתות ולהציג אותו שוב בעתיד — התחברו עם חשבון Google.</div>
+      <button class="btn teal sm" onclick="guestSaveWithGoogle()">🔐 התחברו עם Google ושמרו</button>
+    </div>
     <div style="background:var(--card-hi); border-radius:12px; padding:14px; margin-bottom:18px; text-align:center;">
       <div style="font-size:14px; color:var(--ink-dim);">מספר החידון לשיתוף <span class="info-i" onclick="showInfo(event, 'אפשר להעביר את המספר הזה למורה אחר. הוא יקבל עותק משלו לעריכה ולמשחק — והחידון המקורי שלכם יישאר אצלכם, ללא שינוי. החידון נשמר אוטומטית.')">i</span></div>
       <span class="codepill" id="edit-code">----</span>
@@ -488,6 +493,23 @@ input:focus{border-color:var(--gold); outline:none;}
 </div>
 <div id="ingame-credit" style="position:fixed; bottom:10px; left:14px; z-index:55; font-size:13px; color:rgba(170,180,207,.55); display:none;">נבנה על ידי ד״ר יניב חכים</div>
 
+<!-- חלון תזכורת חוסם: אורח שמתחיל משחק -->
+<div id="guest-play-modal" style="display:none; position:fixed; inset:0; background:rgba(5,8,15,.82); z-index:200; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--bg2); border:2px solid #e74c3c; border-radius:18px; padding:26px 24px; max-width:440px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.6);">
+    <div style="font-size:46px; margin-bottom:8px;">⚠️</div>
+    <h2 style="font-family:'Secular One'; font-size:24px; color:#ff9a8d; margin:0 0 10px;">החידון הזה לא נשמר</h2>
+    <p style="font-size:15px; color:var(--ink); line-height:1.6; margin:0 0 18px;">בניתם את החידון במצב אורח, ולכן הוא יימחק כשתסגרו את הדף. כדי לשמור אותו ולהשתמש בו שוב בעתיד — התחברו עכשיו עם Google. אחרת תוכלו להמשיך, אבל העבודה לא תישמר.</p>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button class="btn teal" onclick="guestPlaySaveFirst()">🔐 התחברו ושמרו</button>
+      <button class="btn ghost" onclick="guestPlayContinue()">להמשיך בלי לשמור</button>
+    </div>
+    <label style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:16px; font-size:14px; color:var(--ink-dim); cursor:pointer;">
+      <input type="checkbox" id="guest-play-dontshow" style="width:18px; height:18px; cursor:pointer;">
+      אל תציגו לי את התזכורת הזאת שוב
+    </label>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -539,10 +561,29 @@ let quiz = null;        // {title, time, teamCount, teamNames[], questions:[...]
 let editCode = null;
 let saveTimer = null;
 let myEmail = '', myEmailKey = '';
+let myStoreKey = '';   // מפתח השמירה של החידונים — מבוסס UID למשתמש מחובר
 let myUid = null, myAuthName = '';
 let isGuest = false;
 
 function genCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
+// מגריל קוד 4 ספרות שעדיין לא תפוס (בודק גם בחידונים המשותפים וגם במשחקים הפעילים)
+async function genUniqueCode(){
+  for (let attempt = 0; attempt < 25; attempt++){
+    const code = genCode();
+    try {
+      const [sharedSnap, gameSnap] = await Promise.all([
+        fdb.ref('shared/'+code).once('value'),
+        fdb.ref('games/'+code).once('value')
+      ]);
+      if (!sharedSnap.exists() && !gameSnap.exists()) return code;
+    } catch(e){
+      // אם הבדיקה נכשלה (רשת) — מחזירים קוד אקראי כדי לא לתקוע את המשתמש
+      return code;
+    }
+  }
+  // גיבוי נדיר מאוד: אם לא נמצא קוד פנוי אחרי 25 ניסיונות
+  return genCode();
+}
 function emailToKey(e){ return e.trim().toLowerCase().replace(/[.#$\[\]\/@]/g, '_'); }
 function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
@@ -553,6 +594,34 @@ function enterGuest(){
   if ($('guest-badge')) $('guest-badge').style.display = 'block';
   $('home-msg').textContent = '';
   newQuiz();
+}
+
+/* ===== תזכורת מצב אורח לפני הצגה לתלמידים ===== */
+// guestPlayWarnDismissed — נזכר לכל הפגישה אם האורח סימן "אל תציג שוב"
+// guestPlayProceedOnce — מאפשר מעבר חד-פעמי אחרי שבחר "להמשיך" (בלי סימון קבוע)
+let guestPlayWarnDismissed = false;
+let guestPlayProceedOnce = false;
+
+function showGuestPlayWarn(){
+  if ($('guest-play-dontshow')) $('guest-play-dontshow').checked = false;
+  if ($('guest-play-modal')) $('guest-play-modal').style.display = 'flex';
+}
+function hideGuestPlayWarn(){
+  if ($('guest-play-modal')) $('guest-play-modal').style.display = 'none';
+}
+// "התחברו ושמרו" — סוגר את החלון ופותח התחברות Google ששומרת את החידון
+function guestPlaySaveFirst(){
+  hideGuestPlayWarn();
+  guestSaveWithGoogle();
+}
+// "להמשיך בלי לשמור" — מכבד את הסימון "אל תציג שוב", וממשיך למשחק
+function guestPlayContinue(){
+  if ($('guest-play-dontshow') && $('guest-play-dontshow').checked){
+    guestPlayWarnDismissed = true;
+  }
+  guestPlayProceedOnce = true;   // מעבר חד-פעמי גם אם לא סומן "אל תציג שוב"
+  hideGuestPlayWarn();
+  goPlay();
 }
 
 /* ===== התחברות Google (לא חובה) ===== */
@@ -585,16 +654,18 @@ function guestSaveWithGoogle(){
     myUid = user.uid;
     myAuthName = user.displayName || '';
     myEmail = (user.email || '').toLowerCase();
-    myEmailKey = myEmail ? emailToKey(myEmail) : ('uid_' + myUid);
+    myEmailKey = myEmail ? emailToKey(myEmail) : '';
+    myStoreKey = myUid;
     isGuest = false;
-    // שומרים את החידון שנבנה כאורח
+    // שומרים את החידון שנבנה כאורח (לפי UID)
     if (editCode && quiz){
       const payload = Object.assign({}, quiz, { updated: Date.now(), ownerEmail: myEmail });
       Promise.all([
-        fdb.ref('teachers/'+myEmailKey+'/'+editCode).set(payload),
+        fdb.ref('teachers/'+myStoreKey+'/'+editCode).set(payload),
         fdb.ref('shared/'+editCode).set(payload),
-        fdb.ref('teacher_emails/'+myEmailKey).set({ email: myEmail, name: myAuthName, uid: myUid, last: Date.now() })
+        fdb.ref('teacher_emails/'+myStoreKey).set({ email: myEmail, name: myAuthName, uid: myUid, last: Date.now() })
       ]).then(()=>{
+        if ($('guest-editor-banner')) $('guest-editor-banner').style.display = 'none';
         $('guest-save-box').innerHTML = '<div style="font-size:15px; color:var(--teal);">✅ החידון נשמר לחשבון שלך! מעכשיו הוא יופיע ברשימת החידונים שלך.</div>';
       }).catch(()=>{
         $('guest-save-box').innerHTML = '<div style="font-size:15px; color:var(--coral);">תקלה בשמירה. נסו שוב מאוחר יותר.</div>';
@@ -614,15 +685,18 @@ fauth.onAuthStateChanged(user => {
     myUid = user.uid;
     myAuthName = user.displayName || '';
     myEmail = (user.email || '').toLowerCase();
-    myEmailKey = myEmail ? emailToKey(myEmail) : ('uid_' + myUid);
+    myEmailKey = myEmail ? emailToKey(myEmail) : '';
+    myStoreKey = myUid;   // מעכשיו השמירה היא לפי החשבון (UID), לא לפי המייל
     // תצוגה: מחובר
     if ($('auth-out')) $('auth-out').style.display = 'none';
     if ($('guest-badge')) $('guest-badge').style.display = 'none';
     if ($('auth-in')){ $('auth-in').style.display = 'block'; $('auth-name').textContent = myAuthName || myEmail; $('auth-email').textContent = myEmail; }
-    // רושמים את המורה
-    fdb.ref('teacher_emails/'+myEmailKey).set({ email: myEmail, name: myAuthName, uid: myUid, last: Date.now() }).catch(()=>{});
+    // רושמים את המורה (לפי UID)
+    fdb.ref('teacher_emails/'+myStoreKey).set({ email: myEmail, name: myAuthName, uid: myUid, last: Date.now() }).catch(()=>{});
+    // הגירה חד-פעמית: אם אין עדיין חידונים תחת ה-UID אבל יש ישנים תחת המייל — מעבירים אותם
+    migrateOldQuizzes();
   } else {
-    myUid = null; myAuthName = ''; myEmail = ''; myEmailKey = '';
+    myUid = null; myAuthName = ''; myEmail = ''; myEmailKey = ''; myStoreKey = '';
     if (!isGuest){
       if ($('auth-out')) $('auth-out').style.display = 'block';
       if ($('auth-in')) $('auth-in').style.display = 'none';
@@ -631,18 +705,37 @@ fauth.onAuthStateChanged(user => {
   }
 });
 
+// הגירה חד-פעמית של חידונים מהמבנה הישן (לפי מייל) למבנה החדש (לפי UID).
+// מעתיקים, מוודאים שהכתיבה הצליחה, ורק אז מוחקים את המקור הישן.
+function migrateOldQuizzes(){
+  if (!myUid || !myEmailKey) return;
+  fdb.ref('teachers/'+myUid).once('value').then(uidSnap => {
+    // אם כבר יש חידונים תחת ה-UID — אין מה להעביר
+    if (uidSnap.exists()) return;
+    fdb.ref('teachers/'+myEmailKey).once('value').then(oldSnap => {
+      const old = oldSnap.val();
+      if (!old) return;   // אין חידונים ישנים
+      // מעתיקים את כל הבלוק תחת ה-UID
+      fdb.ref('teachers/'+myUid).set(old).then(() => {
+        // ההעתקה אושרה — עכשיו אפשר למחוק את המקור הישן בבטחה
+        fdb.ref('teachers/'+myEmailKey).remove().catch(()=>{});
+      }).catch(()=>{ /* אם נכשל — לא מוחקים כלום, המקור נשאר */ });
+    }).catch(()=>{});
+  }).catch(()=>{});
+}
+
 function ensureEmail(){
   // מחובר עם Google — הזהות מוכנה
-  if (myUid && myEmailKey){ return true; }
+  if (myUid && myStoreKey){ return true; }
   // אורח — מותר (בלי שמירה)
   if (isGuest){ return true; }
   return false;
 }
 
 function goShowList(){
-  if (myUid && myEmailKey){
+  if (myUid && myStoreKey){
     $('home-msg').textContent = 'טוען...';
-    fdb.ref('teachers/'+myEmailKey).once('value').then(snap => {
+    fdb.ref('teachers/'+myStoreKey).once('value').then(snap => {
       $('home-msg').textContent = '';
       renderQuizList(snap.val() || {});
       show('mylist');
@@ -653,7 +746,7 @@ function goShowList(){
 }
 
 function goNewQuiz(){
-  if (myUid && myEmailKey){
+  if (myUid && myStoreKey){
     $('home-msg').textContent = '';
     newQuiz();
   } else if (isGuest){
@@ -697,15 +790,15 @@ function renderQuizList(all){
     const test = document.createElement('button'); test.className='btn ghost sm'; test.textContent='👁️ בדיקה'; test.onclick=()=>testExisting(code, q);
     const edit = document.createElement('button'); edit.className='btn ghost sm'; edit.textContent='✏️ עריכה'; edit.onclick=()=>openExisting(code, q);
     const del = document.createElement('button'); del.className='btn ghost sm'; del.textContent='🗑'; del.title='מחיקת החידון';
-    del.onclick=()=>{ if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myEmailKey+'/'+code).remove().then(()=>refreshMyList()); } };
+    del.onclick=()=>{ if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myStoreKey+'/'+code).remove().then(()=>refreshMyList()); } };
     btns.appendChild(play); btns.appendChild(test); btns.appendChild(edit); btns.appendChild(del);
     row.appendChild(info); row.appendChild(btns);
     box.appendChild(row);
   });
 }
 
-function newQuiz(){
-  editCode = genCode();
+async function newQuiz(){
+  editCode = await genUniqueCode();
   quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[] };
   $('edit-code').textContent = editCode;
   renderEditor();
@@ -765,6 +858,8 @@ function renderEditor(){
   $('team-count').value = String(quiz.teamCount);
   renderTeamNames();
   renderQuestions();
+  // פס אזהרת מצב אורח — מוצג רק לאורח
+  if ($('guest-editor-banner')) $('guest-editor-banner').style.display = (isGuest ? 'block' : 'none');
   // אזור הפרסום — מוסתר לאורח, מאופס למחוברים
   if ($('publish-box')) $('publish-box').style.display = (myUid ? 'block' : 'none');
   if ($('pub-check')){ $('pub-check').checked = false; }
@@ -1063,14 +1158,13 @@ function touch(){
   quiz.title = $('quiz-title').value;
   quiz.time = parseInt($('quiz-time').value,10) || 20;
   if (isGuest){ $('save-state').textContent = 'מצב אורח — לא נשמר. התחברו עם Google כדי לשמור.'; return; }
-  $('save-state').textContent = 'שומר...';
   clearTimeout(saveTimer);
   saveTimer = setTimeout(saveQuiz, 600);
 }
 function saveQuiz(){
-  if (!editCode || !quiz || !myEmailKey) return;
+  if (!editCode || !quiz || !myStoreKey) return;
   const payload = Object.assign({}, quiz, { updated: Date.now(), ownerEmail: myEmail });
-  fdb.ref('teachers/'+myEmailKey+'/'+editCode).set(payload).then(() => {
+  fdb.ref('teachers/'+myStoreKey+'/'+editCode).set(payload).then(() => {
     $('save-state').textContent = 'נשמר אוטומטית ✓';
   }).catch(() => {
     $('save-state').textContent = 'תקלה בשמירה';
@@ -1146,16 +1240,16 @@ function unpublishFromLibrary(){
   }).catch(()=>{ $('pub-msg').textContent = 'תקלה בהסרה.'; });
 }
 
-function importShared(){
-  if (!myUid || !myEmailKey){ $('home-msg').textContent = 'יש להתחבר עם Google כדי לפתוח חידון משותף ולשמור אותו אצלך.'; return; }
+async function importShared(){
+  if (!myUid || !myStoreKey){ $('home-msg').textContent = 'יש להתחבר עם Google כדי לפתוח חידון משותף ולשמור אותו אצלך.'; return; }
   const code = $('share-input').value.trim();
   if (!/^\d{4}$/.test(code)){ $('home-msg').textContent = 'מספר החידון הוא 4 ספרות.'; return; }
   $('home-msg').textContent = 'מחפש...';
-  fdb.ref('shared/'+code).once('value').then(snap => {
+  fdb.ref('shared/'+code).once('value').then(async snap => {
     const data = snap.val();
     if (!data){ $('home-msg').textContent = 'לא נמצא חידון עם המספר הזה.'; return; }
-    // יוצרים עותק חדש תחת המייל שלי, עם מספר חדש משלי (כדי לא להתנגש)
-    const newCode = genCode();
+    // יוצרים עותק חדש תחת החשבון שלי, עם מספר חדש ופנוי (כדי לא להתנגש)
+    const newCode = await genUniqueCode();
     const copy = {
       title: (data.title || 'חידון') + ' (עותק)',
       time: data.time || 20,
@@ -1165,7 +1259,7 @@ function importShared(){
       updated: Date.now(),
       ownerEmail: myEmail
     };
-    fdb.ref('teachers/'+myEmailKey+'/'+newCode).set(copy).then(()=>{
+    fdb.ref('teachers/'+myStoreKey+'/'+newCode).set(copy).then(()=>{
       fdb.ref('shared/'+newCode).set(copy).catch(()=>{});
       $('home-msg').textContent = '';
       $('share-input').value = '';
@@ -1175,8 +1269,8 @@ function importShared(){
 }
 
 function refreshMyList(){
-  if (!myEmailKey){ show('home'); return; }
-  fdb.ref('teachers/'+myEmailKey).once('value').then(snap => {
+  if (!myStoreKey){ show('home'); return; }
+  fdb.ref('teachers/'+myStoreKey).once('value').then(snap => {
     renderQuizList(snap.val() || {});
     show('mylist');
   });
@@ -1210,12 +1304,18 @@ let bestMs = Infinity, bestName = '', maxStreak = 0, streakKing = '';
 let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
 
-function goPlay(){
+async function goPlay(){
   const err = quizReady();
   if (err){ alert(err); return; }
+  // אורח שמנסה להציג לתלמידים — תזכורת חוסמת לשמור (אלא אם ביקש לא להציג שוב, או כבר בחר להמשיך)
+  if (isGuest && !guestPlayWarnDismissed && !guestPlayProceedOnce){
+    showGuestPlayWarn();
+    return;
+  }
+  guestPlayProceedOnce = false;   // איפוס המעבר החד-פעמי
   saveQuiz();
   role = 'host';
-  playCode = genCode();
+  playCode = await genUniqueCode();
   $('play-code').textContent = playCode;
   $('lobby-title').textContent = quiz.title || 'החידון';
   const baseUrl = location.origin.startsWith('http') ? (location.origin + location.pathname) : '';
@@ -1736,7 +1836,7 @@ function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(f
 function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('ingame-credit').style.display='none'; refreshMyList(); }
 
 function saveNow(){
-  if (!myEmailKey){ alert('צריך להזין מייל קודם.'); return; }
+  if (!myStoreKey){ alert('יש להתחבר עם Google כדי לשמור.'); return; }
   const err = quizReady();
   if (err){ alert(err); return; }
   saveQuiz();
@@ -1981,6 +2081,15 @@ function showPFin(m){
   } else { $('pfin-rank').textContent='המשחק הסתיים!'; }
   show('pfin');
 }
+
+/* אזהרה לפני יציאה — רק לאורח שכבר בנה לפחות שאלה אחת (כדי לא לאבד עבודה לא שמורה) */
+window.addEventListener('beforeunload', function(e){
+  if (isGuest && quiz && quiz.questions && quiz.questions.length > 0){
+    e.preventDefault();
+    e.returnValue = '';   // הדפדפן יציג חלון אישור סטנדרטי משלו
+    return '';
+  }
+});
 </script>
 </body>
 </html>
