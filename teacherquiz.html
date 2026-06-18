@@ -816,9 +816,9 @@ async function newQuiz(){
   editCode = await genUniqueCode();
   quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[] };
   aiCardDismissed = false;   // חידון חדש — הכרטיס יוצג שוב
+  quiz.questions.push({ text:'', answers:['',''], correct:0 });  // שאלה ריקה ראשונה — לפני הרינדור, כדי לרנדר פעם אחת בלבד
   $('edit-code').textContent = editCode;
-  renderEditor();
-  addQuestion();
+  renderEditor();   // רינדור יחיד עם המצב הסופי (בלי רינדור כפול ובלי הבהוב)
   show('editor');
   saveQuiz();
 }
