@@ -125,7 +125,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v36</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v37</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div id="game-bg"></div>
 
@@ -223,12 +223,9 @@ input:focus{border-color:var(--gold); outline:none;}
       <button class="btn teal" onclick="openImport()" style="font-size:16px;">🤖 יצירת חידון באמצעות בינה מלאכותית</button>
       <div style="font-size:13px; color:var(--ink-dim); margin-top:12px;">או בנו את החידון בעצמכם בהמשך העמוד.</div>
     </div>
-    <div style="background:var(--card-hi); border-radius:12px; padding:14px; margin-bottom:18px;">
-      <div style="text-align:center; font-size:14px; color:var(--ink-dim); margin-bottom:10px;">קוד החידון (לזיהוי בלבד) <span class="codepill" id="edit-code" style="font-size:18px; margin-inline-start:6px;">----</span></div>
-      <div style="border-top:1px solid rgba(255,255,255,.12); padding-top:12px;">
-        <div style="font-size:14px; font-weight:700; color:var(--ink); margin-bottom:10px; text-align:center;">🔗 שיתוף החידון <span class="info-i" onclick="showInfo(event, 'אפשר לשתף את החידון עם מורים אחרים. בשיתוף ספציפי — רק מי שתכניסו את המייל שלו יוכל לפתוח. בשיתוף לכולם — כל מי שיש לו את הקישור. מי שפותח מקבל עותק משלו לעריכה, והמקור שלכם לא משתנה.')">i</span></div>
-        <div id="share-panel"></div>
-      </div>
+    <div style="background:var(--card-hi); border-radius:12px; padding:14px; margin-bottom:18px; text-align:center;">
+      <div style="font-size:14px; color:var(--ink-dim);">קוד החידון <span class="codepill" id="edit-code" style="font-size:18px; margin-inline-start:6px;">----</span></div>
+      <div style="font-size:12px; color:var(--ink-dim); margin-top:6px;">(לזיהוי בלבד)</div>
     </div>
 
     <div class="field">
@@ -285,7 +282,17 @@ input:focus{border-color:var(--gold); outline:none;}
       <button class="btn ghost sm" onclick="backHome()">→ חזרה לרשימה</button>
     </div>
 
+    <div id="share-card" style="margin-top:20px; padding-top:18px; border-top:1px solid rgba(255,255,255,.12);">
+      <div style="font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">🔗 שיתוף החידון <span class="info-i" onclick="showInfo(event, 'אפשר לשתף את החידון. בשיתוף עם אנשים ספציפיים — רק מי שתכניסו את המייל שלו יוכל לפתוח. בקישור שיתוף — כל מי שיש לו את הקישור. מי שפותח מקבל עותק עצמאי משלו לעריכה, והחידון המקורי שלכם לא משתנה.')">i</span></div>
+      <div style="font-size:13px; color:var(--ink-dim); margin-bottom:12px; text-align:center;">שלחו את החידון למישהו אחר — הוא יקבל עותק עצמאי משלו לעריכה ולמשחק.</div>
+      <div id="share-panel" style="max-width:460px; margin:0 auto;"></div>
+    </div>
+
     <p class="help">איך זה עובד: מלאו שאלות, ולכל שאלה סמנו את התשובה הנכונה בעיגול הירוק. הכול נשמר אוטומטית. רוצים לראות איך זה ייראה? לחצו "בדיקה" ותעברו על השאלות בעצמכם, בלי שאף תלמיד צריך להיכנס. כשתרצו לשחק עם הכיתה, לחצו "התחלת משחק" ותקבלו קוד שאותו נותנים לתלמידים.</p>
+
+    <div style="text-align:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
+      <a href="index.html" id="editor-main-menu-link" style="color:var(--ink-dim); text-decoration:none; font-size:14px;">→ לתפריט הראשי (חידון · מצגת · מצגת+חידון)</a>
+    </div>
   </div>
 </div>
 
@@ -1399,13 +1406,13 @@ function renderSharePanel(){
   if (sh.mode === 'specific'){
     panel.appendChild(shareStatusBox('🔒 משותף עם אנשים ספציפיים', sh));
   } else if (sh.mode === 'public'){
-    panel.appendChild(shareStatusBox('🌍 משותף לכולם', sh));
+    panel.appendChild(shareStatusBox('🔗 משותף באמצעות קישור', sh));
   } else {
     // לא משותף — מציגים שני כפתורי בחירה
     const row = document.createElement('div'); row.style.cssText='display:flex; flex-direction:column; gap:8px;';
+    const b2 = document.createElement('button'); b2.className='btn teal sm'; b2.textContent='🔗 יצירת קישור שיתוף'; b2.onclick=shareToEveryone;
     const b1 = document.createElement('button'); b1.className='btn ghost sm'; b1.textContent='🔒 שיתוף עם אנשים ספציפיים'; b1.onclick=startSpecificShare;
-    const b2 = document.createElement('button'); b2.className='btn ghost sm'; b2.textContent='🌍 שיתוף לכולם (קישור)'; b2.onclick=shareToEveryone;
-    row.appendChild(b1); row.appendChild(b2);
+    row.appendChild(b2); row.appendChild(b1);
     panel.appendChild(row);
   }
 }
@@ -1446,6 +1453,9 @@ function shareStatusBox(titleText, sh){
     copyBtn.onclick=()=>copyShareLink(copyBtn, sh.shareId);
     linkRow.appendChild(copyBtn);
     box.appendChild(linkRow);
+    const hint = document.createElement('div'); hint.style.cssText='font-size:12px; color:var(--ink-dim); margin-top:6px; text-align:center;';
+    hint.textContent='שלחו את הקישור למישהו אחר. החידון יועתק לחשבונו והוא יוכל לערוך את העותק שלו.';
+    box.appendChild(hint);
   }
 
   // תת-אפשרות ספרייה (רק ב"לכולם")
@@ -2348,6 +2358,8 @@ let myName='', myTeam=-1, joined=false, pTimer=null, sentThisQ=false, lastPick=-
   if (params.get('embed') === '1'){
     const link = $('main-menu-link');
     if (link) link.style.display = 'none';
+    const editorLink = $('editor-main-menu-link');
+    if (editorLink) editorLink.style.display = 'none';
   }
   const code = params.get('game');
   if (code && /^\d{4}$/.test(code)){
