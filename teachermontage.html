@@ -93,7 +93,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">v45</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">v46</div>
   <h1>🎬 מצגת תמונות</h1>
   <p class="sub">בחרו תמונות ומוזיקה, הוסיפו כיתובים ואפקטים, ולחצו להתחיל. בסיום אפשר לשמור את המצגת כקובץ או כסרטון. הכול נשאר אצלכם — שום דבר לא נשלח לאינטרנט.</p>
 
@@ -1201,6 +1201,14 @@ html,body{height:100%; background:#000; overflow:hidden; font-family:'Heebo',san
 .moncap.vis{opacity:1;}
 #bar{position:fixed; bottom:0; left:0; right:0; height:12px; background:rgba(0,0,0,.55); z-index:6;}
 #barfill{height:100%; width:0; background:#ffd166; transition:width .6s linear;}
+#endslide{position:fixed; inset:0; z-index:9; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:6vw; opacity:0; transition:opacity 1.2s ease; pointer-events:none; overflow:hidden; background:linear-gradient(-45deg,#ff5e62,#ff9966,#ffd200,#36d1dc,#5b86e5,#c471ed,#ff5e9c); background-size:400% 400%; animation:endGrad 10s ease infinite;}
+#endslide.vis{opacity:1;}
+#endslide.photo-bg{background:#111; animation:none;}
+#endslide .ephoto{position:absolute; inset:0; z-index:-2; background-size:cover; background-position:center; filter:blur(18px) brightness(.9); transform:scale(1.12);}
+#endslide .eshade{position:absolute; inset:0; z-index:-1; background:rgba(0,0,0,.55);}
+#endslide .etitle{font-family:'Secular One'; font-size:clamp(60px,11vw,150px); color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.25),0 6px 24px rgba(0,0,0,.6),0 2px 4px rgba(0,0,0,.8); margin-bottom:52px; line-height:1.1;}
+#endslide .etext{font-family:'Heebo'; font-weight:900; font-size:clamp(28px,5vw,58px); color:#fff; text-shadow:0 2px 0 rgba(0,0,0,.25),0 5px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.8); line-height:1.45; max-width:1100px; white-space:pre-wrap;}
+@keyframes endGrad{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
 #ctrls{position:fixed; top:14px; left:14px; z-index:8; display:flex; gap:8px;}
 #ctrls button{font-family:'Heebo'; font-weight:700; font-size:14px; border:none; border-radius:10px; padding:8px 14px; cursor:pointer; background:rgba(20,30,60,.8); color:#f7f4ec;}
 #start{position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, #0a1020 45%, #05080f 100%); color:#f7f4ec; text-align:center; padding:30px;}
@@ -1218,6 +1226,7 @@ html,body{height:100%; background:#000; overflow:hidden; font-family:'Heebo',san
 <div class="monwrap" id="monwrap" style="display:none;"></div>
 <canvas id="fxc"></canvas>
 <div class="moncap" id="cap"></div>
+<div id="endslide"><div class="ephoto" id="ephoto"></div><div class="eshade"></div><div class="etitle" id="etitle"></div><div class="etext" id="etext"></div></div>
 <div id="bar" style="display:none;"><div id="barfill"></div></div>
 <div id="ctrls" style="display:none;">
   <button onclick="togglePause()" id="pauseBtn">⏸️ עצירה</button>
@@ -1229,10 +1238,30 @@ let imgA, imgB, flip=false, idx=0, order=[], iv=null, paused=false, transCycle=0
 let audio=null, playIdx=0, muted=false;
 let capList=DATA.captions||[], capIdx=0, capTimer=null;
 const SLIDE_MS=4500;
+const END_MS=6500;
+let endShowing=false;
+function hasEnd(){ return !!((DATA.endTitle&&DATA.endTitle.length)||(DATA.endText&&DATA.endText.length)); }
 
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} }
 function selTrans(){ return (DATA.transitions&&DATA.transitions.length)?DATA.transitions:['fade']; }
 function setTrans(t){ const w=document.getElementById('monwrap'); w.className='monwrap'; if(t!=='fade') w.classList.add('t-'+t); }
+
+function showEnd(){
+  const el=document.getElementById('endslide');
+  document.getElementById('etitle').textContent=DATA.endTitle||'';
+  document.getElementById('etext').textContent=DATA.endText||'';
+  const ph=document.getElementById('ephoto');
+  if(DATA.endBg==='photo'){
+    let src='';
+    if(imgA&&imgA.classList.contains('vis')) src=imgA.src;
+    else if(imgB&&imgB.classList.contains('vis')) src=imgB.src;
+    if(src){ ph.style.backgroundImage='url("'+src+'")'; el.classList.add('photo-bg'); }
+    else el.classList.remove('photo-bg');
+  } else { el.classList.remove('photo-bg'); ph.style.backgroundImage=''; }
+  const cap=document.getElementById('cap'); if(cap) cap.style.opacity='0';
+  el.classList.add('vis');
+}
+function hideEnd(){ document.getElementById('endslide').classList.remove('vis'); }
 
 function startShow(){
   document.getElementById('start').style.display='none';
@@ -1248,7 +1277,20 @@ function startShow(){
 }
 function step(){
   if(paused) return;
-  if(idx>=order.length){ idx=0; shuffle(order); }
+  // סוף סבב — אם יש שקופית סיום, מציגים אותה ואז ממשיכים ללולאה
+  if(idx>=order.length){
+    if(hasEnd() && !endShowing){
+      endShowing=true;
+      clearInterval(iv);
+      showEnd();
+      iv=setTimeout(()=>{
+        hideEnd(); endShowing=false; idx=0; shuffle(order); capIdx=0;
+        step(); clearInterval(iv); iv=setInterval(step, SLIDE_MS);
+      }, END_MS);
+      return;
+    }
+    idx=0; shuffle(order);
+  }
   updateCap(idx);
   const sel=selTrans(); const t=sel[transCycle%sel.length]; transCycle++;
   setTrans(t);
@@ -1422,7 +1464,10 @@ function buildStandaloneHTML(opts){
     captions: opts.captions,
     transitions: opts.transitions.length ? opts.transitions : ['fade'],
     effects: opts.effects,
-    intensity: opts.intensity || 0.7
+    intensity: opts.intensity || 0.7,
+    endTitle: opts.endTitle || '',
+    endText: opts.endText || '',
+    endBg: opts.endBg || 'gradient'
   };
   const json = JSON.stringify(data);
   const safeTitle = (opts.title || 'מצגת').replace(/</g, '').replace(/>/g, '');
@@ -1524,7 +1569,7 @@ async function exportMontage(){
     // 6. בניית הקובץ והורדה
     if (btn) btn.textContent = '⏳ יוצר קובץ...';
     const title = (document.getElementById('mon-title') && document.getElementById('mon-title').value.trim()) || 'מצגת';
-    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects, intensity: fxIntensity });
+    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects, intensity: fxIntensity, endTitle, endText, endBg });
     const fname = (title.replace(/[\\/:*?"<>|]/g, '') || 'מצגת') + '.html';
     downloadHTMLFile(html, fname);
 

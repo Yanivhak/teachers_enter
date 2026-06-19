@@ -266,7 +266,7 @@ async function makeVideo(){
 
     // ודא שהגופן נטען לפני ציור הכתוביות (אחרת canvas ישתמש בברירת מחדל)
     if (document.fonts && document.fonts.ready){
-      try { await document.fonts.load("700 42px 'Secular One'"); await document.fonts.ready; } catch(e){}
+      try { await document.fonts.load("700 42px 'Secular One'"); await document.fonts.load("900 42px 'Heebo'"); await document.fonts.ready; } catch(e){}
     }
 
     // לוגיקת כתוביות — זהה למצגת: חלוקה שווה למקטעים לפי מספר התמונות
@@ -324,6 +324,95 @@ async function makeVideo(){
       });
     }
 
+    // עוטף טקסט לשורות לפי רוחב מרבי (לציור על canvas)
+    function wrapLines(ctx, text, maxW){
+      const words = (text || '').split(/\s+/);
+      const lines = []; let cur = '';
+      for (const w of words){
+        const test = cur ? cur + ' ' + w : w;
+        if (ctx.measureText(test).width > maxW && cur){ lines.push(cur); cur = w; }
+        else cur = test;
+      }
+      if (cur) lines.push(cur);
+      return lines;
+    }
+
+    // מצייר את שקופית הסיום (גרדיאנט או תמונה מטושטשת + כותרת וטקסט) ומחזיר dataURL
+    function drawEndSlide(lastImgSrc){
+      return new Promise((resolve) => {
+        const CW = 1280, CH = 720;
+        const canvas = document.createElement('canvas');
+        canvas.width = CW; canvas.height = CH;
+        const ctx = canvas.getContext('2d');
+
+        const drawText = () => {
+          // כותרת
+          const title = parsed.endTitle || '';
+          const text = parsed.endText || '';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#fff';
+          // צל כהה לקריאות
+          ctx.shadowColor = 'rgba(0,0,0,0.7)';
+          ctx.shadowBlur = 18; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 4;
+
+          const titleSize = Math.round(CW * 0.072);
+          const textSize = Math.round(CW * 0.038);
+          ctx.font = "400 " + titleSize + "px 'Secular One', sans-serif";
+          const titleLines = wrapLines(ctx, title, CW * 0.82);
+          ctx.font = "900 " + textSize + "px 'Heebo', sans-serif";
+          const textLines = wrapLines(ctx, text, CW * 0.82);
+
+          const gap = Math.round(CH * 0.06);
+          const titleLH = titleSize * 1.15;
+          const textLH = textSize * 1.4;
+          const totalH = titleLines.length*titleLH + (textLines.length ? gap + textLines.length*textLH : 0);
+          let y = (CH - totalH) / 2 + titleLH * 0.8;
+
+          ctx.font = "400 " + titleSize + "px 'Secular One', sans-serif";
+          ctx.textBaseline = 'alphabetic';
+          for (const ln of titleLines){ ctx.fillText(ln, CW/2, y); ctx.fillText(ln, CW/2, y); y += titleLH; }
+          if (textLines.length){
+            y += gap;
+            ctx.font = "900 " + textSize + "px 'Heebo', sans-serif";
+            for (const ln of textLines){ ctx.fillText(ln, CW/2, y); ctx.fillText(ln, CW/2, y); y += textLH; }
+          }
+          ctx.shadowColor = 'transparent';
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
+        };
+
+        if (parsed.endBg === 'photo' && lastImgSrc){
+          // תמונה מטושטשת + שכבה כהה
+          const bg = new Image();
+          bg.onload = () => {
+            // ממלא את כל הקנבס (cover) עם התמונה
+            const scale = Math.max(CW / bg.naturalWidth, CH / bg.naturalHeight);
+            const dw = bg.naturalWidth * scale, dh = bg.naturalHeight * scale;
+            const dx = (CW - dw)/2, dy = (CH - dh)/2;
+            try { ctx.filter = 'blur(16px)'; } catch(e){}
+            ctx.drawImage(bg, dx-20, dy-20, dw+40, dh+40);
+            try { ctx.filter = 'none'; } catch(e){}
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillRect(0,0,CW,CH);
+            drawText();
+          };
+          bg.onerror = () => { drawGradient(); };
+          bg.src = lastImgSrc;
+        } else {
+          drawGradient();
+        }
+
+        function drawGradient(){
+          // גרדיאנט אלכסוני צבעוני (סטטי — קירוב לאנימציה במצגת)
+          const g = ctx.createLinearGradient(0, 0, CW, CH);
+          g.addColorStop(0, '#ff5e62'); g.addColorStop(0.25, '#ff9966');
+          g.addColorStop(0.5, '#ffd200'); g.addColorStop(0.7, '#36d1dc');
+          g.addColorStop(0.85, '#5b86e5'); g.addColorStop(1, '#c471ed');
+          ctx.fillStyle = g; ctx.fillRect(0, 0, CW, CH);
+          drawText();
+        }
+      });
+    }
+
     // 2. כתיבת התמונות (עם כתוביות צרובות) למערכת הקבצים של ffmpeg
     const imgs = parsed.images;
     for (let i = 0; i < imgs.length; i++){
@@ -338,6 +427,18 @@ async function makeVideo(){
       }
       await ffInstance.writeFile(name, await myFetchFile(imgData));
       setProg(15 + (i/imgs.length)*10, 'מכין תמונה ' + (i+1) + ' מתוך ' + imgs.length + '...');
+    }
+
+    // שקופית סיום (אם יש) — נכתבת כפריים נוסף בסוף
+    const hasEndSlide = !!((parsed.endTitle && parsed.endTitle.length) || (parsed.endText && parsed.endText.length));
+    const END_SECONDS = 5;   // משך שקופית הסיום בסרטון
+    if (hasEndSlide){
+      setProg(26, 'מכין שקופית סיום...');
+      try {
+        const lastSrc = imgs.length ? imgs[imgs.length-1] : '';
+        const endData = await drawEndSlide(lastSrc);
+        await ffInstance.writeFile('zzz_end.jpg', await myFetchFile(endData));
+      } catch(e){ /* אם נכשל — ממשיכים בלי שקופית סיום */ }
     }
 
     // 3. כתיבת המוזיקה (אם יש) — מאחדים לקובץ אחד פשוט: לוקחים את הראשון
@@ -356,13 +457,21 @@ async function makeVideo(){
       listLines.push("file '" + name + "'");
       listLines.push('duration ' + SECONDS_PER_IMAGE);
     }
-    // התמונה האחרונה חייבת להופיע פעם נוספת (דרישת concat demuxer)
-    listLines.push("file 'img" + String(imgs.length-1).padStart(4,'0') + ".jpg'");
+    // שקופית סיום (אם יש) — מופיעה פעם אחת בסוף, למשך ארוך יותר
+    if (hasEndSlide){
+      listLines.push("file 'zzz_end.jpg'");
+      listLines.push('duration ' + END_SECONDS);
+      // הפריים האחרון חייב להופיע פעם נוספת (דרישת concat demuxer)
+      listLines.push("file 'zzz_end.jpg'");
+    } else {
+      // התמונה האחרונה חייבת להופיע פעם נוספת (דרישת concat demuxer)
+      listLines.push("file 'img" + String(imgs.length-1).padStart(4,'0') + ".jpg'");
+    }
     await ffInstance.writeFile('list.txt', listLines.join('\n'));
 
     setProg(38, 'מתחיל בקידוד...');
 
-    const totalDur = imgs.length * SECONDS_PER_IMAGE;
+    const totalDur = imgs.length * SECONDS_PER_IMAGE + (hasEndSlide ? END_SECONDS : 0);
 
     // 5. פקודת ffmpeg
     // וידאו: מתוך רשימת התמונות, בגודל אחיד 1280x720, 30fps, עם דהייה רכה בין תמונות
