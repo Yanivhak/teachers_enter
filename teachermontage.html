@@ -65,7 +65,8 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .monwrap.motion img.vis{animation:kenburns 7s ease-out forwards;}
 .trans-btn.on, .motion-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
 .moncap{position:fixed; bottom:42px; left:0; right:0; text-align:center; z-index:4; font-family:'Secular One'; font-size:clamp(28px,4vw,52px); color:var(--gold); text-shadow:0 2px 14px rgba(0,0,0,.9); transition:opacity .7s ease; opacity:0;}
-#mon-end{position:fixed; inset:0; z-index:7; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:6vw; overflow:hidden; background:linear-gradient(-45deg, #ff5e62, #ff9966, #ffd200, #36d1dc, #5b86e5, #c471ed, #ff5e9c); background-size:400% 400%; animation:endGradient 10s ease infinite;}
+#mon-end{position:fixed; inset:0; z-index:7; display:none; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:6vw; overflow:hidden; background:linear-gradient(-45deg, #ff5e62, #ff9966, #ffd200, #36d1dc, #5b86e5, #c471ed, #ff5e9c); background-size:400% 400%;}
+#mon-end.showing{animation:endGradient 10s ease infinite;}
 @keyframes endGradient{0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;}}
 #mon-end .end-title{font-family:'Secular One'; font-size:clamp(48px,9vw,120px); color:#fff; text-shadow:0 0 30px rgba(255,255,255,.5), 0 4px 20px rgba(0,0,0,.55); margin-bottom:28px; line-height:1.1;}
 #mon-end .end-text{font-family:'Heebo'; font-weight:900; font-size:clamp(22px,4vw,46px); color:#fff; text-shadow:0 0 20px rgba(255,255,255,.4), 0 3px 16px rgba(0,0,0,.5); line-height:1.5; max-width:1000px; white-space:pre-wrap;}
@@ -692,10 +693,11 @@ function showMonEnd(){
   $('mon-end-title').textContent = endTitle || '';
   $('mon-end-text').textContent = endText || '';
   el.style.display = 'flex';
+  el.classList.add('showing');
 }
 function hideMonEnd(){
   const el = $('mon-end');
-  if (el) el.style.display = 'none';
+  if (el){ el.style.display = 'none'; el.classList.remove('showing'); }
 }
 function shuffle(arr){
   for (let i = arr.length - 1; i > 0; i--){
