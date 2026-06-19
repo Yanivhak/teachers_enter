@@ -130,7 +130,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v59</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v60</div>
   <h1>🎬 מצגת תמונות</h1>
 
   <!-- שורת התחברות + טעינת מצגת -->
@@ -657,6 +657,12 @@ function openCapPanel(){
   bankWrap.style.cssText = 'margin-top:16px; border-top:1px solid rgba(255,255,255,.12); padding-top:14px;';
   box.appendChild(bankWrap);
 
+  // אזור הספרייה המשותפת
+  const sharedWrap = document.createElement('div');
+  sharedWrap.id = 'cap-shared-wrap';
+  sharedWrap.style.cssText = 'margin-top:14px; border-top:1px solid rgba(255,255,255,.12); padding-top:14px;';
+  box.appendChild(sharedWrap);
+
   const close = document.createElement('button');
   close.className = 'btn'; close.textContent = '✓ אישור'; close.style.cssText += 'margin-top:14px; width:100%;';
   close.onclick = closeModal;
@@ -669,7 +675,204 @@ function openCapPanel(){
   } else {
     renderCaptionBank();
   }
+  // ספרייה משותפת — לחיצה על משפט מוסיפה אותו למצגת
+  renderSharedLib('captions', 'cap-shared-wrap', (text) => {
+    if (!captions.includes(text)){
+      captions.push(text);
+      renderCapList();
+      const fb = $('cap-feedback');
+      if (fb){ fb.textContent = 'נוסף לכיתוב ✓'; fb.style.opacity = '1'; setTimeout(() => { fb.style.opacity = '0'; }, 1500); }
+    }
+  });
   inp.focus();
+}
+
+/* ===== ספרייה משותפת של משפטים (Firebase) — קריאה ציבורית, הגשה למחוברים בלבד =====
+   מבנה:
+     shared_lib/{kind}/approved/{id} = {text, cat, ts}            ← ציבורי, מוצג לכולם
+     shared_lib/{kind}/pending/{id}  = {text, cat, ts, uid, name} ← ממתין לאישור מנהל
+   הגשה נכנסת ל-pending; רק לאחר אישור בעמוד הניהול היא עוברת ל-approved ונראית.
+   ⚠️ הערה: סינון המילים רץ בדפדפן ולכן ניתן לעקיפה — האישור (pending→approved) הוא ההגנה האמיתית. */
+const SHARED_CATS = ['סיום שנה', 'טיול שנתי', 'חגיגות', 'חגים', 'משפחה', 'כללי'];
+/* שכבת הגנה ראשונה בלבד (לא חסינה) */
+const BAD_WORDS = ['זין', 'זיין', 'כוס', 'שרמוטה', 'בן זונה', 'בן-זונה', 'מניאק', 'חרא', 'אידיוט', 'מטומטם', 'fuck', 'shit', 'bitch'];
+
+let sharedData = { captions: [], endings: [] };   // מטמון ה-approved: [{key,text,cat}]
+let sharedOpen = { captions: false, endings: false };
+let sharedFilter = { captions: { cat: 'all', q: '' }, endings: { cat: 'all', q: '' } };
+
+function normText(s){ return (s || '').replace(/\s+/g, ' ').trim(); }
+function containsBadWord(text){
+  const t = normText(text).toLowerCase();
+  return BAD_WORDS.some(w => t.indexOf(w.toLowerCase()) !== -1);
+}
+function sharedRef(kind, status){
+  if (!fdb) return null;
+  return fdb.ref('shared_lib/' + kind + '/' + status);
+}
+function loadSharedApproved(kind, cb){
+  const ref = sharedRef(kind, 'approved');
+  if (!ref){ sharedData[kind] = []; if (cb) cb(); return; }
+  ref.once('value').then(snap => {
+    const val = snap.val() || {};
+    sharedData[kind] = Object.keys(val)
+      .map(k => ({ key: k, text: val[k].text || '', cat: val[k].cat || 'כללי' }))
+      .filter(s => s.text)
+      .sort((a, b) => a.text.localeCompare(b.text, 'he'));
+    if (cb) cb();
+  }).catch(() => { sharedData[kind] = []; if (cb) cb(); });
+}
+/* הגשה: בודק התחברות, סינון מילים, דה-דופ מול ה-approved, ואז כותב ל-pending */
+function submitToShared(kind, text, cat, cb){
+  const t = normText(text);
+  if (!t){ if (cb) cb('empty'); return; }
+  if (!myUid){ if (cb) cb('noauth'); return; }
+  if (containsBadWord(t)){ if (cb) cb('badword'); return; }
+  if (sharedData[kind].some(s => normText(s.text) === t)){ if (cb) cb('exists'); return; }
+  const ref = sharedRef(kind, 'pending');
+  if (!ref){ if (cb) cb('error'); return; }
+  const nr = ref.push();
+  nr.set({ text: t, cat: cat || 'כללי', ts: Date.now(), uid: myUid, name: myName || '' })
+    .then(() => { if (cb) cb('ok'); })
+    .catch(() => { if (cb) cb('error'); });
+}
+
+/* תצוגת הספרייה המשותפת (מתקפלת) בתוך אלמנט. onPick: מה לעשות בלחיצה על משפט. */
+function renderSharedLib(kind, wrapId, onPick){
+  const wrap = $(wrapId);
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none;';
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:14px; color:var(--teal); font-weight:700;';
+  title.textContent = '🌐 ספרייה משותפת';
+  const arrow = document.createElement('span');
+  arrow.style.cssText = 'font-size:13px; color:var(--ink-dim);';
+  arrow.textContent = sharedOpen[kind] ? '▲ הסתר' : '▼ הצג';
+  head.appendChild(title); head.appendChild(arrow);
+  wrap.appendChild(head);
+
+  const body = document.createElement('div');
+  body.style.cssText = 'margin-top:10px;';
+  body.style.display = sharedOpen[kind] ? 'block' : 'none';
+  wrap.appendChild(body);
+
+  head.onclick = () => {
+    sharedOpen[kind] = !sharedOpen[kind];
+    arrow.textContent = sharedOpen[kind] ? '▲ הסתר' : '▼ הצג';
+    body.style.display = sharedOpen[kind] ? 'block' : 'none';
+    if (sharedOpen[kind] && !sharedData[kind].length){
+      loadSharedApproved(kind, () => renderSharedBody(kind, body, onPick));
+    }
+  };
+  if (sharedOpen[kind]) renderSharedBody(kind, body, onPick);
+}
+
+function renderSharedBody(kind, body, onPick){
+  body.innerHTML = '';
+  // חיפוש חופשי
+  const search = document.createElement('input');
+  search.type = 'text'; search.placeholder = '🔎 חיפוש משפט...';
+  search.value = sharedFilter[kind].q;
+  search.style.cssText = "width:100%; font-family:'Heebo'; font-size:14px; padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); margin-bottom:8px;";
+  body.appendChild(search);
+  // צ'יפים של קטגוריות
+  const chips = document.createElement('div');
+  chips.style.cssText = 'display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;';
+  const makeChip = (label, val) => {
+    const c = document.createElement('button');
+    c.textContent = label;
+    const on = sharedFilter[kind].cat === val;
+    c.style.cssText = "font-family:'Heebo'; font-size:12px; padding:5px 10px; border-radius:20px; cursor:pointer; border:1px solid rgba(255,255,255,.2); background:" + (on ? 'var(--teal)' : 'transparent') + "; color:" + (on ? '#06221f' : 'var(--ink)') + ";";
+    c.onclick = () => { sharedFilter[kind].cat = val; renderSharedBody(kind, body, onPick); };
+    return c;
+  };
+  chips.appendChild(makeChip('הכל', 'all'));
+  SHARED_CATS.forEach(cat => chips.appendChild(makeChip(cat, cat)));
+  body.appendChild(chips);
+
+  const listEl = document.createElement('div');
+  listEl.className = 'list';
+  body.appendChild(listEl);
+  search.oninput = () => { sharedFilter[kind].q = search.value; renderSharedList(kind, listEl, onPick); };
+  renderSharedList(kind, listEl, onPick);
+
+  // אזור הגשה (רק למחוברים)
+  const sub = document.createElement('div');
+  sub.style.cssText = 'margin-top:12px; border-top:1px solid rgba(255,255,255,.1); padding-top:10px;';
+  body.appendChild(sub);
+  if (!myUid){
+    const msg = document.createElement('div');
+    msg.style.cssText = 'font-size:12px; color:var(--ink-dim); line-height:1.5;';
+    msg.textContent = 'התחברו עם Google כדי להציע משפטים לספרייה. כל הצעה עוברת אישור לפני שהיא מתפרסמת.';
+    sub.appendChild(msg);
+    return;
+  }
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:12px; color:var(--ink-dim); margin-bottom:6px;';
+  lbl.textContent = 'הצעת משפט לספרייה (יפורסם לאחר אישור):';
+  sub.appendChild(lbl);
+  const sinp = document.createElement('input');
+  sinp.type = 'text'; sinp.maxLength = 80; sinp.placeholder = 'המשפט שלכם';
+  sinp.style.cssText = "width:100%; font-family:'Heebo'; font-size:14px; padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); margin-bottom:6px;";
+  sub.appendChild(sinp);
+  const scat = document.createElement('select');
+  scat.style.cssText = "width:100%; font-family:'Heebo'; font-size:14px; padding:8px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:#0d1426; color:var(--ink); margin-bottom:6px;";
+  SHARED_CATS.forEach(cat => { const o = document.createElement('option'); o.value = cat; o.textContent = cat; scat.appendChild(o); });
+  sub.appendChild(scat);
+  const sbtn = document.createElement('button');
+  sbtn.className = 'btn'; sbtn.textContent = '📤 הצעה לספרייה'; sbtn.style.cssText += 'width:100%; font-size:14px; padding:9px;';
+  const sfb = document.createElement('div');
+  sfb.style.cssText = 'font-size:12px; margin-top:6px; min-height:16px;';
+  sbtn.onclick = () => {
+    submitToShared(kind, sinp.value, scat.value, (res) => {
+      const map = {
+        ok: ['var(--teal)', '✓ נשלח לאישור. תודה!'],
+        exists: ['var(--gold)', 'המשפט כבר קיים בספרייה.'],
+        badword: ['var(--coral)', 'המשפט מכיל ניסוח שאינו מתאים.'],
+        empty: ['var(--coral)', 'כתבו משפט קודם.'],
+        noauth: ['var(--coral)', 'צריך להתחבר.'],
+        error: ['var(--coral)', 'שגיאה בשליחה, נסו שוב.']
+      };
+      const m = map[res] || map.error;
+      sfb.style.color = m[0]; sfb.textContent = m[1];
+      if (res === 'ok'){ sinp.value = ''; }
+    });
+  };
+  sub.appendChild(sbtn);
+  sub.appendChild(sfb);
+}
+
+function renderSharedList(kind, listEl, onPick){
+  listEl.innerHTML = '';
+  const f = sharedFilter[kind];
+  const q = normText(f.q).toLowerCase();
+  const items = sharedData[kind].filter(s => {
+    if (f.cat !== 'all' && s.cat !== f.cat) return false;
+    if (q && s.text.toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+  if (!items.length){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:13px; color:var(--ink-dim);';
+    empty.textContent = sharedData[kind].length ? 'אין תוצאות לחיפוש.' : 'הספרייה עדיין ריקה — היו הראשונים להציע משפט!';
+    listEl.appendChild(empty);
+    return;
+  }
+  items.forEach(s => {
+    const row = document.createElement('div'); row.className = 'item';
+    const txt = document.createElement('span');
+    txt.textContent = s.text;
+    txt.style.cssText = 'cursor:pointer; flex:1;';
+    txt.title = 'לחיצה להוספה למצגת';
+    txt.onclick = () => onPick(s.text);
+    const cat = document.createElement('span');
+    cat.textContent = s.cat;
+    cat.style.cssText = 'font-size:11px; color:var(--ink-dim); border:1px solid rgba(255,255,255,.15); border-radius:10px; padding:2px 7px; white-space:nowrap;';
+    row.appendChild(txt); row.appendChild(cat);
+    listEl.appendChild(row);
+  });
 }
 
 /* מציג בנק משפטים מתקפל (כללי — לכיתוב או לסיום) בתוך אלמנט נתון.
