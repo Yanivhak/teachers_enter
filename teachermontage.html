@@ -611,8 +611,8 @@ function startShow(){
   }
   startCaptions(caps, pics.length);
   show('show');
-  // מוציאים את שקופית הסיום מה-DOM בתחילת ההצגה (תחזור רק בסוף הסבב)
-  detachMonEnd();
+  // ודא ששקופית הסיום מוסתרת בתחילת ההצגה
+  const endEl0 = $('mon-end'); if (endEl0){ endEl0.style.display = 'none'; endEl0.classList.remove('showing'); }
   playIdx = 0;
   monMusicMuted = false;
   $('mon-music').textContent = '🔊 מוזיקה';
@@ -688,9 +688,7 @@ function monStep(){
   if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
 }
 
-let monEndParent = null, monEndEl = null;
 function showMonEnd(){
-  attachMonEnd();
   const el = $('mon-end');
   if (!el) return;
   $('mon-end-title').textContent = endTitle || '';
@@ -701,16 +699,6 @@ function showMonEnd(){
 function hideMonEnd(){
   const el = $('mon-end');
   if (el){ el.style.display = 'none'; el.classList.remove('showing'); }
-  detachMonEnd();
-}
-// בהתחלה: מוציאים את שקופית הסיום מה-DOM לגמרי (מונע בעיית רינדור של אלמנט fixed ענק)
-function detachMonEnd(){
-  const el = $('mon-end');
-  if (el && el.parentNode){ monEndParent = el.parentNode; monEndEl = el; monEndParent.removeChild(el); }
-}
-// מחזירים אותה ל-DOM רק כשצריך להציג
-function attachMonEnd(){
-  if (monEndEl && monEndParent && !monEndEl.parentNode){ monEndParent.appendChild(monEndEl); }
 }
 function shuffle(arr){
   for (let i = arr.length - 1; i > 0; i--){
