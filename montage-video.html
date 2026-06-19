@@ -196,8 +196,6 @@ function resetAll(){
 }
 
 /* ---------- יצירת הווידאו ---------- */
-const { FFmpeg } = FFmpegWASM;
-const { fetchFile, toBlobURL } = FFmpegUtil;
 let ffInstance = null;
 
 function setProg(pct, text){
@@ -213,6 +211,14 @@ async function makeVideo(){
   document.getElementById('result').classList.add('hidden');
 
   try {
+    // גישה לספריות רק עכשיו (אחרי שנטענו) — עם בדיקה ברורה
+    if (typeof FFmpegWASM === 'undefined' || typeof FFmpegUtil === 'undefined'){
+      throw new Error('רכיב העיבוד לא נטען. בדקו חיבור לאינטרנט ונסו לרענן את הדף.');
+    }
+    const FFmpeg = FFmpegWASM.FFmpeg;
+    const fetchFile = FFmpegUtil.fetchFile;
+    const toBlobURL = FFmpegUtil.toBlobURL;
+
     // 1. טעינת ffmpeg.wasm (הורדה חד-פעמית)
     if (!ffInstance){
       setProg(2, 'מוריד רכיב עיבוד (פעם ראשונה, עד דקה)...');
