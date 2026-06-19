@@ -38,10 +38,6 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .list .item{display:flex; align-items:center; gap:10px; justify-content:center;}
 .list .x{background:none; border:1px solid rgba(255,255,255,.3); color:var(--coral); border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:13px; line-height:1;}
 .note{font-size:13px; color:var(--ink-dim); margin-top:14px; max-width:420px;}
-.capbox{margin:14px 0; display:none;}
-.capbox.on{display:block;}
-.capbox input{font-family:'Heebo'; font-size:17px; padding:12px 16px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); width:min(420px,86vw); text-align:center;}
-.capbox input:focus{border-color:var(--gold); outline:none;}
 
 /* מסך המצגת */
 #show{padding:0;}
@@ -84,30 +80,21 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
   <h1>🎬 מצגת תמונות</h1>
-  <p class="sub">בחרו תמונות ומוזיקה מהמחשב, ולחצו להתחיל. הכול נשאר על המחשב הזה ולא עולה לאינטרנט.</p>
+  <p class="sub">בחרו תמונות ומוזיקה, הוסיפו כיתובים ואפקטים, ולחצו להתחיל. בסיום אפשר לשמור את המצגת כקובץ או כסרטון. הכול נשאר אצלכם — שום דבר לא נשלח לאינטרנט.</p>
 
   <div class="row">
     <button class="btn ghost" id="pics-btn" onclick="$('pics-input').click()">📷 בחירת תמונות</button>
-    <button class="btn ghost" id="music-btn" onclick="$('music-input').click()">🎵 בחירת מוזיקה</button>
-    <button class="btn ghost" id="music-gallery-btn" onclick="openMusicGallery()">🎼 מוזיקה מהגלריה</button>
-    <button class="btn ghost" id="cap-btn" onclick="toggleCap()">✏️ הוספת כיתוב</button>
+    <button class="btn ghost" id="music-btn" onclick="openMusicPanel()">🎵 מוזיקה</button>
+    <button class="btn ghost" id="cap-btn" onclick="openCapPanel()">✏️ כיתוב</button>
+    <button class="btn ghost" id="fx-btn" onclick="openFxPanel()">✨ אפקטים ומעברים</button>
     <span class="info-i" onclick="showInfo(event, 'התמונות והמוזיקה נטענות מהמחשב ולא נשמרות, אז צריך לבחור אותן מחדש בכל פעם. בזמן ההצגה אפשר לעצור, להשתיק מוזיקה, ולשנות אפקטים — הכול תוך כדי.')">i</span>
   </div>
 
   <input type="file" id="pics-input" accept="image/*" multiple style="display:none" onchange="picsChosen(this.files)">
   <input type="file" id="music-input" accept="audio/*" multiple style="display:none" onchange="musicChosen(this.files)">
 
-  <div class="capbox" id="capbox">
-    <div style="font-size:13px; color:var(--ink-dim); margin-bottom:8px;">כתבו שורת כיתוב. אפשר להוסיף עוד שורות עם הכפתור + <span class="info-i" onclick="showInfo(event, 'אפשר להוסיף כמה שורות כיתוב. במצגת הן יתחלפו ביניהן באקראי בדהייה רכה, כל כמה שניות. אם תכתבו שורה אחת בלבד, היא תופיע קבוע.')">i</span></div>
-    <div id="cap-lines"></div>
-    <button class="btn ghost sm" onclick="addCapLine()" style="margin-top:8px;">➕ הוספת שורת כיתוב</button>
-  </div>
-
-  <div class="row" style="margin:16px 0;">
-    <button class="btn ghost" onclick="openFxPanel()">✨ אפקטים ומעברים</button>
-  </div>
-
   <div class="list" id="music-list"></div>
+  <div class="list" id="cap-summary" style="margin-top:4px;"></div>
 
   <div class="row" style="margin-top:18px;">
     <button class="btn" id="start-btn" onclick="startShow()" disabled>▶️ התחלת המצגת</button>
@@ -124,7 +111,6 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
   </div>
   <p class="note">להעלאה ליוטיוב או לאינסטגרם. קודם מורידים את המצגת (הכפתור למעלה), ואז מעלים אותה שם. בגרסת ניסיון — כרגע בלי אפקטים.</p>
 
-  <p class="note">📷 התמונות והשירים נטענים מהמחשב הזה בלבד ואינם עולים לרשת.</p>
   <p class="note">טיפ: שיר אחד באורך 3-4 דקות מספיק — הוא יתנגן בלולאה. אפשר להוסיף עוד שירים.</p>
   <div style="margin-top:14px;">
     <a href="index.html" target="_top" id="main-menu-link" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a>
@@ -261,7 +247,87 @@ function removeSong(i){
 }
 function renderMusicList(){
   const box = $('music-list');
-  box.innerHTML = '';
+  if (box){
+    box.innerHTML = '';
+    playlist.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'item';
+      const txt = document.createElement('span');
+      txt.textContent = '🎵 ' + (i+1) + '. ' + s.name;
+      const x = document.createElement('button');
+      x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השיר';
+      x.onclick = () => removeSong(i);
+      row.appendChild(txt); row.appendChild(x);
+      box.appendChild(row);
+    });
+  }
+  const mb = $('music-btn');
+  if (mb) mb.textContent = playlist.length ? '🎵 מוזיקה (' + playlist.length + ')' : '🎵 מוזיקה';
+  // אם חלון המוזיקה פתוח — לרענן גם את הרשימה שבתוכו
+  if ($('music-panel-list')) renderMusicPanelList();
+}
+
+/* ---------- חלון משותף (מודאלי) ---------- */
+function openModal(titleText){
+  // סוגר חלון קודם אם קיים
+  const prev = $('mon-modal'); if (prev) prev.remove();
+  const ov = document.createElement('div'); ov.id = 'mon-modal';
+  ov.style.cssText = 'position:fixed; inset:0; z-index:9; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:18px;';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:440px; width:100%; max-height:86vh; overflow:auto; text-align:right;';
+  const h = document.createElement('div');
+  h.style.cssText = "font-family:'Secular One'; font-size:24px; color:var(--gold); margin-bottom:4px;";
+  h.textContent = titleText;
+  box.appendChild(h);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  return box;
+}
+function closeModal(){ const m = $('mon-modal'); if (m) m.remove(); }
+
+/* ---------- חלון מוזיקה ---------- */
+function openMusicPanel(){
+  if ($('mon-modal')){ closeModal(); return; }  // לחיצה שנייה סוגרת
+  const box = openModal('מוזיקה');
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
+  sub.textContent = 'אפשר לבחור מוזיקה מהמחשב או מהגלריה. אפשר להוסיף כמה שירים — הם יתנגנו ברצף.';
+  box.appendChild(sub);
+
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex; gap:8px; flex-wrap:wrap;';
+  const fromPc = document.createElement('button');
+  fromPc.className = 'btn ghost sm'; fromPc.textContent = '📁 מהמחשב';
+  fromPc.onclick = () => $('music-input').click();
+  const fromGal = document.createElement('button');
+  fromGal.className = 'btn ghost sm'; fromGal.textContent = '🎼 מהגלריה';
+  fromGal.onclick = () => openMusicGallery();
+  btns.appendChild(fromPc); btns.appendChild(fromGal);
+  box.appendChild(btns);
+
+  const list = document.createElement('div');
+  list.className = 'list'; list.id = 'music-panel-list'; list.style.marginTop = '14px';
+  box.appendChild(list);
+
+  const close = document.createElement('button');
+  close.className = 'btn'; close.textContent = '✓ סגירה'; close.style.cssText += 'margin-top:14px; width:100%;';
+  close.onclick = closeModal;
+  box.appendChild(close);
+
+  renderMusicPanelList();
+}
+function renderMusicPanelList(){
+  const list = $('music-panel-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!playlist.length){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:13px; color:var(--ink-dim); text-align:center; padding:6px 0;';
+    empty.textContent = 'עדיין לא נבחרה מוזיקה.';
+    list.appendChild(empty);
+    return;
+  }
   playlist.forEach((s, i) => {
     const row = document.createElement('div');
     row.className = 'item';
@@ -271,34 +337,97 @@ function renderMusicList(){
     x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השיר';
     x.onclick = () => removeSong(i);
     row.appendChild(txt); row.appendChild(x);
-    box.appendChild(row);
+    list.appendChild(row);
   });
-  $('music-btn').textContent = playlist.length ? '🎵 הוספת שיר נוסף' : '🎵 בחירת מוזיקה';
 }
 
-/* ---------- כיתוב ---------- */
-function toggleCap(){
-  $('capbox').classList.toggle('on');
-  if ($('capbox').classList.contains('on')){
-    if (!$('cap-lines').children.length) addCapLine();
-    const first = $('cap-lines').querySelector('input');
-    if (first) first.focus();
-  }
+/* ---------- חלון כיתוב ---------- */
+let captions = [];
+function openCapPanel(){
+  if ($('mon-modal')){ closeModal(); return; }
+  const box = openModal('כיתוב');
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
+  sub.textContent = 'כתבו שורת כיתוב ולחצו הוספה. אפשר להוסיף כמה שורות — הן יתחלפו ביניהן בהצגה. שורה אחת בלבד תופיע קבוע.';
+  box.appendChild(sub);
+
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.id = 'cap-input'; inp.maxLength = 60; inp.placeholder = 'שורת כיתוב';
+  inp.style.cssText = "width:100%; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center;";
+  inp.onkeydown = (e) => { if (e.key === 'Enter'){ e.preventDefault(); addCapLine(); } };
+  box.appendChild(inp);
+
+  const add = document.createElement('button');
+  add.className = 'btn ghost sm'; add.textContent = '➕ הוספת שורת כיתוב'; add.style.marginTop = '8px';
+  add.onclick = addCapLine;
+  box.appendChild(add);
+
+  const list = document.createElement('div');
+  list.className = 'list'; list.id = 'cap-panel-list'; list.style.marginTop = '14px';
+  box.appendChild(list);
+
+  const close = document.createElement('button');
+  close.className = 'btn'; close.textContent = '✓ סגירה'; close.style.cssText += 'margin-top:14px; width:100%;';
+  close.onclick = closeModal;
+  box.appendChild(close);
+
+  renderCapList();
+  inp.focus();
 }
 function addCapLine(){
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center;';
-  const inp = document.createElement('input');
-  inp.type = 'text'; inp.maxLength = 60; inp.placeholder = 'שורת כיתוב';
-  inp.style.cssText = "flex:1; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center;";
-  const del = document.createElement('button');
-  del.className = 'btn ghost sm'; del.textContent = '✕'; del.title = 'הסרת השורה';
-  del.onclick = () => { wrap.remove(); };
-  wrap.appendChild(inp); wrap.appendChild(del);
-  $('cap-lines').appendChild(wrap);
+  const inp = $('cap-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) return;
+  captions.push(val);
+  inp.value = '';
+  inp.focus();
+  renderCapList();
+}
+function removeCaption(i){
+  captions.splice(i, 1);
+  renderCapList();
+}
+function renderCapList(){
+  // רשימה בתוך החלון
+  const panel = $('cap-panel-list');
+  if (panel){
+    panel.innerHTML = '';
+    if (!captions.length){
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:13px; color:var(--ink-dim); text-align:center; padding:6px 0;';
+      empty.textContent = 'עדיין לא נוספו כיתובים.';
+      panel.appendChild(empty);
+    } else {
+      captions.forEach((c, i) => {
+        const row = document.createElement('div'); row.className = 'item';
+        const txt = document.createElement('span'); txt.textContent = '✏️ ' + c;
+        const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השורה';
+        x.onclick = () => removeCaption(i);
+        row.appendChild(txt); row.appendChild(x);
+        panel.appendChild(row);
+      });
+    }
+  }
+  // סיכום במסך הראשי
+  const summary = $('cap-summary');
+  if (summary){
+    summary.innerHTML = '';
+    captions.forEach((c, i) => {
+      const row = document.createElement('div'); row.className = 'item';
+      const txt = document.createElement('span'); txt.textContent = '✏️ ' + c;
+      const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השורה';
+      x.onclick = () => removeCaption(i);
+      row.appendChild(txt); row.appendChild(x);
+      summary.appendChild(row);
+    });
+  }
+  // עדכון טקסט הכפתור הראשי
+  const cb = $('cap-btn');
+  if (cb) cb.textContent = captions.length ? '✏️ כיתוב (' + captions.length + ')' : '✏️ כיתוב';
 }
 function getCaptions(){
-  return [...$('cap-lines').querySelectorAll('input')].map(i=>i.value.trim()).filter(v=>v);
+  return captions.slice();
 }
 
 function refreshStart(){
