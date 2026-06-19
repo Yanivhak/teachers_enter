@@ -131,6 +131,7 @@ a.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decorat
 let parsed = null;       // { images:[dataURL], music:[dataURL], transitions:[], effects:[] }
 let lastVideoUrl = null;
 let videoCancelled = false;   // דגל ביטול יצירת וידאו
+let isCreatingVideo = false;  // האם יצירת וידאו רצה כרגע (אמין יותר מבדיקת DOM)
 const SECONDS_PER_IMAGE = 4;  // משך הצגת כל תמונה
 const FADE = 1;               // משך מעבר דהייה בשניות
 
@@ -150,6 +151,7 @@ function confirmCancel(){
 /* עצירה בפועל + ניקוי זיכרון (משמש גם בביטול וגם בהעלאת קובץ חדש) */
 function doCancel(){
   videoCancelled = true;
+  isCreatingVideo = false;
   document.getElementById('prog-text').textContent = 'מבטל...';
   // עוצרים את מנוע הקידוד (אם רץ) — זה יקטע את exec וינקה את הזיכרון
   if (ffInstance){
@@ -159,8 +161,7 @@ function doCancel(){
 }
 /* האם יצירת וידאו רצה כרגע? */
 function isMaking(){
-  const pw = document.getElementById('prog-wrap');
-  return pw && !pw.classList.contains('hidden');
+  return isCreatingVideo === true;
 }
 
 /* ---------- העלאת קובץ ---------- */
@@ -173,11 +174,6 @@ fileInput.onchange = () => { if (fileInput.files[0]) handleFile(fileInput.files[
 drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
 
 function handleFile(file){
-  // אם יצירת וידאו רצה כרגע — לא מאפשרים להעלות קובץ חדש; מבקשים אישור ביטול
-  if (isMaking()){
-    document.getElementById('cancel-confirm').classList.remove('hidden');
-    return;
-  }
   if (!/\.html?$/i.test(file.name) && file.type !== 'text/html'){
     alert('צריך להעלות קובץ HTML שהורד מכלי המצגת.');
     return;
@@ -235,6 +231,7 @@ function showReady(data){
 
 function resetAll(){
   parsed = null;
+  isCreatingVideo = false;
   if (lastVideoUrl){ URL.revokeObjectURL(lastVideoUrl); lastVideoUrl = null; }
   document.getElementById('ready-card').classList.add('hidden');
   document.getElementById('upload-card').classList.remove('hidden');
@@ -256,6 +253,7 @@ function setProg(pct, text){
 async function makeVideo(){
   if (!parsed) return;
   videoCancelled = false;
+  isCreatingVideo = true;
   const makeBtn = document.getElementById('make-btn');
   makeBtn.disabled = true;
   document.getElementById('action-area').classList.add('hidden');
@@ -590,6 +588,7 @@ async function makeVideo(){
     lastVideoUrl = URL.createObjectURL(blob);
 
     setProg(100, '✓ הווידאו מוכן!');
+    isCreatingVideo = false;
     document.getElementById('prog-wrap').classList.add('hidden');
     document.getElementById('action-area').classList.remove('hidden');
     const vid = document.getElementById('out-video');
@@ -607,6 +606,7 @@ async function makeVideo(){
 
   } catch(e){
     const detail = (e && e.message) ? e.message : String(e);
+    isCreatingVideo = false;
     if (videoCancelled || detail === '__CANCELLED__'){
       // המשתמש ביטל — הודעה נקייה, בלי שגיאה
       document.getElementById('prog-wrap').classList.add('hidden');
