@@ -554,7 +554,7 @@ function playMusic(){
 }
 
 /* ---------- המצגת ---------- */
-let monTimer = null, paused = false;
+let monIv = null, paused = false, stepFn = null, intervalMs = 4500;
 let monOrder = [], monImgA = null, monImgB = null, monFlip = false, monMusicMuted = false;
 let capList = [], capIdx = -1, capTimer = null, capTotalSlides = 0;
 
@@ -629,64 +629,61 @@ function startShow(){
   // ערבוב חד-פעמי: עוברים על כל התמונות פעם אחת בלי כפילויות
   monOrder = pics.slice();
   shuffle(monOrder);
+  const order = monOrder;
 
-  monIdx = 0;
+  const SLIDE_MS = 4500;
+  let idx = 0;
+  const fill = $('mon-progress-fill');
+  monEndShowing = false;
+
+  // פונקציה פנימית (closure) — בדיוק כמו הגרסה שעבדה, עם שקופית הסיום משולבת בתוכה
+  function step(){
+    // סוף סבב — אם יש שקופית סיום, מציגים אותה ואז ממשיכים ללולאה
+    if (idx >= order.length){
+      if (hasEndSlide() && !monEndShowing){
+        monEndShowing = true;
+        clearInterval(monIv);
+        showMonEnd();
+        monIv = setTimeout(() => {
+          hideMonEnd();
+          monEndShowing = false;
+          idx = 0;
+          shuffle(order);
+          step();
+          clearInterval(monIv);
+          monIv = setInterval(step, SLIDE_MS);
+        }, MON_END_MS);
+        return;
+      }
+      idx = 0;
+      shuffle(order);
+    }
+    // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
+    updateCaptionForSlide(idx);
+    // בחירת מעבר לתמונה הזו: אם נבחר אחד — קבוע; אם כמה — מתחלפים
+    const sel = selectedTransitions();
+    const t = sel.length ? sel[transCycle % sel.length] : 'fade';
+    transCycle++;
+    setTransitionClass(t);
+    const cur = monFlip ? b : a, prev = monFlip ? a : b;
+    cur.src = order[idx];
+    cur.classList.add('vis'); prev.classList.remove('vis');
+    monFlip = !monFlip;
+    idx++;
+    fill.style.width = Math.round((idx / order.length) * 100) + '%';
+  }
+  step();
+  clearInterval(monIv);
+  monIv = setInterval(step, SLIDE_MS);
   paused = false;
+  stepFn = step;
+  intervalMs = SLIDE_MS;
   $('mon-pause').textContent = '⏸️ עצירה';
-
-  // מתחילים: צעד ראשון מיד, ואז interval קבוע (כמו הגרסה המוכחת)
-  monStep();
-  clearInterval(monTimer);
-  monTimer = setInterval(monStep, MON_SLIDE_MS);
 }
 
-/* ===== ניהול הלולאה ===== */
-let monIdx = 0;
-const MON_SLIDE_MS = 4500;
+/* ===== קבועים לשקופית הסיום ===== */
 const MON_END_MS = 6500;
 let monEndShowing = false;
-
-function monStep(){
-  if (paused) return;
-  const order = monOrder;
-  const fill = $('mon-progress-fill');
-
-  // סוף סבב — אם יש שקופית סיום, מציגים אותה (עוצרים את ה-interval בזמן הזה)
-  if (monIdx >= order.length){
-    if (hasEndSlide() && !monEndShowing){
-      monEndShowing = true;
-      clearInterval(monTimer);
-      showMonEnd();
-      monTimer = setTimeout(() => {
-        hideMonEnd();
-        monEndShowing = false;
-        monIdx = 0;
-        shuffle(order);
-        monStep();
-        clearInterval(monTimer);
-        monTimer = setInterval(monStep, MON_SLIDE_MS);
-      }, MON_END_MS);
-      return;
-    }
-    monIdx = 0;
-    shuffle(order);
-  }
-
-  // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
-  updateCaptionForSlide(monIdx);
-  // בחירת מעבר (אם נבחרו כמה — מתחלפים)
-  const sel = selectedTransitions();
-  const t = sel.length ? sel[transCycle % sel.length] : 'fade';
-  transCycle++;
-  setTransitionClass(t);
-  const cur = monFlip ? monImgB : monImgA, prev = monFlip ? monImgA : monImgB;
-  // החלפה סינכרונית מקורית (בדיוק כמו הגרסה שעבדה, בלי decode/async)
-  cur.src = order[monIdx];
-  cur.classList.add('vis'); prev.classList.remove('vis');
-  monFlip = !monFlip;
-  monIdx++;
-  if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
-}
 
 function showMonEnd(){
   const el = $('mon-end');
@@ -710,24 +707,23 @@ function shuffle(arr){
 function togglePause(){
   paused = !paused;
   if (paused){
-    clearTimeout(monTimer); clearInterval(monTimer); monTimer = null;
+    clearTimeout(monIv); clearInterval(monIv); monIv = null;
     if (audio){ try{ audio.pause(); }catch(e){} }
     $('mon-pause').textContent = '▶️ המשך';
   } else {
     if (audio && !monMusicMuted){ audio.play().catch(()=>{}); }
     $('mon-pause').textContent = '⏸️ עצירה';
     // ממשיך את הלולאה הרגילה (לא באמצע שקופית סיום)
-    if (!monEndShowing){
-      monStep();
-      clearInterval(monTimer);
-      monTimer = setInterval(monStep, MON_SLIDE_MS);
+    if (!monEndShowing && stepFn){
+      clearInterval(monIv);
+      monIv = setInterval(stepFn, intervalMs);
     }
   }
 }
 
 /* סיום: קפיצה לתמונה האחרונה ועצירת הכול (תמונות + מוזיקה) */
 function finishToLast(){
-  clearTimeout(monTimer); clearInterval(monTimer); monTimer = null;
+  clearTimeout(monIv); clearInterval(monIv); monIv = null;
   monEndShowing = false;
   if (audio){ try{ audio.pause(); }catch(e){} }
   hideMonEnd();
@@ -756,7 +752,7 @@ function toggleMontageMusic(){
 
 /* חזרה לעריכה: למסך ההגדרות */
 function backToSetup(){
-  clearTimeout(monTimer); clearInterval(monTimer); monTimer = null;
+  clearTimeout(monIv); clearInterval(monIv); monIv = null;
   monEndShowing = false;
   if (capTimer){ clearInterval(capTimer); capTimer = null; }
   if (audio){ try{ audio.pause(); }catch(e){} }
