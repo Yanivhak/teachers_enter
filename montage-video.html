@@ -264,11 +264,79 @@ async function makeVideo(){
 
     setProg(15, 'מכין תמונות...');
 
-    // 2. כתיבת התמונות למערכת הקבצים של ffmpeg
+    // ודא שהגופן נטען לפני ציור הכתוביות (אחרת canvas ישתמש בברירת מחדל)
+    if (document.fonts && document.fonts.ready){
+      try { await document.fonts.load("700 42px 'Secular One'"); await document.fonts.ready; } catch(e){}
+    }
+
+    // לוגיקת כתוביות — זהה למצגת: חלוקה שווה למקטעים לפי מספר התמונות
+    const caps = (parsed.captions && parsed.captions.length) ? parsed.captions : [];
+    function capForImage(imgNum, total, numCaps){
+      if (numCaps < 1) return null;
+      if (numCaps === 1) return caps[0];
+      const perCap = total / numCaps;
+      let i = Math.floor(imgNum / perCap);
+      if (i >= numCaps) i = numCaps - 1;
+      return caps[i];
+    }
+
+    // מצייר תמונה + כתובית על canvas ומחזיר dataURL (JPEG). מתאים לסגנון המצגת.
+    function drawImageWithCaption(srcDataUrl, captionText){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          // קנבס בגודל הווידאו (1280x720) עם רקע שחור ושמירת יחס
+          const CW = 1280, CH = 720;
+          const canvas = document.createElement('canvas');
+          canvas.width = CW; canvas.height = CH;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, CW, CH);
+          // התאמת התמונה לתוך הקנבס (contain — שומר יחס, רקע שחור בצדדים)
+          const scale = Math.min(CW / img.naturalWidth, CH / img.naturalHeight);
+          const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+          const dx = (CW - dw) / 2, dy = (CH - dh) / 2;
+          ctx.drawImage(img, dx, dy, dw, dh);
+          // ציור הכתובית — בסגנון המצגת (זהב, צל כהה, תחתית, Secular One)
+          if (captionText){
+            const fontSize = Math.round(CW * 0.042); // ~4% מהרוחב, כמו clamp(28,4vw,52) במצגת
+            ctx.font = '700 ' + fontSize + "px 'Secular One', sans-serif";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            const x = CW / 2;
+            const y = CH - 50; // ~42px מהתחתית כמו במצגת
+            // צל כהה חזק (במקום רקע — בדיוק כמו המצגת)
+            ctx.shadowColor = 'rgba(0,0,0,0.9)';
+            ctx.shadowBlur = 14;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 2;
+            ctx.fillStyle = '#ffd166';
+            // ציור כפול לצל חזק יותר (קריאוּת על כל רקע)
+            ctx.fillText(captionText, x, y);
+            ctx.fillText(captionText, x, y);
+            ctx.shadowColor = 'transparent';
+          }
+          try { resolve(canvas.toDataURL('image/jpeg', 0.9)); }
+          catch(e){ reject(e); }
+        };
+        img.onerror = () => reject(new Error('image load failed'));
+        img.src = srcDataUrl;
+      });
+    }
+
+    // 2. כתיבת התמונות (עם כתוביות צרובות) למערכת הקבצים של ffmpeg
     const imgs = parsed.images;
     for (let i = 0; i < imgs.length; i++){
       const name = 'img' + String(i).padStart(4,'0') + '.jpg';
-      await ffInstance.writeFile(name, await myFetchFile(imgs[i]));
+      const capText = capForImage(i, imgs.length, caps.length);
+      let imgData;
+      try {
+        imgData = await drawImageWithCaption(imgs[i], capText);
+      } catch(e){
+        // אם הציור נכשל — משתמשים בתמונה המקורית בלי כתובית
+        imgData = imgs[i];
+      }
+      await ffInstance.writeFile(name, await myFetchFile(imgData));
       setProg(15 + (i/imgs.length)*10, 'מכין תמונה ' + (i+1) + ' מתוך ' + imgs.length + '...');
     }
 
