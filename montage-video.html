@@ -48,7 +48,7 @@ a.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decorat
 </style>
 </head>
 <body>
-<div style="position:fixed; top:8px; right:10px; z-index:9999; font-family:sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">video v10</div>
+<div style="position:fixed; top:8px; right:10px; z-index:9999; font-family:sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">video v11</div>
 <div class="wrap">
   <h1>🎬 יצירת וידאו מהמצגת</h1>
   <div class="beta">גרסת ניסיון · בטא</div>
@@ -99,7 +99,7 @@ a.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decorat
     </div>
 
     <!-- חלון אישור ביטול -->
-    <div id="cancel-confirm" class="hidden" style="position:fixed; inset:0; z-index:100; background:rgba(5,8,15,.8); display:flex; align-items:center; justify-content:center; padding:24px;">
+    <div id="cancel-confirm" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(5,8,15,.8); align-items:center; justify-content:center; padding:24px;">
       <div style="background:#1a2342; border-radius:18px; padding:28px; max-width:380px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.5);">
         <div style="font-family:'Secular One'; font-size:22px; color:#ffd166; margin-bottom:12px;">לבטל את יצירת הווידאו?</div>
         <div style="font-size:15px; color:#cfd6e6; margin-bottom:22px; line-height:1.5;">העבודה שנעשתה עד כה תימחק ותצטרכו להתחיל מחדש.</div>
@@ -138,15 +138,15 @@ const FADE = 1;               // משך מעבר דהייה בשניות
 
 /* ביטול יצירת הווידאו — מציג חלון אישור */
 function cancelVideo(){
-  document.getElementById('cancel-confirm').classList.remove('hidden');
+  document.getElementById('cancel-confirm').style.display = 'flex';
 }
 /* המשתמש סגר את חלון האישור — ממשיכים כרגיל */
 function dismissCancel(){
-  document.getElementById('cancel-confirm').classList.add('hidden');
+  document.getElementById('cancel-confirm').style.display = 'none';
 }
 /* המשתמש אישר ביטול — עוצרים ומנקים הכול */
 function confirmCancel(){
-  document.getElementById('cancel-confirm').classList.add('hidden');
+  document.getElementById('cancel-confirm').style.display = 'none';
   doCancel();
 }
 /* עצירה בפועל + ניקוי זיכרון (משמש גם בביטול וגם בהעלאת קובץ חדש) */
