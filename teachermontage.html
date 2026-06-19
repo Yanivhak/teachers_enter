@@ -672,8 +672,8 @@ function monStep(){
     shuffle(order);
   }
 
-  // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
-  updateCaptionForSlide(monIdx);
+  // בדיקה 2: ביטול זמני של עדכון הכתוביות (לבידוד באג המסך השחור)
+  // updateCaptionForSlide(monIdx);
   // בדיקה זמנית: מעבר דהייה קבוע (לבידוד באג המסך השחור)
   const t = 'fade';
   transCycle++;
