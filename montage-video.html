@@ -106,7 +106,8 @@ a.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decorat
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js" onerror="window._ffmpegLoadError='ffmpeg.js לא נטען'"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js" onerror="window._ffmpegLoadError='util לא נטען'"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js"></script>
+<script src="https://unpkg.com/@ffmpeg/util@0.12.2/dist/umd/index.js"></script>
 <script>
 /* ============================================================
    כלי וידאו עצמאי — קורא קובץ HTML של מצגת שמורה,
@@ -217,6 +218,28 @@ async function makeVideo(){
       setProg(1, 'טוען רכיב עיבוד...');
       await new Promise(r => setTimeout(r, 250));
       waited += 250;
+    }
+    // אם ה-util עדיין חסר — ננסה לטעון אותו דינמית ממקור גיבוי
+    if (typeof FFmpegUtil === 'undefined'){
+      setProg(1, 'טוען רכיב עיבוד (גיבוי)...');
+      const utilSources = [
+        'https://unpkg.com/@ffmpeg/util@0.12.2/dist/umd/index.js',
+        'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js'
+      ];
+      for (const src of utilSources){
+        if (typeof FFmpegUtil !== 'undefined') break;
+        try {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = src;
+            s.onload = resolve;
+            s.onerror = () => reject(new Error('failed ' + src));
+            document.head.appendChild(s);
+          });
+          // המתנה קצרה שייקלט
+          await new Promise(r => setTimeout(r, 300));
+        } catch(e){ /* ננסה את המקור הבא */ }
+      }
     }
     // אבחון מפורט: מה בדיוק חסר
     const hasWASM = (typeof FFmpegWASM !== 'undefined');
