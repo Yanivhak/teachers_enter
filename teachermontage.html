@@ -70,7 +70,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 #mon-end .end-text{font-family:'Heebo'; font-weight:700; font-size:clamp(18px,3vw,32px); color:var(--ink); line-height:1.5; max-width:900px; white-space:pre-wrap;}
 #mon-progress{position:fixed; bottom:0; left:0; right:0; height:14px; background:rgba(0,0,0,.55); z-index:5;}
 #mon-progress i{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #ffe9a8); transition:width .5s linear; box-shadow:0 0 12px var(--gold);}
-#mon-controls{position:fixed; top:16px; right:16px; z-index:6; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
+#mon-controls{position:fixed; top:16px; right:16px; z-index:8; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
 #mon-controls button{font-family:'Heebo'; font-size:15px; font-weight:700; color:var(--ink); background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:9px 16px; cursor:pointer;}
 #mon-controls button:active{transform:translateY(1px);}
 .fx-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
@@ -552,7 +552,7 @@ function playMusic(){
 }
 
 /* ---------- המצגת ---------- */
-let monIv = null, paused = false, stepFn = null, intervalMs = 4500;
+let monTimer = null, paused = false;
 let monOrder = [], monImgA = null, monImgB = null, monFlip = false, monMusicMuted = false;
 let capList = [], capIdx = -1, capTimer = null, capTotalSlides = 0;
 
@@ -580,11 +580,16 @@ function captionIndexForSlide(slideNum, totalSlides, numCaps){
 
 // מעדכן את הכתובית לפי התמונה הנוכחית (נקרא מ-step)
 function updateCaptionForSlide(slideNum){
-  if (capList.length <= 1) return; // קבוע — לא משתנה
   const el = $('moncap');
   if (!el) return;
+  if (capList.length === 1){
+    // כתובית אחת קבועה — לוודא שהיא מוצגת (למשל אחרי שקופית סיום שהסתירה אותה)
+    if (el.style.opacity !== '1'){ el.textContent = capList[0]; el.style.opacity = '1'; }
+    return;
+  }
+  if (capList.length === 0){ el.style.opacity = '0'; return; }
   const wanted = captionIndexForSlide(slideNum, capTotalSlides, capList.length);
-  if (wanted === capIdx) return; // אותה כתובית — לא צריך לשנות
+  if (wanted === capIdx && el.style.opacity === '1') return; // אותה כתובית וכבר מוצגת
   // דהייה והחלפה
   el.style.opacity = '0';
   setTimeout(() => {
@@ -599,7 +604,7 @@ function startShow(){
   const caps = getCaptions();
   // בדיקה: יותר כתוביות מתמונות — חוסם
   if (caps.length > pics.length){
-    alert('יש יותר כתוביות מתמונות (' + caps.length + ' כתוביות, ' + pics.length + ' תמונות).\n\nכל כתובית מלווה קבוצת תמונות, אז צריך לפחות תמונה אחת לכל כתובית. חזרו והסירו כתוביות, או הוסיפו תמונות.');
+    alert('יש יותר כותרות מתמונות. הסירו כותרות או הוסיפו תמונות.');
     return;
   }
   startCaptions(caps, pics.length);
@@ -622,67 +627,72 @@ function startShow(){
   // ערבוב חד-פעמי: עוברים על כל התמונות פעם אחת בלי כפילויות
   monOrder = pics.slice();
   shuffle(monOrder);
-  const order = monOrder;
 
-  const SLIDE_MS = 4500;
-  let idx = 0;
+  monIdx = 0;
+  paused = false;
+  $('mon-pause').textContent = '⏸️ עצירה';
+
+  // מציג תמונה אחת (לפי monIdx) ומתזמן את הצעד הבא
+  showSlide();
+}
+
+/* ===== ניהול הלולאה (תזמון רציף, לא interval) ===== */
+let monIdx = 0;
+const MON_SLIDE_MS = 4500;
+const MON_END_MS = 6500;
+
+function showSlide(){
+  if (paused) return;
+  const order = monOrder;
   const fill = $('mon-progress-fill');
 
-  function step(){
-    // סוף סבב — אם יש שקופית סיום, מציגים אותה לפני שממשיכים ללולאה הבאה
-    if (idx >= order.length){
-      if (hasEndSlide()){
-        showEndSlide(() => { idx = 0; shuffle(order); hideEndSlide(); step(); });
-        return;
-      }
-      idx = 0; shuffle(order);
+  // סוף סבב — אם יש שקופית סיום, מציגים אותה ואז ממשיכים ללולאה הבאה
+  if (monIdx >= order.length){
+    if (hasEndSlide()){
+      showMonEnd();
+      monTimer = setTimeout(() => {
+        hideMonEnd();
+        monIdx = 0;
+        shuffle(order);
+        showSlide();
+      }, MON_END_MS);
+      return;
     }
-    // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
-    updateCaptionForSlide(idx);
-    // בחירת מעבר לתמונה הזו: אם נבחר אחד — קבוע; אם כמה — מתחלפים
-    const sel = selectedTransitions();
-    const t = sel.length ? sel[transCycle % sel.length] : 'fade';
-    transCycle++;
-    setTransitionClass(t);
-    const cur = monFlip ? b : a, prev = monFlip ? a : b;
-    cur.src = order[idx];
-    cur.classList.add('vis'); prev.classList.remove('vis');
-    monFlip = !monFlip;
-    idx++;
-    fill.style.width = Math.round((idx / order.length) * 100) + '%';
+    monIdx = 0;
+    shuffle(order);
   }
-  step();
-  clearInterval(monIv);
-  monIv = setInterval(step, SLIDE_MS);
-  paused = false;
-  stepFn = step;
-  intervalMs = SLIDE_MS;
-  $('mon-pause').textContent = '⏸️ עצירה';
+
+  // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
+  updateCaptionForSlide(monIdx);
+  // בחירת מעבר
+  const sel = selectedTransitions();
+  const t = sel.length ? sel[transCycle % sel.length] : 'fade';
+  transCycle++;
+  setTransitionClass(t);
+  const cur = monFlip ? monImgB : monImgA, prev = monFlip ? monImgA : monImgB;
+  cur.src = order[monIdx];
+  cur.classList.add('vis'); prev.classList.remove('vis');
+  monFlip = !monFlip;
+  monIdx++;
+  if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
+
+  monTimer = setTimeout(showSlide, MON_SLIDE_MS);
 }
 
-// מציג את שקופית הסיום (עוצר את המעבר הרגיל), ואז קורא ל-callback
-const END_SLIDE_MS = 6500;
-let endSlideTimer = null;
-function showEndSlide(done){
-  clearInterval(monIv); // עוצר את מעבר התמונות בזמן הסיום
+function showMonEnd(){
   const el = $('mon-end');
+  if (!el) return;
   $('mon-end-title').textContent = endTitle || '';
   $('mon-end-text').textContent = endText || '';
-  // מסתיר את הכתובית והתמונות מאחור
+  // מסתיר את הכתובית מאחור (שלא תופיע על שקופית הסיום)
   const cap = $('moncap'); if (cap) cap.style.opacity = '0';
+  capIdx = -1; // איפוס כדי שהכתובית תתחיל נכון בסבב הבא
   el.classList.add('vis');
-  endSlideTimer = setTimeout(() => {
-    if (typeof done === 'function') done();
-  }, END_SLIDE_MS);
 }
-function hideEndSlide(){
+function hideMonEnd(){
   const el = $('mon-end');
-  el.classList.remove('vis');
-  // מחדש את מעבר התמונות
-  clearInterval(monIv);
-  if (stepFn) monIv = setInterval(stepFn, intervalMs);
+  if (el) el.classList.remove('vis');
 }
-
 function shuffle(arr){
   for (let i = arr.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
@@ -693,20 +703,21 @@ function shuffle(arr){
 function togglePause(){
   paused = !paused;
   if (paused){
-    clearInterval(monIv);
+    if (monTimer){ clearTimeout(monTimer); monTimer = null; }
     if (audio){ try{ audio.pause(); }catch(e){} }
     $('mon-pause').textContent = '▶️ המשך';
   } else {
-    if (stepFn) monIv = setInterval(stepFn, intervalMs);
     if (audio && !monMusicMuted){ audio.play().catch(()=>{}); }
     $('mon-pause').textContent = '⏸️ עצירה';
+    showSlide(); // ממשיך מהמקום שבו עצר
   }
 }
 
 /* סיום: קפיצה לתמונה האחרונה ועצירת הכול (תמונות + מוזיקה) */
 function finishToLast(){
-  clearInterval(monIv);
+  if (monTimer){ clearTimeout(monTimer); monTimer = null; }
   if (audio){ try{ audio.pause(); }catch(e){} }
+  hideMonEnd();
   if (monOrder.length && monImgA && monImgB){
     const last = monOrder[monOrder.length-1];
     const cur = monFlip ? monImgB : monImgA, prev = monFlip ? monImgA : monImgB;
@@ -732,9 +743,10 @@ function toggleMontageMusic(){
 
 /* חזרה לעריכה: למסך ההגדרות */
 function backToSetup(){
-  clearInterval(monIv);
+  if (monTimer){ clearTimeout(monTimer); monTimer = null; }
   if (capTimer){ clearInterval(capTimer); capTimer = null; }
   if (audio){ try{ audio.pause(); }catch(e){} }
+  hideMonEnd();
   stopFx();
   show('setup');
 }
@@ -1244,7 +1256,7 @@ async function exportMontage(){
   // בדיקה: יותר כתוביות מתמונות — חוסם
   const capsCheck = (typeof getCaptions === 'function') ? getCaptions() : [];
   if (capsCheck.length > pics.length){
-    alert('יש יותר כתוביות מתמונות (' + capsCheck.length + ' כתוביות, ' + pics.length + ' תמונות).\n\nכל כתובית מלווה קבוצת תמונות, אז צריך לפחות תמונה אחת לכל כתובית. חזרו והסירו כתוביות, או הוסיפו תמונות.');
+    alert('יש יותר כותרות מתמונות. הסירו כותרות או הוסיפו תמונות.');
     return;
   }
 
