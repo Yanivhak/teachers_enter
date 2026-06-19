@@ -87,7 +87,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
     <button class="btn ghost" id="music-btn" onclick="openMusicPanel()">🎵 מוזיקה</button>
     <button class="btn ghost" id="cap-btn" onclick="openCapPanel()">✏️ כיתוב</button>
     <button class="btn ghost" id="fx-btn" onclick="openFxPanel()">✨ אפקטים ומעברים</button>
-    <span class="info-i" onclick="showInfo(event, 'התמונות והמוזיקה נטענות מהמחשב ולא נשמרות, אז צריך לבחור אותן מחדש בכל פעם. בזמן ההצגה אפשר לעצור, להשתיק מוזיקה, ולשנות אפקטים — הכול תוך כדי.')">i</span>
+    <span class="info-i" onclick="showInfo(event, 'התמונות והמוזיקה נשמרות כל עוד הדף פתוח — אפשר להציג, לחזור לעריכה ולשנות. הן אינן נשמרות לצמיתות (נמחקות כשסוגרים את הדף), כדי שהקבצים שלכם לא ייחשפו לרשת. את המצגת המוגמרת אפשר לשמור על המחשב — כקובץ, או כסרטון (בטא) — בכפתורים שבתחתית.')">i</span>
   </div>
 
   <input type="file" id="pics-input" accept="image/*" multiple style="display:none" onchange="picsChosen(this.files)">
@@ -350,27 +350,36 @@ function renderMusicPanelList(){
 
 /* ---------- חלון כיתוב ---------- */
 let captions = [];
+let capEditIdx = -1;   // -1 = הוספת שורה חדשה; אחרת = עריכת שורה קיימת
 function openCapPanel(){
   if ($('mon-modal')){ closeModal(); return; }
+  capEditIdx = -1;
   const box = openModal('כיתוב');
   const sub = document.createElement('div');
   sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
-  sub.textContent = 'כתבו שורת כיתוב ולחצו הוספה. אפשר להוסיף כמה שורות — הן יתחלפו ביניהן בהצגה. שורה אחת בלבד תופיע קבוע.';
+  sub.textContent = 'כתבו שורת כיתוב ולחצו ✓ לאישור. אפשר להוסיף כמה שורות שתרצו — הן יתחלפו ביניהן בהצגה. שורה אחת בלבד תופיע קבוע.';
   box.appendChild(sub);
 
+  const inpRow = document.createElement('div');
+  inpRow.style.cssText = 'display:flex; gap:8px; align-items:stretch;';
   const inp = document.createElement('input');
   inp.type = 'text'; inp.id = 'cap-input'; inp.maxLength = 60; inp.placeholder = 'שורת כיתוב';
-  inp.style.cssText = "width:100%; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center;";
+  inp.style.cssText = "flex:1; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center;";
   inp.onkeydown = (e) => { if (e.key === 'Enter'){ e.preventDefault(); addCapLine(); } };
-  box.appendChild(inp);
+  const ok = document.createElement('button');
+  ok.id = 'cap-ok'; ok.textContent = '✓'; ok.title = 'אישור השורה';
+  ok.style.cssText = "font-family:'Heebo'; font-weight:800; font-size:20px; border:none; border-radius:12px; padding:0 18px; cursor:pointer; background:var(--gold); color:#1a2342;";
+  ok.onclick = addCapLine;
+  inpRow.appendChild(inp); inpRow.appendChild(ok);
+  box.appendChild(inpRow);
 
-  const add = document.createElement('button');
-  add.className = 'btn ghost sm'; add.textContent = '➕ הוספת שורת כיתוב'; add.style.marginTop = '8px';
-  add.onclick = addCapLine;
-  box.appendChild(add);
+  const hint = document.createElement('div');
+  hint.id = 'cap-feedback';
+  hint.style.cssText = 'font-size:13px; color:var(--teal); margin-top:8px; height:18px; text-align:center; opacity:0; transition:opacity .2s;';
+  box.appendChild(hint);
 
   const list = document.createElement('div');
-  list.className = 'list'; list.id = 'cap-panel-list'; list.style.marginTop = '14px';
+  list.className = 'list'; list.id = 'cap-panel-list'; list.style.marginTop = '8px';
   box.appendChild(list);
 
   const close = document.createElement('button');
@@ -386,14 +395,42 @@ function addCapLine(){
   if (!inp) return;
   const val = inp.value.trim();
   if (!val) return;
-  captions.push(val);
+  if (capEditIdx >= 0){
+    // עריכת שורה קיימת
+    captions[capEditIdx] = val;
+    capEditIdx = -1;
+    const ok = $('cap-ok'); if (ok){ ok.textContent = '✓'; }
+    showCapFeedback('✓ השורה עודכנה');
+  } else {
+    captions.push(val);
+    showCapFeedback('✓ השורה נוספה');
+  }
   inp.value = '';
   inp.focus();
   renderCapList();
 }
 function removeCaption(i){
   captions.splice(i, 1);
+  // אם מחקנו את השורה שבעריכה — לאפס
+  if (capEditIdx === i){ capEditIdx = -1; const inp=$('cap-input'); if(inp) inp.value=''; const ok=$('cap-ok'); if(ok) ok.textContent='✓'; }
   renderCapList();
+}
+function editCaption(i){
+  const inp = $('cap-input');
+  if (!inp) return;
+  inp.value = captions[i];
+  capEditIdx = i;
+  const ok = $('cap-ok'); if (ok){ ok.textContent = '✓'; }
+  inp.focus();
+  showCapFeedback('עריכת השורה — שנו ולחצו ✓');
+}
+function showCapFeedback(text){
+  const fb = $('cap-feedback');
+  if (!fb) return;
+  fb.textContent = text;
+  fb.style.opacity = '1';
+  clearTimeout(fb._t);
+  fb._t = setTimeout(() => { fb.style.opacity = '0'; }, 1800);
 }
 function renderCapList(){
   // רשימה בתוך החלון
@@ -409,9 +446,12 @@ function renderCapList(){
       captions.forEach((c, i) => {
         const row = document.createElement('div'); row.className = 'item';
         const txt = document.createElement('span'); txt.textContent = '✏️ ' + c;
+        const edit = document.createElement('button'); edit.className = 'x'; edit.textContent = '✎'; edit.title = 'עריכת השורה';
+        edit.style.color = 'var(--gold)';
+        edit.onclick = () => editCaption(i);
         const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השורה';
         x.onclick = () => removeCaption(i);
-        row.appendChild(txt); row.appendChild(x);
+        row.appendChild(txt); row.appendChild(edit); row.appendChild(x);
         panel.appendChild(row);
       });
     }
@@ -1073,12 +1113,21 @@ async function exportMontage(){
   if (btn){ btn.disabled = true; btn.textContent = '⏳ מכין את הקובץ...'; }
 
   try {
-    // 1. דחיסת תמונות
+    // 1. דחיסת תמונות (כל תמונה מוגנת בנפרד — תמונה שנכשלת מדולגת)
     const images = [];
+    let skipped = 0;
     for (let i = 0; i < pics.length; i++){
       if (btn) btn.textContent = '⏳ מעבד תמונה ' + (i+1) + ' מתוך ' + pics.length + '...';
-      const dataUrl = await compressImageToDataURL(pics[i], 1600, 0.8);
-      images.push(dataUrl);
+      try {
+        const dataUrl = await compressImageToDataURL(pics[i], 1600, 0.8);
+        images.push(dataUrl);
+      } catch(imgErr){
+        console.warn('image ' + (i+1) + ' failed:', imgErr);
+        skipped++;
+      }
+    }
+    if (!images.length){
+      throw new Error('אף תמונה לא עובדה בהצלחה');
     }
 
     // 2. המרת מוזיקה (מחשב + גלריה) ל-Base64
@@ -1134,7 +1183,8 @@ async function exportMontage(){
     if (btn){ btn.disabled = false; btn.textContent = '✓ הקובץ ירד!'; setTimeout(()=>{ btn.textContent = origText; }, 2500); }
   } catch(e){
     console.error(e);
-    alert('משהו השתבש ביצירת הקובץ. נסו שוב, או עם פחות תמונות.');
+    const detail = (e && e.message) ? e.message : String(e);
+    alert('משהו השתבש ביצירת הקובץ.\n\nפרטים: ' + detail + '\n\nנסו שוב, או עם פחות תמונות.');
     if (btn){ btn.disabled = false; btn.textContent = origText; }
   }
 }
