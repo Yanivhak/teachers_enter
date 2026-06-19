@@ -632,6 +632,7 @@ function backToSetup(){
 
 /* ===== אפקטים: שלג, גשם, זיקוקים, לבבות ===== */
 const fxActive = { snow:false, rain:false, fireworks:false, hearts:false, bubbles:false, leaves:false, stars:false, sparkles:false, confetti:false };
+let fxIntensity = 0.7;   // עוצמת אפקטים: נמוכה=0.4, בינונית=0.7, גבוהה=1.0 (משפיע על כמות+תדירות)
 let fxRAF = null, fxParticles = [], fxCanvas = null, fxCtx = null, fxFwTimer = null;
 let fxSwitchTimer = 0, fxShownIdx = 0;
 
@@ -705,19 +706,19 @@ function fxLoop(){
     shown[sel[fxShownIdx % sel.length]] = true;
   }
 
-  // הולדת חלקיקים
-  if (shown.snow && Math.random()<0.4) fxParticles.push({type:'snow', x:Math.random()*W, y:-10, r:2+Math.random()*4, sp:1+Math.random()*1.5, sw:Math.random()*1});
-  if (shown.rain && Math.random()<0.9) for(let i=0;i<2;i++) fxParticles.push({type:'rain', x:Math.random()*W, y:-10, len:12+Math.random()*16, sp:9+Math.random()*6});
-  if (shown.hearts && Math.random()<0.08) fxParticles.push({type:'heart', x:Math.random()*W, y:H+10, sp:1+Math.random()*1.5, sz:14+Math.random()*16, sway:Math.random()*2});
+  // הולדת חלקיקים (הסף מוכפל בעוצמה — משפיע על כמות+תדירות)
+  if (shown.snow && Math.random()<0.4*fxIntensity) fxParticles.push({type:'snow', x:Math.random()*W, y:-10, r:2+Math.random()*4, sp:1+Math.random()*1.5, sw:Math.random()*1});
+  if (shown.rain && Math.random()<0.9*fxIntensity) for(let i=0;i<2;i++) fxParticles.push({type:'rain', x:Math.random()*W, y:-10, len:12+Math.random()*16, sp:9+Math.random()*6});
+  if (shown.hearts && Math.random()<0.08*fxIntensity) fxParticles.push({type:'heart', x:Math.random()*W, y:H+10, sp:1+Math.random()*1.5, sz:14+Math.random()*16, sway:Math.random()*2});
   if (shown.fireworks){
     fxFwTimer--;
-    if (fxFwTimer<=0){ spawnFirework(W,H); fxFwTimer = 40+Math.random()*50; }
+    if (fxFwTimer<=0){ spawnFirework(W,H); fxFwTimer = (40+Math.random()*50)/fxIntensity; }
   }
-  if (shown.bubbles && Math.random()<0.15) fxParticles.push({type:'bubble', x:Math.random()*W, y:H+10, r:6+Math.random()*18, sp:1+Math.random()*1.6, sway:Math.random()*1.5});
-  if (shown.leaves && Math.random()<0.12) fxParticles.push({type:'leaf', x:Math.random()*W, y:-10, sp:1+Math.random()*1.4, sz:16+Math.random()*14, sway:1+Math.random()*2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.1, emoji: Math.random()<0.5?'🍂':'🍁'});
-  if (shown.stars && Math.random()<0.18) fxParticles.push({type:'star', x:Math.random()*W, y:Math.random()*H, life:60+Math.random()*40, max:100, r:1+Math.random()*2.5});
-  if (shown.sparkles && Math.random()<0.25) fxParticles.push({type:'sparkle', x:Math.random()*W, y:Math.random()*H, life:30+Math.random()*30, max:60, sz:8+Math.random()*10});
-  if (shown.confetti && Math.random()<0.4) for(let i=0;i<2;i++) fxParticles.push({type:'confetti', x:Math.random()*W, y:-10, sp:2+Math.random()*2.5, sway:1+Math.random()*2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.3, w:6+Math.random()*5, h:9+Math.random()*6, color:['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ff9f1c','#06d6a0'][Math.floor(Math.random()*6)]});
+  if (shown.bubbles && Math.random()<0.15*fxIntensity) fxParticles.push({type:'bubble', x:Math.random()*W, y:H+10, r:6+Math.random()*18, sp:1+Math.random()*1.6, sway:Math.random()*1.5});
+  if (shown.leaves && Math.random()<0.12*fxIntensity) fxParticles.push({type:'leaf', x:Math.random()*W, y:-10, sp:1+Math.random()*1.4, sz:16+Math.random()*14, sway:1+Math.random()*2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.1, emoji: Math.random()<0.5?'🍂':'🍁'});
+  if (shown.stars && Math.random()<0.18*fxIntensity) fxParticles.push({type:'star', x:Math.random()*W, y:Math.random()*H, life:60+Math.random()*40, max:100, r:1+Math.random()*2.5});
+  if (shown.sparkles && Math.random()<0.25*fxIntensity) fxParticles.push({type:'sparkle', x:Math.random()*W, y:Math.random()*H, life:30+Math.random()*30, max:60, sz:8+Math.random()*10});
+  if (shown.confetti && Math.random()<0.4*fxIntensity) for(let i=0;i<2;i++) fxParticles.push({type:'confetti', x:Math.random()*W, y:-10, sp:2+Math.random()*2.5, sway:1+Math.random()*2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.3, w:6+Math.random()*5, h:9+Math.random()*6, color:['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ff9f1c','#06d6a0'][Math.floor(Math.random()*6)]});
 
   for (let i=fxParticles.length-1;i>=0;i--){
     const p = fxParticles[i];
@@ -831,6 +832,15 @@ function openFxPanel(){
     if(fxActive[fx]){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
     b.onclick=()=>{ fxActive[fx]=!fxActive[fx]; if(fxActive[fx]){b.style.background='var(--gold)';b.style.color='#1a2342';}else{b.style.background='';b.style.color='';} updateFxBtn(); };
     fRow.appendChild(b);
+  });
+
+  // עוצמת האפקטים (כמה חלקיקים ובאיזו תכיפות)
+  const iRow = group('עוצמת האפקטים');
+  [[0.4,'נמוכה'],[0.7,'בינונית'],[1.0,'גבוהה']].forEach(([val,label])=>{
+    const b=document.createElement('button'); b.className='btn ghost sm'; b.textContent=label;
+    if(Math.abs(fxIntensity-val)<0.01){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
+    b.onclick=()=>{ fxIntensity=val; [...iRow.children].forEach(c=>{c.style.background='';c.style.color='';}); b.style.background='var(--gold)'; b.style.color='#1a2342'; };
+    iRow.appendChild(b);
   });
 
   const close=document.createElement('button'); close.className='btn'; close.textContent='✓ אישור'; close.style.cssText+='margin-top:14px; width:100%;';
@@ -969,6 +979,7 @@ function startCaptions(){
 /* ---- אפקטים (fx) ---- */
 let fxc, fxx, fxRAF, parts=[], fxSwitch=0, fxShown=0, fwTimer=0;
 const FX=DATA.effects||[];
+const FXI=DATA.intensity||0.7;
 function startFx(){
   if(!FX.length) return;
   fxc=document.getElementById('fxc'); fxx=fxc.getContext('2d');
@@ -983,15 +994,15 @@ function fxLoop(){
   let shown={};
   if(FX.length<=1){ FX.forEach(k=>shown[k]=true); }
   else { fxSwitch++; if(fxSwitch>12*60){fxSwitch=0;fxShown=(fxShown+1)%FX.length;} shown[FX[fxShown%FX.length]]=true; }
-  if(shown.snow&&Math.random()<0.4) parts.push({type:'snow',x:Math.random()*W,y:-10,r:2+Math.random()*4,sp:1+Math.random()*1.5,sw:Math.random()*1});
-  if(shown.rain&&Math.random()<0.9) for(let i=0;i<2;i++) parts.push({type:'rain',x:Math.random()*W,y:-10,len:12+Math.random()*16,sp:9+Math.random()*6});
-  if(shown.hearts&&Math.random()<0.08) parts.push({type:'heart',x:Math.random()*W,y:H+10,sp:1+Math.random()*1.5,sz:14+Math.random()*16,sway:Math.random()*2});
-  if(shown.fireworks){ fwTimer--; if(fwTimer<=0){ spawnFw(W,H); fwTimer=40+Math.random()*50; } }
-  if(shown.bubbles&&Math.random()<0.15) parts.push({type:'bubble',x:Math.random()*W,y:H+10,r:6+Math.random()*18,sp:1+Math.random()*1.6,sway:Math.random()*1.5});
-  if(shown.leaves&&Math.random()<0.12) parts.push({type:'leaf',x:Math.random()*W,y:-10,sp:1+Math.random()*1.4,sz:16+Math.random()*14,sway:1+Math.random()*2,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.1,emoji:Math.random()<0.5?'🍂':'🍁'});
-  if(shown.stars&&Math.random()<0.18) parts.push({type:'star',x:Math.random()*W,y:Math.random()*H,life:60+Math.random()*40,max:100,r:1+Math.random()*2.5});
-  if(shown.sparkles&&Math.random()<0.25) parts.push({type:'sparkle',x:Math.random()*W,y:Math.random()*H,life:30+Math.random()*30,max:60,sz:8+Math.random()*10});
-  if(shown.confetti&&Math.random()<0.4) for(let i=0;i<2;i++) parts.push({type:'confetti',x:Math.random()*W,y:-10,sp:2+Math.random()*2.5,sway:1+Math.random()*2,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.3,w:6+Math.random()*5,h:9+Math.random()*6,color:['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ff9f1c','#06d6a0'][Math.floor(Math.random()*6)]});
+  if(shown.snow&&Math.random()<0.4*FXI) parts.push({type:'snow',x:Math.random()*W,y:-10,r:2+Math.random()*4,sp:1+Math.random()*1.5,sw:Math.random()*1});
+  if(shown.rain&&Math.random()<0.9*FXI) for(let i=0;i<2;i++) parts.push({type:'rain',x:Math.random()*W,y:-10,len:12+Math.random()*16,sp:9+Math.random()*6});
+  if(shown.hearts&&Math.random()<0.08*FXI) parts.push({type:'heart',x:Math.random()*W,y:H+10,sp:1+Math.random()*1.5,sz:14+Math.random()*16,sway:Math.random()*2});
+  if(shown.fireworks){ fwTimer--; if(fwTimer<=0){ spawnFw(W,H); fwTimer=(40+Math.random()*50)/FXI; } }
+  if(shown.bubbles&&Math.random()<0.15*FXI) parts.push({type:'bubble',x:Math.random()*W,y:H+10,r:6+Math.random()*18,sp:1+Math.random()*1.6,sway:Math.random()*1.5});
+  if(shown.leaves&&Math.random()<0.12*FXI) parts.push({type:'leaf',x:Math.random()*W,y:-10,sp:1+Math.random()*1.4,sz:16+Math.random()*14,sway:1+Math.random()*2,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.1,emoji:Math.random()<0.5?'🍂':'🍁'});
+  if(shown.stars&&Math.random()<0.18*FXI) parts.push({type:'star',x:Math.random()*W,y:Math.random()*H,life:60+Math.random()*40,max:100,r:1+Math.random()*2.5});
+  if(shown.sparkles&&Math.random()<0.25*FXI) parts.push({type:'sparkle',x:Math.random()*W,y:Math.random()*H,life:30+Math.random()*30,max:60,sz:8+Math.random()*10});
+  if(shown.confetti&&Math.random()<0.4*FXI) for(let i=0;i<2;i++) parts.push({type:'confetti',x:Math.random()*W,y:-10,sp:2+Math.random()*2.5,sway:1+Math.random()*2,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.3,w:6+Math.random()*5,h:9+Math.random()*6,color:['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ff9f1c','#06d6a0'][Math.floor(Math.random()*6)]});
   for(let i=parts.length-1;i>=0;i--){
     const p=parts[i];
     if(p.type==='snow'){ p.y+=p.sp; p.x+=Math.sin(p.y/40)*p.sw; fxx.globalAlpha=0.85; fxx.fillStyle='#fff'; fxx.beginPath(); fxx.arc(p.x,p.y,p.r,0,7); fxx.fill(); if(p.y>H+10) parts.splice(i,1); }
@@ -1075,13 +1086,14 @@ function fmtMB(bytes){
 
 /* בניית קובץ ה-HTML העצמאי */
 function buildStandaloneHTML(opts){
-  // opts: { title, images:[dataURL], music:[{name,dataURL}], captions:[str], transitions:[str], effects:[str] }
+  // opts: { title, images:[dataURL], music:[{name,dataURL}], captions:[str], transitions:[str], effects:[str], intensity:number }
   const data = {
     images: opts.images,
     music: opts.music.map(m => m.dataURL),
     captions: opts.captions,
     transitions: opts.transitions.length ? opts.transitions : ['fade'],
-    effects: opts.effects
+    effects: opts.effects,
+    intensity: opts.intensity || 0.7
   };
   const json = JSON.stringify(data);
   const safeTitle = (opts.title || 'מצגת').replace(/</g, '').replace(/>/g, '');
@@ -1176,7 +1188,7 @@ async function exportMontage(){
     // 6. בניית הקובץ והורדה
     if (btn) btn.textContent = '⏳ יוצר קובץ...';
     const title = (document.getElementById('mon-title') && document.getElementById('mon-title').value.trim()) || 'מצגת';
-    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects });
+    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects, intensity: fxIntensity });
     const fname = (title.replace(/[\\/:*?"<>|]/g, '') || 'מצגת') + '.html';
     downloadHTMLFile(html, fname);
 
