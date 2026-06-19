@@ -44,6 +44,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .monwrap{position:fixed; inset:0; background:#000; z-index:3;}
 .monwrap img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0; transition:opacity 1.8s ease, transform 1.8s ease;}
 .monwrap img.vis{opacity:1;}
+.monwrap img.prev{opacity:1;}
 /* מעבר החלקה */
 .monwrap.t-slide img{transform:translateX(8%);}
 .monwrap.t-slide img.vis{transform:translateX(0);}
@@ -64,14 +65,15 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .monwrap.motion img.vis{animation:kenburns 7s ease-out forwards;}
 .trans-btn.on, .motion-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
 .moncap{position:fixed; bottom:42px; left:0; right:0; text-align:center; z-index:4; font-family:'Secular One'; font-size:clamp(28px,4vw,52px); color:var(--gold); text-shadow:0 2px 14px rgba(0,0,0,.9); transition:opacity .7s ease; opacity:0;}
-#mon-end{position:fixed; inset:0; z-index:7; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8vw; opacity:0; transition:opacity 1.2s ease; pointer-events:none; overflow:hidden; background:linear-gradient(-45deg, #ff6b6b, #f7b733, #4ecdc4, #845ec2, #ff6b9d); background-size:400% 400%; animation:endGradient 12s ease infinite;}
+#mon-end{position:fixed; inset:0; z-index:7; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:6vw; opacity:0; transition:opacity 1.2s ease; pointer-events:none; overflow:hidden; background:linear-gradient(-45deg, #ff5e62, #ff9966, #ffd200, #36d1dc, #5b86e5, #c471ed, #ff5e9c); background-size:400% 400%; animation:endGradient 10s ease infinite;}
 #mon-end.vis{opacity:1;}
 @keyframes endGradient{0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;}}
-#mon-end .end-title{font-family:'Secular One'; font-size:clamp(36px,6.5vw,80px); color:#fff; text-shadow:0 3px 24px rgba(0,0,0,.45); margin-bottom:24px; line-height:1.2; opacity:0; transform:translateY(28px);}
-#mon-end.vis .end-title{animation:endRise .9s cubic-bezier(.22,1,.36,1) .35s forwards;}
-#mon-end .end-text{font-family:'Heebo'; font-weight:700; font-size:clamp(18px,3vw,34px); color:#fff; text-shadow:0 2px 16px rgba(0,0,0,.4); line-height:1.5; max-width:900px; white-space:pre-wrap; opacity:0; transform:translateY(24px);}
-#mon-end.vis .end-text{animation:endRise .9s cubic-bezier(.22,1,.36,1) .75s forwards;}
-@keyframes endRise{to{opacity:1; transform:translateY(0);}}
+#mon-end .end-title{font-family:'Secular One'; font-size:clamp(48px,9vw,120px); color:#fff; text-shadow:0 0 30px rgba(255,255,255,.5), 0 4px 20px rgba(0,0,0,.55); margin-bottom:28px; line-height:1.1; opacity:0; transform:translateY(34px) scale(.92);}
+#mon-end.vis .end-title{animation:endRise 1s cubic-bezier(.22,1,.36,1) .35s forwards;}
+#mon-end .end-text{font-family:'Heebo'; font-weight:900; font-size:clamp(22px,4vw,46px); color:#fff; text-shadow:0 0 20px rgba(255,255,255,.4), 0 3px 16px rgba(0,0,0,.5); line-height:1.5; max-width:1000px; white-space:pre-wrap; opacity:0; transform:translateY(28px);}
+#mon-end.vis .end-text{animation:endRise 1s cubic-bezier(.22,1,.36,1) .8s forwards;}
+@keyframes endRise{to{opacity:1; transform:translateY(0) scale(1);}}
+#mon-end canvas{position:absolute; inset:0; z-index:-1; pointer-events:none;}
 #mon-progress{position:fixed; bottom:0; left:0; right:0; height:14px; background:rgba(0,0,0,.55); z-index:5;}
 #mon-progress i{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #ffe9a8); transition:width .5s linear; box-shadow:0 0 12px var(--gold);}
 #mon-controls{position:fixed; top:16px; right:16px; z-index:8; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
@@ -136,7 +138,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
   <div class="monwrap" id="monwrap"></div>
   <canvas id="fx-canvas" style="position:fixed; inset:0; z-index:5; pointer-events:none;"></canvas>
   <div class="moncap" id="moncap"></div>
-  <div id="mon-end"><div class="end-title" id="mon-end-title"></div><div class="end-text" id="mon-end-text"></div></div>
+  <div id="mon-end"><canvas id="mon-end-fw"></canvas><div class="end-title" id="mon-end-title"></div><div class="end-text" id="mon-end-text"></div></div>
   <div id="mon-progress"><i id="mon-progress-fill"></i></div>
   <div id="mon-controls">
     <button onclick="toggleMontageMusic()" id="mon-music">🔊 מוזיקה</button>
@@ -677,15 +679,20 @@ function showSlide(){
   cur.src = order[monIdx];
   // התמונה הראשונה בכלל — מופיעה מיד בלי דהייה (כדי שלא יהיה מסך שחור בהתחלה)
   const isVeryFirst = (monIdx === 0 && transCycle === 1);
+  // התמונה החדשה למעלה (z-index גבוה) ודוהית פנימה; הישנה נשארת אטומה מתחתיה
+  cur.style.zIndex = '2';
+  prev.style.zIndex = '1';
   if (isVeryFirst){
     cur.style.transition = 'none';
     cur.classList.add('vis');
-    // החזרת הדהייה לתמונות הבאות
     requestAnimationFrame(() => { requestAnimationFrame(() => { cur.style.transition = ''; }); });
   } else {
     cur.classList.add('vis');
   }
-  prev.classList.remove('vis');
+  // הישנה לא נעלמת מיד — היא נשארת מתחת עד שהחדשה כיסתה אותה (מונע הבזק שחור)
+  // אחרי שהדהייה הסתיימה, מורידים את הישנה
+  const prevToHide = prev;
+  setTimeout(() => { prevToHide.classList.remove('vis'); }, 1800);
   monFlip = !monFlip;
   monIdx++;
   if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
@@ -702,10 +709,56 @@ function showMonEnd(){
   const cap = $('moncap'); if (cap) cap.style.opacity = '0';
   capIdx = -1; // איפוס כדי שהכתובית תתחיל נכון בסבב הבא
   el.classList.add('vis');
+  startEndFireworks();
 }
 function hideMonEnd(){
   const el = $('mon-end');
   if (el) el.classList.remove('vis');
+  stopEndFireworks();
+}
+
+/* זיקוקים על שקופית הסיום */
+let endFwRAF = null, endFwParticles = [], endFwTimer = 0;
+function startEndFireworks(){
+  const cv = $('mon-end-fw');
+  if (!cv) return;
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  const ctx = cv.getContext('2d');
+  endFwParticles = [];
+  endFwTimer = 0;
+  function spawn(){
+    const cx = cv.width * (0.2 + Math.random() * 0.6);
+    const cy = cv.height * (0.15 + Math.random() * 0.4);
+    const hue = Math.floor(Math.random() * 360);
+    const n = 36 + Math.floor(Math.random() * 24);
+    for (let i = 0; i < n; i++){
+      const ang = (Math.PI * 2 * i) / n;
+      const sp = 2 + Math.random() * 4;
+      endFwParticles.push({ x: cx, y: cy, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 60 + Math.random() * 30, max: 90, color: 'hsl(' + hue + ',100%,' + (55 + Math.random() * 20) + '%)' });
+    }
+  }
+  function loop(){
+    endFwRAF = requestAnimationFrame(loop);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    endFwTimer--;
+    if (endFwTimer <= 0){ spawn(); endFwTimer = 35 + Math.random() * 35; }
+    for (let i = endFwParticles.length - 1; i >= 0; i--){
+      const p = endFwParticles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.04; p.vx *= 0.99; p.vy *= 0.99; p.life--;
+      if (p.life <= 0){ endFwParticles.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.max(0, p.life / p.max);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  loop();
+}
+function stopEndFireworks(){
+  if (endFwRAF){ cancelAnimationFrame(endFwRAF); endFwRAF = null; }
+  endFwParticles = [];
+  const cv = $('mon-end-fw');
+  if (cv){ const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, cv.width, cv.height); }
 }
 function shuffle(arr){
   for (let i = arr.length - 1; i > 0; i--){
