@@ -64,10 +64,14 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .monwrap.motion img.vis{animation:kenburns 7s ease-out forwards;}
 .trans-btn.on, .motion-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
 .moncap{position:fixed; bottom:42px; left:0; right:0; text-align:center; z-index:4; font-family:'Secular One'; font-size:clamp(28px,4vw,52px); color:var(--gold); text-shadow:0 2px 14px rgba(0,0,0,.9); transition:opacity .7s ease; opacity:0;}
-#mon-end{position:fixed; inset:0; z-index:7; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8vw; background:radial-gradient(1200px 700px at 50% 30%, #16223f 0%, #0a1020 55%, #05080f 100%); opacity:0; transition:opacity 1.2s ease; pointer-events:none;}
+#mon-end{position:fixed; inset:0; z-index:7; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8vw; opacity:0; transition:opacity 1.2s ease; pointer-events:none; overflow:hidden; background:linear-gradient(-45deg, #ff6b6b, #f7b733, #4ecdc4, #845ec2, #ff6b9d); background-size:400% 400%; animation:endGradient 12s ease infinite;}
 #mon-end.vis{opacity:1;}
-#mon-end .end-title{font-family:'Secular One'; font-size:clamp(34px,6vw,72px); color:var(--gold); text-shadow:0 2px 20px rgba(0,0,0,.7); margin-bottom:24px; line-height:1.2;}
-#mon-end .end-text{font-family:'Heebo'; font-weight:700; font-size:clamp(18px,3vw,32px); color:var(--ink); line-height:1.5; max-width:900px; white-space:pre-wrap;}
+@keyframes endGradient{0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;}}
+#mon-end .end-title{font-family:'Secular One'; font-size:clamp(36px,6.5vw,80px); color:#fff; text-shadow:0 3px 24px rgba(0,0,0,.45); margin-bottom:24px; line-height:1.2; opacity:0; transform:translateY(28px);}
+#mon-end.vis .end-title{animation:endRise .9s cubic-bezier(.22,1,.36,1) .35s forwards;}
+#mon-end .end-text{font-family:'Heebo'; font-weight:700; font-size:clamp(18px,3vw,34px); color:#fff; text-shadow:0 2px 16px rgba(0,0,0,.4); line-height:1.5; max-width:900px; white-space:pre-wrap; opacity:0; transform:translateY(24px);}
+#mon-end.vis .end-text{animation:endRise .9s cubic-bezier(.22,1,.36,1) .75s forwards;}
+@keyframes endRise{to{opacity:1; transform:translateY(0);}}
 #mon-progress{position:fixed; bottom:0; left:0; right:0; height:14px; background:rgba(0,0,0,.55); z-index:5;}
 #mon-progress i{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #ffe9a8); transition:width .5s linear; box-shadow:0 0 12px var(--gold);}
 #mon-controls{position:fixed; top:16px; right:16px; z-index:8; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
@@ -671,7 +675,17 @@ function showSlide(){
   setTransitionClass(t);
   const cur = monFlip ? monImgB : monImgA, prev = monFlip ? monImgA : monImgB;
   cur.src = order[monIdx];
-  cur.classList.add('vis'); prev.classList.remove('vis');
+  // התמונה הראשונה בכלל — מופיעה מיד בלי דהייה (כדי שלא יהיה מסך שחור בהתחלה)
+  const isVeryFirst = (monIdx === 0 && transCycle === 1);
+  if (isVeryFirst){
+    cur.style.transition = 'none';
+    cur.classList.add('vis');
+    // החזרת הדהייה לתמונות הבאות
+    requestAnimationFrame(() => { requestAnimationFrame(() => { cur.style.transition = ''; }); });
+  } else {
+    cur.classList.add('vis');
+  }
+  prev.classList.remove('vis');
   monFlip = !monFlip;
   monIdx++;
   if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
