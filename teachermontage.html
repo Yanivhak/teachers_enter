@@ -680,17 +680,9 @@ function monStep(){
   transCycle++;
   setTransitionClass(t);
   const cur = monFlip ? monImgB : monImgA, prev = monFlip ? monImgA : monImgB;
-  const thisSrc = order[monIdx];
-  // טוענים ומפענחים את התמונה לפני שמציגים אותה (מונע פריים שחור מ-ObjectURL שלא פוענח)
-  cur.src = thisSrc;
-  const reveal = () => { cur.classList.add('vis'); prev.classList.remove('vis'); };
-  if (cur.decode){
-    cur.decode().then(reveal).catch(reveal);
-  } else if (!cur.complete){
-    cur.onload = reveal; cur.onerror = reveal;
-  } else {
-    reveal();
-  }
+  // החלפה סינכרונית מקורית (בדיוק כמו הגרסה שעבדה, בלי decode/async)
+  cur.src = order[monIdx];
+  cur.classList.add('vis'); prev.classList.remove('vis');
   monFlip = !monFlip;
   monIdx++;
   if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
