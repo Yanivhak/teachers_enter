@@ -93,7 +93,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">v47</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">v48</div>
   <h1>🎬 מצגת תמונות</h1>
   <p class="sub">בחרו תמונות ומוזיקה, הוסיפו כיתובים ואפקטים, ולחצו להתחיל. בסיום אפשר לשמור את המצגת כקובץ או כסרטון. הכול נשאר אצלכם — שום דבר לא נשלח לאינטרנט.</p>
 
@@ -148,6 +148,8 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
   <div id="mon-controls">
     <button onclick="toggleMontageMusic()" id="mon-music">🔊 מוזיקה</button>
     <button onclick="togglePause()" id="mon-pause">⏸️ עצירה</button>
+    <button onclick="skipOneSlide()" id="mon-skip" title="דילוג לתמונה הבאה">⏩ תמונה הבאה</button>
+    <button onclick="cycleSpeed()" id="mon-speed" title="מהירות ריצה: רגיל ← פי 2 ← פי 5 ← רגיל">⚡ מהירות: רגיל</button>
     <button onclick="openFxPanel()" id="mon-fx">✨ אפקטים</button>
     <button onclick="finishToLast()">⏭️ סיום</button>
     <button onclick="backToSetup()">✏️ חזרה לעריכה</button>
@@ -746,7 +748,9 @@ function startShow(){
 
   monIdx = 0;
   paused = false;
+  monSpeed = 1;
   $('mon-pause').textContent = '⏸️ עצירה';
+  if ($('mon-speed')) $('mon-speed').textContent = '⚡ מהירות: רגיל';
 
   // מציג תמונה אחת (לפי monIdx) ומתזמן את הצעד הבא
   showSlide();
@@ -756,6 +760,8 @@ function startShow(){
 let monIdx = 0;
 const MON_SLIDE_MS = 4500;
 const MON_END_MS = 6500;
+let monSpeed = 1;                 // מכפיל מהירות: 1, 2, או 5
+function curSlideMs(){ return Math.round(MON_SLIDE_MS / monSpeed); }
 
 function showSlide(){
   if (paused) return;
@@ -807,7 +813,7 @@ function showSlide(){
   monIdx++;
   if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
 
-  monTimer = setTimeout(showSlide, MON_SLIDE_MS);
+  monTimer = setTimeout(showSlide, curSlideMs());
 }
 
 function showMonEnd(){
@@ -905,6 +911,34 @@ function togglePause(){
     if (audio && !monMusicMuted){ audio.play().catch(()=>{}); }
     $('mon-pause').textContent = '⏸️ עצירה';
     showSlide(); // ממשיך מהמקום שבו עצר
+  }
+}
+
+/* דילוג ידני: מעבר מיידי לתמונה הבאה */
+function skipOneSlide(){
+  // אם באמצע שקופית סיום — לא עושים כלום
+  if ($('mon-end') && $('mon-end').classList.contains('vis')) return;
+  if (monTimer){ clearTimeout(monTimer); monTimer = null; }
+  // אם היה במצב עצירה — משאירים עצור אבל מקדמים תמונה אחת
+  const wasPaused = paused;
+  paused = false;
+  showSlide();         // מציג את התמונה הבאה ומתזמן את הבאה אחריה
+  if (wasPaused){
+    // חוזרים למצב עצירה אחרי שהוצגה התמונה
+    if (monTimer){ clearTimeout(monTimer); monTimer = null; }
+    paused = true;
+  }
+}
+
+/* מהירות ריצה מחזורית: רגיל ← פי 2 ← פי 5 ← רגיל */
+function cycleSpeed(){
+  monSpeed = (monSpeed === 1) ? 2 : (monSpeed === 2) ? 5 : 1;
+  const label = (monSpeed === 1) ? 'רגיל' : 'פי ' + monSpeed;
+  $('mon-speed').textContent = '⚡ מהירות: ' + label;
+  // אם רץ כרגע — מחילים את המהירות החדשה מיד (מתזמנים מחדש)
+  if (!paused && monTimer){
+    clearTimeout(monTimer);
+    monTimer = setTimeout(showSlide, curSlideMs());
   }
 }
 
