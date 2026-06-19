@@ -110,7 +110,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v52</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v53</div>
   <h1>🎬 מצגת תמונות</h1>
 
   <!-- שורת התחברות -->
@@ -643,7 +643,7 @@ function openCapPanel(){
 
 /* מציג בנק משפטים מתקפל (כללי — לכיתוב או לסיום) בתוך אלמנט נתון.
    kind: 'captions' או 'endings'. onPick: מה לעשות בלחיצה על משפט. */
-function renderBank(kind, wrapId, onPick){
+function renderBank(kind, wrapId, onPick, targets){
   const wrap = $(wrapId);
   if (!wrap) return;
   wrap.innerHTML = '';
@@ -693,12 +693,29 @@ function renderBank(kind, wrapId, onPick){
     const row = document.createElement('div'); row.className = 'item';
     const txt = document.createElement('span');
     txt.textContent = s.text;
-    txt.style.cssText = 'cursor:pointer; flex:1;';
-    txt.title = 'לחיצה לשימוש';
-    txt.onclick = () => onPick(s.text);
+    txt.style.flex = '1';
+    if (targets && targets.length){
+      // לכל יעד כפתור משלו (כותרת / טקסט) — הטקסט עצמו לא לחיץ
+      txt.style.cursor = 'default';
+      row.appendChild(txt);
+      targets.forEach(tg => {
+        const b = document.createElement('button');
+        b.className = 'x';
+        b.textContent = tg.label;
+        b.title = tg.title || '';
+        b.style.cssText = 'width:auto; height:auto; padding:3px 9px; border-radius:10px; font-size:12px; color:var(--gold); border-color:rgba(255,209,102,.5);';
+        b.onclick = () => tg.fill(s.text);
+        row.appendChild(b);
+      });
+    } else {
+      txt.style.cursor = 'pointer';
+      txt.title = 'לחיצה לשימוש';
+      txt.onclick = () => onPick(s.text);
+      row.appendChild(txt);
+    }
     const del = document.createElement('button'); del.className = 'x'; del.textContent = '🗑️'; del.title = 'מחיקה מהבנק';
-    del.onclick = () => { deleteFromBank(kind, s.key, (ok) => { if (ok) renderBank(kind, wrapId, onPick); }); };
-    row.appendChild(txt); row.appendChild(del);
+    del.onclick = () => { deleteFromBank(kind, s.key, (ok) => { if (ok) renderBank(kind, wrapId, onPick, targets); }); };
+    row.appendChild(del);
     listEl.appendChild(row);
   });
   body.appendChild(listEl);
@@ -930,12 +947,10 @@ function openEndPanel(){
 
 /* בנק משפטי הסיום — לחיצה ממלאת את הכותרת אם ריקה, אחרת את הטקסט */
 function renderEndingBank(){
-  renderBank('endings', 'end-bank-wrap', (text) => {
-    const t = window._endPickTargets;
-    if (!t) return;
-    if (!t.inp1.value.trim()){ t.inp1.value = text; }
-    else { t.inp2.value = (t.inp2.value.trim() ? t.inp2.value.trim() + '\n' : '') + text; }
-  });
+  renderBank('endings', 'end-bank-wrap', null, [
+    { label: '→ כותרת', title: 'הוספה לכותרת', fill: (text) => { const t = window._endPickTargets; if (t) t.inp1.value = text; } },
+    { label: '→ טקסט', title: 'הוספה לטקסט', fill: (text) => { const t = window._endPickTargets; if (!t) return; t.inp2.value = (t.inp2.value.trim() ? t.inp2.value.trim() + '\n' : '') + text; } }
+  ]);
 }
 function updateEndBtn(){
   const btn = $('end-btn');
