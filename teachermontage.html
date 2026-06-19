@@ -93,7 +93,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">v46</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">v47</div>
   <h1>🎬 מצגת תמונות</h1>
   <p class="sub">בחרו תמונות ומוזיקה, הוסיפו כיתובים ואפקטים, ולחצו להתחיל. בסיום אפשר לשמור את המצגת כקובץ או כסרטון. הכול נשאר אצלכם — שום דבר לא נשלח לאינטרנט.</p>
 
@@ -578,7 +578,7 @@ function openEndPanel(){
   const box = openModal('שקופית סיום');
   const sub = document.createElement('div');
   sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
-  sub.textContent = 'הוסיפו מסך סיום שיופיע בסוף המצגת (ובסרטון). אפשר למלא כותרת, טקסט, או שניהם. אם הכול ריק — לא תופיע שקופית סיום.';
+  sub.textContent = 'הוסיפו מסך סיום שיופיע בסוף המצגת (ובסרטון). אפשר למלא כותרת, טקסט, או שניהם. אם הכול ריק — לא תופיע שקופית סיום. אפשר להוסיף אימוג\'י 🎉❤️ (במחשב: Ctrl+Cmd+רווח ב-Mac, או ⊞+נקודה ב-Windows).';
   box.appendChild(sub);
 
   const lbl1 = document.createElement('div');
@@ -614,21 +614,20 @@ function openEndPanel(){
     { val: 'photo', label: '🖼️ תמונה מהמצגת' }
   ];
   let chosenBg = endBg;
-  const bgBtns = [];
   bgOptions.forEach(opt => {
     const b = document.createElement('button');
     b.className = 'btn ghost';
     b.textContent = opt.label;
+    b.dataset.bg = opt.val;
     b.style.cssText = 'flex:1; font-size:15px; padding:10px;';
-    const paint = () => {
-      bgBtns.forEach(x => { x.btn.style.background = ''; x.btn.style.color = ''; });
-      if (chosenBg === opt.val){ b.style.background = 'var(--gold)'; b.style.color = '#1a2342'; }
+    if (chosenBg === opt.val){ b.style.background = 'var(--gold)'; b.style.color = '#1a2342'; }
+    b.onclick = () => {
+      chosenBg = opt.val;
+      [...bgRow.children].forEach(c => { c.style.background = ''; c.style.color = ''; });
+      b.style.background = 'var(--gold)'; b.style.color = '#1a2342';
     };
-    b.onclick = () => { chosenBg = opt.val; bgBtns.forEach(x => x.paint()); };
-    bgBtns.push({ btn: b, paint });
     bgRow.appendChild(b);
   });
-  bgBtns.forEach(x => x.paint());
   box.appendChild(bgRow);
 
   const close = document.createElement('button');
