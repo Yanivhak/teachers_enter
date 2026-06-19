@@ -38,16 +38,13 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .list .item{display:flex; align-items:center; gap:10px; justify-content:center;}
 .list .x{background:none; border:1px solid rgba(255,255,255,.3); color:var(--coral); border-radius:50%; width:24px; height:24px; cursor:pointer; font-size:13px; line-height:1;}
 .note{font-size:13px; color:var(--ink-dim); margin-top:14px; max-width:420px;}
-.capbox{margin:14px 0; display:none;}
-.capbox.on{display:block;}
-.capbox input{font-family:'Heebo'; font-size:17px; padding:12px 16px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); width:min(420px,86vw); text-align:center;}
-.capbox input:focus{border-color:var(--gold); outline:none;}
 
 /* מסך המצגת */
 #show{padding:0;}
 .monwrap{position:fixed; inset:0; background:#000; z-index:3;}
 .monwrap img{position:absolute; inset:0; width:100%; height:100%; object-fit:contain; opacity:0; transition:opacity 1.8s ease, transform 1.8s ease;}
 .monwrap img.vis{opacity:1;}
+.monwrap img.prev{opacity:1;}
 /* מעבר החלקה */
 .monwrap.t-slide img{transform:translateX(8%);}
 .monwrap.t-slide img.vis{transform:translateX(0);}
@@ -68,9 +65,18 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .monwrap.motion img.vis{animation:kenburns 7s ease-out forwards;}
 .trans-btn.on, .motion-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
 .moncap{position:fixed; bottom:42px; left:0; right:0; text-align:center; z-index:4; font-family:'Secular One'; font-size:clamp(28px,4vw,52px); color:var(--gold); text-shadow:0 2px 14px rgba(0,0,0,.9); transition:opacity .7s ease; opacity:0;}
+#mon-end{position:fixed; inset:0; z-index:7; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:6vw; opacity:0; transition:opacity 1.2s ease; pointer-events:none; overflow:hidden; background:linear-gradient(-45deg, #ff5e62, #ff9966, #ffd200, #36d1dc, #5b86e5, #c471ed, #ff5e9c); background-size:400% 400%; animation:endGradient 10s ease infinite;}
+#mon-end.vis{opacity:1;}
+@keyframes endGradient{0%{background-position:0% 50%;} 50%{background-position:100% 50%;} 100%{background-position:0% 50%;}}
+#mon-end .end-title{font-family:'Secular One'; font-size:clamp(48px,9vw,120px); color:#fff; text-shadow:0 0 30px rgba(255,255,255,.5), 0 4px 20px rgba(0,0,0,.55); margin-bottom:28px; line-height:1.1; opacity:0; transform:translateY(34px) scale(.92);}
+#mon-end.vis .end-title{animation:endRise 1s cubic-bezier(.22,1,.36,1) .35s forwards;}
+#mon-end .end-text{font-family:'Heebo'; font-weight:900; font-size:clamp(22px,4vw,46px); color:#fff; text-shadow:0 0 20px rgba(255,255,255,.4), 0 3px 16px rgba(0,0,0,.5); line-height:1.5; max-width:1000px; white-space:pre-wrap; opacity:0; transform:translateY(28px);}
+#mon-end.vis .end-text{animation:endRise 1s cubic-bezier(.22,1,.36,1) .8s forwards;}
+@keyframes endRise{to{opacity:1; transform:translateY(0) scale(1);}}
+#mon-end canvas{position:absolute; inset:0; z-index:-1; pointer-events:none;}
 #mon-progress{position:fixed; bottom:0; left:0; right:0; height:14px; background:rgba(0,0,0,.55); z-index:5;}
 #mon-progress i{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #ffe9a8); transition:width .5s linear; box-shadow:0 0 12px var(--gold);}
-#mon-controls{position:fixed; top:16px; right:16px; z-index:6; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
+#mon-controls{position:fixed; top:16px; right:16px; z-index:8; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
 #mon-controls button{font-family:'Heebo'; font-size:15px; font-weight:700; color:var(--ink); background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:9px 16px; cursor:pointer;}
 #mon-controls button:active{transform:translateY(1px);}
 .fx-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
@@ -84,49 +90,45 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
   <h1>🎬 מצגת תמונות</h1>
-  <p class="sub">בחרו תמונות ומוזיקה מהמחשב, ולחצו להתחיל. הכול נשאר על המחשב הזה ולא עולה לאינטרנט.</p>
+  <p class="sub">בחרו תמונות ומוזיקה, הוסיפו כיתובים ואפקטים, ולחצו להתחיל. בסיום אפשר לשמור את המצגת כקובץ או כסרטון. הכול נשאר אצלכם — שום דבר לא נשלח לאינטרנט.</p>
 
   <div class="row">
-    <button class="btn ghost" id="pics-btn" onclick="$('pics-input').click()">📷 בחירת תמונות</button>
-    <button class="btn ghost" id="music-btn" onclick="$('music-input').click()">🎵 בחירת מוזיקה</button>
-    <button class="btn ghost" id="music-gallery-btn" onclick="openMusicGallery()">🎼 מוזיקה מהגלריה</button>
-    <button class="btn ghost" id="cap-btn" onclick="toggleCap()">✏️ הוספת כיתוב</button>
-    <span class="info-i" onclick="showInfo(event, 'התמונות והמוזיקה נטענות מהמחשב ולא נשמרות, אז צריך לבחור אותן מחדש בכל פעם. בזמן ההצגה אפשר לעצור, להשתיק מוזיקה, ולשנות אפקטים — הכול תוך כדי.')">i</span>
+    <button class="btn ghost" id="pics-btn" onclick="$('pics-input').click()">📷 תמונות</button>
+    <button class="btn ghost" id="music-btn" onclick="openMusicPanel()">🎵 מוזיקה</button>
+    <button class="btn ghost" id="cap-btn" onclick="openCapPanel()">✏️ כיתוב</button>
+    <button class="btn ghost" id="fx-btn" onclick="openFxPanel()">✨ אפקטים ומעברים</button>
+    <button class="btn ghost" id="end-btn" onclick="openEndPanel()">🏁 שקופית סיום</button>
+    <span class="info-i" onclick="showInfo(event, 'התמונות והמוזיקה נשמרות כל עוד הדף פתוח — אפשר להציג, לחזור לעריכה ולשנות. הן אינן נשמרות לצמיתות (נמחקות כשסוגרים את הדף), כדי שהקבצים שלכם לא ייחשפו לרשת. את המצגת המוגמרת אפשר לשמור על המחשב — כקובץ, או כסרטון (בטא) — בכפתורים שבתחתית.')">i</span>
   </div>
 
   <input type="file" id="pics-input" accept="image/*" multiple style="display:none" onchange="picsChosen(this.files)">
   <input type="file" id="music-input" accept="audio/*" multiple style="display:none" onchange="musicChosen(this.files)">
 
-  <div class="capbox" id="capbox">
-    <div style="font-size:13px; color:var(--ink-dim); margin-bottom:8px;">כתבו שורת כיתוב. אפשר להוסיף עוד שורות עם הכפתור + <span class="info-i" onclick="showInfo(event, 'אפשר להוסיף כמה שורות כיתוב. במצגת הן יתחלפו ביניהן באקראי בדהייה רכה, כל כמה שניות. אם תכתבו שורה אחת בלבד, היא תופיע קבוע.')">i</span></div>
-    <div id="cap-lines"></div>
-    <button class="btn ghost sm" onclick="addCapLine()" style="margin-top:8px;">➕ הוספת שורת כיתוב</button>
+  <div id="music-summary-wrap" style="display:none; margin-top:10px;">
+    <div style="font-size:13px; color:var(--ink-dim); margin-bottom:4px; text-align:center;">🎵 מוזיקה שנבחרה:</div>
+    <div class="list" id="music-list"></div>
   </div>
-
-  <div class="row" style="margin:16px 0;">
-    <button class="btn ghost" onclick="openFxPanel()">✨ אפקטים ומעברים</button>
+  <div id="cap-summary-wrap" style="display:none; margin-top:10px;">
+    <div style="font-size:13px; color:var(--ink-dim); margin-bottom:4px; text-align:center;">✏️ כיתובים שנוספו:</div>
+    <div class="list" id="cap-summary"></div>
   </div>
-
-  <div class="list" id="music-list"></div>
 
   <div class="row" style="margin-top:18px;">
     <button class="btn" id="start-btn" onclick="startShow()" disabled>▶️ התחלת המצגת</button>
   </div>
   <p class="note" id="start-hint" style="color:var(--gold);">כדי להתחיל, בחרו קודם תמונות (חובה). מוזיקה היא רשות.</p>
 
-  <div class="row" style="margin-top:10px;">
-    <button class="btn ghost" id="export-btn" onclick="exportMontage()" style="width:100%;">💾 הורדת המצגת למחשב</button>
+  <div class="row" style="margin-top:10px; align-items:center; justify-content:center;">
+    <button class="btn ghost" id="export-btn" onclick="exportMontage()" style="flex:1;">💾 הורדת המצגת למחשב</button>
+    <span class="info-i" onclick="showInfo(event, 'שומר קובץ אחד שמכיל את כל התמונות, המוזיקה והאפקטים — אפשר לפתוח אותו בכל מחשב, גם בלי אינטרנט. מומלץ 1–3 שירים ולא יותר מדי תמונות, כדי שהקובץ יישאר קל להעברה. טיפ: שיר אחד באורך 3-4 דקות מספיק — הוא יתנגן בלולאה.')">i</span>
   </div>
-  <p class="note">שומר קובץ אחד שמכיל את כל התמונות, המוזיקה והאפקטים — אפשר לפתוח אותו בכל מחשב, גם בלי אינטרנט. מומלץ 1–3 שירים ולא יותר מדי תמונות, כדי שהקובץ יישאר קל להעברה.</p>
 
-  <div class="row" style="margin-top:10px;">
-    <a class="btn ghost" href="montage-video.html" target="_blank" rel="noopener" style="width:100%; text-align:center; text-decoration:none; display:block;">🎬 המרת מצגת לווידאו (בטא)</a>
+  <div class="row" style="margin-top:10px; align-items:center; justify-content:center;">
+    <a class="btn ghost" href="montage-video.html" target="_blank" rel="noopener" style="flex:1; text-align:center; text-decoration:none;">🎬 המרת מצגת לווידאו (בטא)</a>
+    <span class="info-i" onclick="showInfo(event, 'להעלאה ליוטיוב או לאינסטגרם. קודם מורידים את המצגת (הכפתור למעלה), ואז מעלים אותה שם. בגרסת ניסיון — כרגע בלי אפקטים.')">i</span>
   </div>
-  <p class="note">להעלאה ליוטיוב או לאינסטגרם. קודם מורידים את המצגת (הכפתור למעלה), ואז מעלים אותה שם. בגרסת ניסיון — כרגע בלי אפקטים.</p>
 
-  <p class="note">📷 התמונות והשירים נטענים מהמחשב הזה בלבד ואינם עולים לרשת.</p>
-  <p class="note">טיפ: שיר אחד באורך 3-4 דקות מספיק — הוא יתנגן בלולאה. אפשר להוסיף עוד שירים.</p>
-  <div style="margin-top:14px;">
+  <div style="margin-top:16px;">
     <a href="index.html" target="_top" id="main-menu-link" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a>
   </div>
 </div>
@@ -136,6 +138,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
   <div class="monwrap" id="monwrap"></div>
   <canvas id="fx-canvas" style="position:fixed; inset:0; z-index:5; pointer-events:none;"></canvas>
   <div class="moncap" id="moncap"></div>
+  <div id="mon-end"><canvas id="mon-end-fw"></canvas><div class="end-title" id="mon-end-title"></div><div class="end-text" id="mon-end-text"></div></div>
   <div id="mon-progress"><i id="mon-progress-fill"></i></div>
   <div id="mon-controls">
     <button onclick="toggleMontageMusic()" id="mon-music">🔊 מוזיקה</button>
@@ -179,48 +182,92 @@ function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList
 
 /* ---------- בחירת תמונות ---------- */
 let pics = [];
-function picsChosen(files){
+function isHeicFile(f){
+  return /\.(heic|heif)$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
+}
+
+// טוען את ספריית heic2any מהריפו (מקומי), פעם אחת
+let heicLibPromise = null;
+function loadHeicLib(){
+  if (window.heic2any) return Promise.resolve(true);
+  if (heicLibPromise) return heicLibPromise;
+  heicLibPromise = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'heic2any.min.js';   // קובץ מקומי בשורש הריפו
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+  return heicLibPromise;
+}
+
+async function picsChosen(files){
   if (!files || !files.length) return;
-  pics.forEach(u => URL.revokeObjectURL(u));
-  pics = [...files].map(f => URL.createObjectURL(f));
-  $('pics-btn').textContent = '📷 ' + pics.length + ' תמונות ✓ (לחיצה מחליפה)';
+  let fileArr = [...files];
   $('pics-input').value = '';
 
-  // ===== בדיקת אבחון זמנית (לפי הצעת GPT): האם כל תמונה נטענת onload או onerror, וכמה זמן =====
-  (function diagnoseImages(){
-    const fileArr = [...files];
-    let report = [];
-    const status = fileArr.map(() => 'תקועה (לא הגיב)');
-    fileArr.forEach((f, i) => {
-      const t0 = performance.now();
-      const im = new Image();
-      const isHeic = /\.heic$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
-      const tag = (i+1) + '. ' + f.name + (isHeic ? ' [HEIC]' : '');
-      im.onload = () => {
-        const ms = Math.round(performance.now() - t0);
-        status[i] = 'onload (' + ms + 'ms)';
-        console.log(tag + ' → ' + status[i]);
-      };
-      im.onerror = () => {
-        const ms = Math.round(performance.now() - t0);
-        status[i] = '❌ onerror (' + ms + 'ms)';
-        console.log(tag + ' → ' + status[i]);
-      };
-      im.src = pics[i];
-    });
-    // אחרי 8 שניות — מציגים דוח של מה שקרה (כולל תמונות שנתקעו)
-    setTimeout(() => {
-      const lines = fileArr.map((f, i) => {
-        const isHeic = /\.heic$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
-        return (i+1) + '. ' + f.name + (isHeic ? ' [HEIC]' : '') + ' → ' + status[i];
-      });
-      const relevant = lines.filter(l => l.includes('[HEIC]') || l.includes('onerror') || l.includes('תקועה'));
-      const msg = 'בדיקת טעינה (אחרי 8 שניות):\n\n' + (relevant.length ? relevant.join('\n') : 'כל התמונות נטענו בהצלחה.') + '\n\n(פירוט מלא ב-Console / F12)';
-      alert(msg);
-    }, 8000);
-  })();
+  // ===== המרת HEIC ל-JPEG בתחילת השרשרת (כל שאר המערכת עובדת רק עם JPEG) =====
+  const heicCount = fileArr.filter(isHeicFile).length;
+  if (heicCount > 0){
+    showHeicProgress(0, heicCount);
+    const ok = await loadHeicLib();
+    if (ok && window.heic2any){
+      let converted = 0, failed = 0;
+      const out = [];
+      for (const f of fileArr){
+        if (isHeicFile(f)){
+          try {
+            const blob = await window.heic2any({ blob: f, toType: 'image/jpeg', quality: 0.9 });
+            const jpgBlob = Array.isArray(blob) ? blob[0] : blob;
+            // עוטפים כקובץ עם שם חדש (כדי ששאר המערכת תתייחס אליו כ-JPEG)
+            const newName = f.name.replace(/\.(heic|heif)$/i, '.jpg');
+            out.push(new File([jpgBlob], newName, { type: 'image/jpeg' }));
+            converted++;
+          } catch(e){
+            failed++; // אם נכשל — מדלגים על התמונה הזו
+          }
+          showHeicProgress(converted + failed, heicCount);
+        } else {
+          out.push(f);
+        }
+      }
+      fileArr = out;
+      hideHeicProgress();
+      if (failed > 0){
+        alert('הומרו ' + converted + ' תמונות HEIC ל-JPG. ' + failed + ' לא הצליחו להמרה והושמטו.');
+      }
+    } else {
+      // הספרייה לא נטענה — מדלגים על תמונות HEIC כדי שלא יופיעו שחורות
+      hideHeicProgress();
+      fileArr = fileArr.filter(f => !isHeicFile(f));
+      alert('לא ניתן היה להמיר תמונות HEIC (' + heicCount + '), והן הושמטו. ודאו חיבור לאינטרנט או המירו ל-JPG מראש.');
+    }
+  }
 
+  if (!fileArr.length){ refreshStart(); return; }
+
+  pics.forEach(u => URL.revokeObjectURL(u));
+  pics = fileArr.map(f => URL.createObjectURL(f));
+  $('pics-btn').textContent = '📷 ' + pics.length + ' תמונות ✓ (לחיצה מחליפה)';
   refreshStart();
+}
+
+// פס התקדמות פשוט להמרת HEIC
+function showHeicProgress(done, total){
+  let el = $('heic-progress');
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'heic-progress';
+    el.style.cssText = 'position:fixed; inset:0; z-index:50; background:rgba(5,8,15,.85); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#f7f4ec; font-family:Heebo,sans-serif; text-align:center; padding:30px;';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = '<div style="font-family:\'Secular One\'; font-size:26px; color:#ffd166; margin-bottom:14px;">ממיר תמונות...</div>' +
+    '<div style="font-size:17px; margin-bottom:18px;">מכין ' + done + ' מתוך ' + total + ' תמונות מהאייפון (HEIC)</div>' +
+    '<div style="width:280px; max-width:80vw; height:12px; background:rgba(255,255,255,.18); border-radius:8px; overflow:hidden;"><div style="height:100%; width:' + Math.round((done/Math.max(total,1))*100) + '%; background:#2ec4b6; transition:width .3s;"></div></div>';
+}
+function hideHeicProgress(){
+  const el = $('heic-progress');
+  if (el) el.remove();
 }
 
 /* ---------- בחירת מוזיקה ---------- */
@@ -261,7 +308,7 @@ function openMusicGallery(){
     grid.appendChild(row);
   });
   box.appendChild(grid);
-  const close=document.createElement('button'); close.className='btn ghost sm'; close.textContent='✓ סגירה'; close.style.cssText='margin-top:16px; width:100%;';
+  const close=document.createElement('button'); close.className='btn ghost sm'; close.textContent='✓ אישור'; close.style.cssText='margin-top:16px; width:100%;';
   close.onclick=()=>{ stopPreviewAudio(); ov.remove(); };
   box.appendChild(close);
   ov.appendChild(box); document.body.appendChild(ov);
@@ -296,7 +343,89 @@ function removeSong(i){
 }
 function renderMusicList(){
   const box = $('music-list');
-  box.innerHTML = '';
+  if (box){
+    box.innerHTML = '';
+    playlist.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.className = 'item';
+      const txt = document.createElement('span');
+      txt.textContent = '🎵 ' + (i+1) + '. ' + s.name;
+      const x = document.createElement('button');
+      x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השיר';
+      x.onclick = () => removeSong(i);
+      row.appendChild(txt); row.appendChild(x);
+      box.appendChild(row);
+    });
+  }
+  const mb = $('music-btn');
+  if (mb) mb.textContent = playlist.length ? '🎵 מוזיקה (' + playlist.length + ')' : '🎵 מוזיקה';
+  const mw = $('music-summary-wrap');
+  if (mw) mw.style.display = playlist.length ? 'block' : 'none';
+  // אם חלון המוזיקה פתוח — לרענן גם את הרשימה שבתוכו
+  if ($('music-panel-list')) renderMusicPanelList();
+}
+
+/* ---------- חלון משותף (מודאלי) ---------- */
+function openModal(titleText){
+  // סוגר חלון קודם אם קיים
+  const prev = $('mon-modal'); if (prev) prev.remove();
+  const ov = document.createElement('div'); ov.id = 'mon-modal';
+  ov.style.cssText = 'position:fixed; inset:0; z-index:9; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:18px;';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:440px; width:100%; max-height:86vh; overflow:auto; text-align:right;';
+  const h = document.createElement('div');
+  h.style.cssText = "font-family:'Secular One'; font-size:24px; color:var(--gold); margin-bottom:4px;";
+  h.textContent = titleText;
+  box.appendChild(h);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  return box;
+}
+function closeModal(){ const m = $('mon-modal'); if (m) m.remove(); }
+
+/* ---------- חלון מוזיקה ---------- */
+function openMusicPanel(){
+  if ($('mon-modal')){ closeModal(); return; }  // לחיצה שנייה סוגרת
+  const box = openModal('מוזיקה');
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
+  sub.textContent = 'אפשר לבחור מוזיקה מהמחשב או מהגלריה. אפשר להוסיף כמה שירים — הם יתנגנו ברצף.';
+  box.appendChild(sub);
+
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex; gap:8px; flex-wrap:wrap;';
+  const fromPc = document.createElement('button');
+  fromPc.className = 'btn ghost sm'; fromPc.textContent = '📁 מהמחשב';
+  fromPc.onclick = () => $('music-input').click();
+  const fromGal = document.createElement('button');
+  fromGal.className = 'btn ghost sm'; fromGal.textContent = '🎼 מהגלריה';
+  fromGal.onclick = () => openMusicGallery();
+  btns.appendChild(fromPc); btns.appendChild(fromGal);
+  box.appendChild(btns);
+
+  const list = document.createElement('div');
+  list.className = 'list'; list.id = 'music-panel-list'; list.style.marginTop = '14px';
+  box.appendChild(list);
+
+  const close = document.createElement('button');
+  close.className = 'btn'; close.textContent = '✓ אישור'; close.style.cssText += 'margin-top:14px; width:100%;';
+  close.onclick = closeModal;
+  box.appendChild(close);
+
+  renderMusicPanelList();
+}
+function renderMusicPanelList(){
+  const list = $('music-panel-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (!playlist.length){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'font-size:13px; color:var(--ink-dim); text-align:center; padding:6px 0;';
+    empty.textContent = 'עדיין לא נבחרה מוזיקה.';
+    list.appendChild(empty);
+    return;
+  }
   playlist.forEach((s, i) => {
     const row = document.createElement('div');
     row.className = 'item';
@@ -306,35 +435,188 @@ function renderMusicList(){
     x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השיר';
     x.onclick = () => removeSong(i);
     row.appendChild(txt); row.appendChild(x);
-    box.appendChild(row);
+    list.appendChild(row);
   });
-  $('music-btn').textContent = playlist.length ? '🎵 הוספת שיר נוסף' : '🎵 בחירת מוזיקה';
 }
 
-/* ---------- כיתוב ---------- */
-function toggleCap(){
-  $('capbox').classList.toggle('on');
-  if ($('capbox').classList.contains('on')){
-    if (!$('cap-lines').children.length) addCapLine();
-    const first = $('cap-lines').querySelector('input');
-    if (first) first.focus();
-  }
+/* ---------- חלון כיתוב ---------- */
+let captions = [];
+let capEditIdx = -1;   // -1 = הוספת שורה חדשה; אחרת = עריכת שורה קיימת
+function openCapPanel(){
+  if ($('mon-modal')){ closeModal(); return; }
+  capEditIdx = -1;
+  const box = openModal('כיתוב');
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
+  sub.textContent = 'כתבו שורת כיתוב ולחצו ✓ לאישור. אפשר להוסיף כמה שורות שתרצו — הן יתחלפו ביניהן בהצגה. שורה אחת בלבד תופיע קבוע.';
+  box.appendChild(sub);
+
+  const inpRow = document.createElement('div');
+  inpRow.style.cssText = 'display:flex; gap:8px; align-items:stretch;';
+  const inp = document.createElement('input');
+  inp.type = 'text'; inp.id = 'cap-input'; inp.maxLength = 60; inp.placeholder = 'שורת כיתוב';
+  inp.style.cssText = "flex:1; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center;";
+  inp.onkeydown = (e) => { if (e.key === 'Enter'){ e.preventDefault(); addCapLine(); } };
+  const ok = document.createElement('button');
+  ok.id = 'cap-ok'; ok.textContent = '✓'; ok.title = 'אישור השורה';
+  ok.style.cssText = "font-family:'Heebo'; font-weight:800; font-size:20px; border:none; border-radius:12px; padding:0 18px; cursor:pointer; background:var(--gold); color:#1a2342;";
+  ok.onclick = addCapLine;
+  inpRow.appendChild(inp); inpRow.appendChild(ok);
+  box.appendChild(inpRow);
+
+  const hint = document.createElement('div');
+  hint.id = 'cap-feedback';
+  hint.style.cssText = 'font-size:13px; color:var(--teal); margin-top:8px; height:18px; text-align:center; opacity:0; transition:opacity .2s;';
+  box.appendChild(hint);
+
+  const list = document.createElement('div');
+  list.className = 'list'; list.id = 'cap-panel-list'; list.style.marginTop = '8px';
+  box.appendChild(list);
+
+  const close = document.createElement('button');
+  close.className = 'btn'; close.textContent = '✓ אישור'; close.style.cssText += 'margin-top:14px; width:100%;';
+  close.onclick = closeModal;
+  box.appendChild(close);
+
+  renderCapList();
+  inp.focus();
 }
 function addCapLine(){
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center;';
-  const inp = document.createElement('input');
-  inp.type = 'text'; inp.maxLength = 60; inp.placeholder = 'שורת כיתוב';
-  inp.style.cssText = "flex:1; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center;";
-  const del = document.createElement('button');
-  del.className = 'btn ghost sm'; del.textContent = '✕'; del.title = 'הסרת השורה';
-  del.onclick = () => { wrap.remove(); };
-  wrap.appendChild(inp); wrap.appendChild(del);
-  $('cap-lines').appendChild(wrap);
+  const inp = $('cap-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) return;
+  if (capEditIdx >= 0){
+    // עריכת שורה קיימת
+    captions[capEditIdx] = val;
+    capEditIdx = -1;
+    const ok = $('cap-ok'); if (ok){ ok.textContent = '✓'; }
+    showCapFeedback('✓ השורה עודכנה');
+  } else {
+    captions.push(val);
+    showCapFeedback('✓ השורה נוספה');
+  }
+  inp.value = '';
+  inp.focus();
+  renderCapList();
+}
+function removeCaption(i){
+  captions.splice(i, 1);
+  // אם מחקנו את השורה שבעריכה — לאפס
+  if (capEditIdx === i){ capEditIdx = -1; const inp=$('cap-input'); if(inp) inp.value=''; const ok=$('cap-ok'); if(ok) ok.textContent='✓'; }
+  renderCapList();
+}
+function editCaption(i){
+  const inp = $('cap-input');
+  if (!inp) return;
+  inp.value = captions[i];
+  capEditIdx = i;
+  const ok = $('cap-ok'); if (ok){ ok.textContent = '✓'; }
+  inp.focus();
+  showCapFeedback('עריכת השורה — שנו ולחצו ✓');
+}
+function showCapFeedback(text){
+  const fb = $('cap-feedback');
+  if (!fb) return;
+  fb.textContent = text;
+  fb.style.opacity = '1';
+  clearTimeout(fb._t);
+  fb._t = setTimeout(() => { fb.style.opacity = '0'; }, 1800);
+}
+function renderCapList(){
+  // רשימה בתוך החלון
+  const panel = $('cap-panel-list');
+  if (panel){
+    panel.innerHTML = '';
+    if (!captions.length){
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-size:13px; color:var(--ink-dim); text-align:center; padding:6px 0;';
+      empty.textContent = 'עדיין לא נוספו כיתובים.';
+      panel.appendChild(empty);
+    } else {
+      captions.forEach((c, i) => {
+        const row = document.createElement('div'); row.className = 'item';
+        const txt = document.createElement('span'); txt.textContent = '✏️ ' + c;
+        const edit = document.createElement('button'); edit.className = 'x'; edit.textContent = '✎'; edit.title = 'עריכת השורה';
+        edit.style.color = 'var(--gold)';
+        edit.onclick = () => editCaption(i);
+        const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השורה';
+        x.onclick = () => removeCaption(i);
+        row.appendChild(txt); row.appendChild(edit); row.appendChild(x);
+        panel.appendChild(row);
+      });
+    }
+  }
+  // סיכום במסך הראשי
+  const summary = $('cap-summary');
+  if (summary){
+    summary.innerHTML = '';
+    captions.forEach((c, i) => {
+      const row = document.createElement('div'); row.className = 'item';
+      const txt = document.createElement('span'); txt.textContent = '✏️ ' + c;
+      const x = document.createElement('button'); x.className = 'x'; x.textContent = '✕'; x.title = 'הסרת השורה';
+      x.onclick = () => removeCaption(i);
+      row.appendChild(txt); row.appendChild(x);
+      summary.appendChild(row);
+    });
+  }
+  // עדכון טקסט הכפתור הראשי
+  const cb = $('cap-btn');
+  if (cb) cb.textContent = captions.length ? '✏️ כיתוב (' + captions.length + ')' : '✏️ כיתוב';
+  const cw = $('cap-summary-wrap');
+  if (cw) cw.style.display = captions.length ? 'block' : 'none';
 }
 function getCaptions(){
-  return [...$('cap-lines').querySelectorAll('input')].map(i=>i.value.trim()).filter(v=>v);
+  return captions.slice();
 }
+
+/* ---------- שקופית סיום ---------- */
+let endTitle = '', endText = '';
+function openEndPanel(){
+  if ($('mon-modal')){ closeModal(); return; }
+  const box = openModal('שקופית סיום');
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
+  sub.textContent = 'הוסיפו מסך סיום שיופיע בסוף המצגת (ובסרטון). אפשר למלא כותרת, טקסט, או שניהם. אם הכול ריק — לא תופיע שקופית סיום.';
+  box.appendChild(sub);
+
+  const lbl1 = document.createElement('div');
+  lbl1.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:6px;';
+  lbl1.textContent = 'כותרת סיום';
+  box.appendChild(lbl1);
+  const inp1 = document.createElement('input');
+  inp1.type = 'text'; inp1.id = 'end-title-input'; inp1.maxLength = 50; inp1.placeholder = 'למשל: תודה על הדרך המשותפת';
+  inp1.value = endTitle;
+  inp1.style.cssText = "width:100%; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center; margin-bottom:14px;";
+  box.appendChild(inp1);
+
+  const lbl2 = document.createElement('div');
+  lbl2.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:6px;';
+  lbl2.textContent = 'טקסט סיום';
+  box.appendChild(lbl2);
+  const inp2 = document.createElement('textarea');
+  inp2.id = 'end-text-input'; inp2.maxLength = 200; inp2.rows = 3; inp2.placeholder = 'למשל: מאחלים לכולם הצלחה בהמשך הדרך';
+  inp2.value = endText;
+  inp2.style.cssText = "width:100%; font-family:'Heebo'; font-size:16px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center; resize:vertical;";
+  box.appendChild(inp2);
+
+  const close = document.createElement('button');
+  close.className = 'btn'; close.textContent = '✓ אישור'; close.style.cssText += 'margin-top:16px; width:100%;';
+  close.onclick = () => {
+    endTitle = inp1.value.trim();
+    endText = inp2.value.trim();
+    updateEndBtn();
+    closeModal();
+  };
+  box.appendChild(close);
+  inp1.focus();
+}
+function updateEndBtn(){
+  const btn = $('end-btn');
+  if (!btn) return;
+  btn.textContent = (endTitle || endText) ? '🏁 שקופית סיום ✓' : '🏁 שקופית סיום';
+}
+function hasEndSlide(){ return !!(endTitle || endText); }
 
 function refreshStart(){
   $('start-btn').disabled = pics.length === 0;
@@ -355,37 +637,65 @@ function playMusic(){
 }
 
 /* ---------- המצגת ---------- */
-let monIv = null, paused = false, stepFn = null, intervalMs = 4500;
+let monTimer = null, paused = false;
 let monOrder = [], monImgA = null, monImgB = null, monFlip = false, monMusicMuted = false;
-let capList = [], capIdx = 0, capTimer = null;
+let capList = [], capIdx = -1, capTimer = null, capTotalSlides = 0;
 
-function startCaptions(caps){
+function startCaptions(caps, totalSlides){
   capList = caps || [];
-  capIdx = 0;
+  capIdx = -1;
+  capTotalSlides = totalSlides || (pics.length || 1);
   if (capTimer){ clearInterval(capTimer); capTimer = null; }
   const el = $('moncap');
   if (!capList.length){ el.textContent = ''; el.style.opacity = '0'; return; }
-  // שורה ראשונה
-  el.textContent = capList[0];
-  el.style.opacity = '1';
-  if (capList.length === 1) return; // שורה אחת = קבוע
-  // התחלפות בדהייה כל ~6.5 שניות
-  capTimer = setInterval(() => {
-    if (paused) return;
-    el.style.opacity = '0';
-    setTimeout(() => {
-      capIdx = (capIdx + 1) % capList.length;
-      el.textContent = capList[capIdx];
-      el.style.opacity = '1';
-    }, 700);
-  }, 6500);
+  // שורה אחת = קבוע לכל המצגת
+  if (capList.length === 1){ el.textContent = capList[0]; el.style.opacity = '1'; return; }
+  // כמה שורות — מתחלקות לפי מקטעים של תמונות (מתעדכן ב-updateCaptionForSlide)
+}
+
+// מחשב איזו כתובית פעילה לפי מספר התמונה (חלוקה שווה למקטעים)
+function captionIndexForSlide(slideNum, totalSlides, numCaps){
+  if (numCaps <= 1) return 0;
+  // כל כתובית מקבלת מקטע שווה מהתמונות
+  const perCap = totalSlides / numCaps;
+  let i = Math.floor(slideNum / perCap);
+  if (i >= numCaps) i = numCaps - 1;
+  return i;
+}
+
+// מעדכן את הכתובית לפי התמונה הנוכחית (נקרא מ-step)
+function updateCaptionForSlide(slideNum){
+  const el = $('moncap');
+  if (!el) return;
+  if (capList.length === 1){
+    // כתובית אחת קבועה — לוודא שהיא מוצגת (למשל אחרי שקופית סיום שהסתירה אותה)
+    if (el.style.opacity !== '1'){ el.textContent = capList[0]; el.style.opacity = '1'; }
+    return;
+  }
+  if (capList.length === 0){ el.style.opacity = '0'; return; }
+  const wanted = captionIndexForSlide(slideNum, capTotalSlides, capList.length);
+  if (wanted === capIdx && el.style.opacity === '1') return; // אותה כתובית וכבר מוצגת
+  // דהייה והחלפה
+  el.style.opacity = '0';
+  setTimeout(() => {
+    capIdx = wanted;
+    el.textContent = capList[wanted];
+    el.style.opacity = '1';
+  }, 350);
 }
 
 function startShow(){
   if (!pics.length) return;
   const caps = getCaptions();
-  startCaptions(caps);
+  // בדיקה: יותר כתוביות מתמונות — חוסם
+  if (caps.length > pics.length){
+    alert('יש יותר כותרות מתמונות. הסירו כותרות או הוסיפו תמונות.');
+    return;
+  }
+  startCaptions(caps, pics.length);
   show('show');
+  // ודא ששקופית הסיום מוסתרת בתחילת ההצגה
+  const endEl = $('mon-end'); if (endEl) endEl.classList.remove('vis');
   playIdx = 0;
   monMusicMuted = false;
   $('mon-music').textContent = '🔊 מוזיקה';
@@ -402,35 +712,133 @@ function startShow(){
   // ערבוב חד-פעמי: עוברים על כל התמונות פעם אחת בלי כפילויות
   monOrder = pics.slice();
   shuffle(monOrder);
-  const order = monOrder;
 
-  const SLIDE_MS = 4500;
-  let idx = 0;
-  const fill = $('mon-progress-fill');
-
-  function step(){
-    if (idx >= order.length){ idx = 0; shuffle(order); }
-    // בחירת מעבר לתמונה הזו: אם נבחר אחד — קבוע; אם כמה — מתחלפים
-    const sel = selectedTransitions();
-    const t = sel.length ? sel[transCycle % sel.length] : 'fade';
-    transCycle++;
-    setTransitionClass(t);
-    const cur = monFlip ? b : a, prev = monFlip ? a : b;
-    cur.src = order[idx];
-    cur.classList.add('vis'); prev.classList.remove('vis');
-    monFlip = !monFlip;
-    idx++;
-    fill.style.width = Math.round((idx / order.length) * 100) + '%';
-  }
-  step();
-  clearInterval(monIv);
-  monIv = setInterval(step, SLIDE_MS);
+  monIdx = 0;
   paused = false;
-  stepFn = step;
-  intervalMs = SLIDE_MS;
   $('mon-pause').textContent = '⏸️ עצירה';
+
+  // מציג תמונה אחת (לפי monIdx) ומתזמן את הצעד הבא
+  showSlide();
 }
 
+/* ===== ניהול הלולאה (תזמון רציף, לא interval) ===== */
+let monIdx = 0;
+const MON_SLIDE_MS = 4500;
+const MON_END_MS = 6500;
+
+function showSlide(){
+  if (paused) return;
+  const order = monOrder;
+  const fill = $('mon-progress-fill');
+
+  // סוף סבב — אם יש שקופית סיום, מציגים אותה ואז ממשיכים ללולאה הבאה
+  if (monIdx >= order.length){
+    if (hasEndSlide()){
+      showMonEnd();
+      monTimer = setTimeout(() => {
+        hideMonEnd();
+        monIdx = 0;
+        shuffle(order);
+        showSlide();
+      }, MON_END_MS);
+      return;
+    }
+    monIdx = 0;
+    shuffle(order);
+  }
+
+  // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
+  updateCaptionForSlide(monIdx);
+  // בחירת מעבר
+  const sel = selectedTransitions();
+  const t = sel.length ? sel[transCycle % sel.length] : 'fade';
+  transCycle++;
+  setTransitionClass(t);
+  const cur = monFlip ? monImgB : monImgA, prev = monFlip ? monImgA : monImgB;
+  cur.src = order[monIdx];
+  // התמונה הראשונה בכלל — מופיעה מיד בלי דהייה (כדי שלא יהיה מסך שחור בהתחלה)
+  const isVeryFirst = (monIdx === 0 && transCycle === 1);
+  // התמונה החדשה למעלה (z-index גבוה) ודוהית פנימה; הישנה נשארת אטומה מתחתיה
+  cur.style.zIndex = '2';
+  prev.style.zIndex = '1';
+  if (isVeryFirst){
+    cur.style.transition = 'none';
+    cur.classList.add('vis');
+    requestAnimationFrame(() => { requestAnimationFrame(() => { cur.style.transition = ''; }); });
+  } else {
+    cur.classList.add('vis');
+  }
+  // הישנה לא נעלמת מיד — היא נשארת מתחת עד שהחדשה כיסתה אותה (מונע הבזק שחור)
+  // אחרי שהדהייה הסתיימה, מורידים את הישנה
+  const prevToHide = prev;
+  setTimeout(() => { prevToHide.classList.remove('vis'); }, 1800);
+  monFlip = !monFlip;
+  monIdx++;
+  if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
+
+  monTimer = setTimeout(showSlide, MON_SLIDE_MS);
+}
+
+function showMonEnd(){
+  const el = $('mon-end');
+  if (!el) return;
+  $('mon-end-title').textContent = endTitle || '';
+  $('mon-end-text').textContent = endText || '';
+  // מסתיר את הכתובית מאחור (שלא תופיע על שקופית הסיום)
+  const cap = $('moncap'); if (cap) cap.style.opacity = '0';
+  capIdx = -1; // איפוס כדי שהכתובית תתחיל נכון בסבב הבא
+  el.classList.add('vis');
+  startEndFireworks();
+}
+function hideMonEnd(){
+  const el = $('mon-end');
+  if (el) el.classList.remove('vis');
+  stopEndFireworks();
+}
+
+/* זיקוקים על שקופית הסיום */
+let endFwRAF = null, endFwParticles = [], endFwTimer = 0;
+function startEndFireworks(){
+  const cv = $('mon-end-fw');
+  if (!cv) return;
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  const ctx = cv.getContext('2d');
+  endFwParticles = [];
+  endFwTimer = 0;
+  function spawn(){
+    const cx = cv.width * (0.2 + Math.random() * 0.6);
+    const cy = cv.height * (0.15 + Math.random() * 0.4);
+    const hue = Math.floor(Math.random() * 360);
+    const n = 36 + Math.floor(Math.random() * 24);
+    for (let i = 0; i < n; i++){
+      const ang = (Math.PI * 2 * i) / n;
+      const sp = 2 + Math.random() * 4;
+      endFwParticles.push({ x: cx, y: cy, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 60 + Math.random() * 30, max: 90, color: 'hsl(' + hue + ',100%,' + (55 + Math.random() * 20) + '%)' });
+    }
+  }
+  function loop(){
+    endFwRAF = requestAnimationFrame(loop);
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    endFwTimer--;
+    if (endFwTimer <= 0){ spawn(); endFwTimer = 35 + Math.random() * 35; }
+    for (let i = endFwParticles.length - 1; i >= 0; i--){
+      const p = endFwParticles[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.04; p.vx *= 0.99; p.vy *= 0.99; p.life--;
+      if (p.life <= 0){ endFwParticles.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.max(0, p.life / p.max);
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  loop();
+}
+function stopEndFireworks(){
+  if (endFwRAF){ cancelAnimationFrame(endFwRAF); endFwRAF = null; }
+  endFwParticles = [];
+  const cv = $('mon-end-fw');
+  if (cv){ const ctx = cv.getContext('2d'); ctx.clearRect(0, 0, cv.width, cv.height); }
+}
 function shuffle(arr){
   for (let i = arr.length - 1; i > 0; i--){
     const j = Math.floor(Math.random() * (i + 1));
@@ -441,20 +849,21 @@ function shuffle(arr){
 function togglePause(){
   paused = !paused;
   if (paused){
-    clearInterval(monIv);
+    if (monTimer){ clearTimeout(monTimer); monTimer = null; }
     if (audio){ try{ audio.pause(); }catch(e){} }
     $('mon-pause').textContent = '▶️ המשך';
   } else {
-    if (stepFn) monIv = setInterval(stepFn, intervalMs);
     if (audio && !monMusicMuted){ audio.play().catch(()=>{}); }
     $('mon-pause').textContent = '⏸️ עצירה';
+    showSlide(); // ממשיך מהמקום שבו עצר
   }
 }
 
 /* סיום: קפיצה לתמונה האחרונה ועצירת הכול (תמונות + מוזיקה) */
 function finishToLast(){
-  clearInterval(monIv);
+  if (monTimer){ clearTimeout(monTimer); monTimer = null; }
   if (audio){ try{ audio.pause(); }catch(e){} }
+  hideMonEnd();
   if (monOrder.length && monImgA && monImgB){
     const last = monOrder[monOrder.length-1];
     const cur = monFlip ? monImgB : monImgA, prev = monFlip ? monImgA : monImgB;
@@ -480,17 +889,27 @@ function toggleMontageMusic(){
 
 /* חזרה לעריכה: למסך ההגדרות */
 function backToSetup(){
-  clearInterval(monIv);
+  if (monTimer){ clearTimeout(monTimer); monTimer = null; }
   if (capTimer){ clearInterval(capTimer); capTimer = null; }
   if (audio){ try{ audio.pause(); }catch(e){} }
+  hideMonEnd();
   stopFx();
   show('setup');
 }
 
 /* ===== אפקטים: שלג, גשם, זיקוקים, לבבות ===== */
 const fxActive = { snow:false, rain:false, fireworks:false, hearts:false, bubbles:false, leaves:false, stars:false, sparkles:false, confetti:false };
+let fxIntensity = 0.7;   // עוצמת אפקטים: נמוכה=0.4, בינונית=0.7, גבוהה=1.0 (משפיע על כמות+תדירות)
 let fxRAF = null, fxParticles = [], fxCanvas = null, fxCtx = null, fxFwTimer = null;
 let fxSwitchTimer = 0, fxShownIdx = 0;
+
+/* עדכון טקסט כפתור האפקטים — מראה כמה אפקטים נבחרו (כמו התמונות) */
+function updateFxBtn(){
+  const btn = document.getElementById('fx-btn');
+  if (!btn) return;
+  const n = Object.keys(fxActive).filter(k => fxActive[k]).length;
+  btn.textContent = n ? '✨ אפקטים ומעברים (' + n + ')' : '✨ אפקטים ומעברים';
+}
 
 /* בחירת מעבר ותנועה (הבחירה נעשית בחלון האפקטים). אפשר לבחור כמה מעברים — והם יתחלפו. */
 let transSel = { fade:true, slide:false, zoom:false, zoomout:false, slideup:false, slidedown:false };
@@ -554,19 +973,19 @@ function fxLoop(){
     shown[sel[fxShownIdx % sel.length]] = true;
   }
 
-  // הולדת חלקיקים
-  if (shown.snow && Math.random()<0.4) fxParticles.push({type:'snow', x:Math.random()*W, y:-10, r:2+Math.random()*4, sp:1+Math.random()*1.5, sw:Math.random()*1});
-  if (shown.rain && Math.random()<0.9) for(let i=0;i<2;i++) fxParticles.push({type:'rain', x:Math.random()*W, y:-10, len:12+Math.random()*16, sp:9+Math.random()*6});
-  if (shown.hearts && Math.random()<0.08) fxParticles.push({type:'heart', x:Math.random()*W, y:H+10, sp:1+Math.random()*1.5, sz:14+Math.random()*16, sway:Math.random()*2});
+  // הולדת חלקיקים (הסף מוכפל בעוצמה — משפיע על כמות+תדירות)
+  if (shown.snow && Math.random()<0.4*fxIntensity) fxParticles.push({type:'snow', x:Math.random()*W, y:-10, r:2+Math.random()*4, sp:1+Math.random()*1.5, sw:Math.random()*1});
+  if (shown.rain && Math.random()<0.9*fxIntensity) for(let i=0;i<2;i++) fxParticles.push({type:'rain', x:Math.random()*W, y:-10, len:12+Math.random()*16, sp:9+Math.random()*6});
+  if (shown.hearts && Math.random()<0.08*fxIntensity) fxParticles.push({type:'heart', x:Math.random()*W, y:H+10, sp:1+Math.random()*1.5, sz:14+Math.random()*16, sway:Math.random()*2});
   if (shown.fireworks){
     fxFwTimer--;
-    if (fxFwTimer<=0){ spawnFirework(W,H); fxFwTimer = 40+Math.random()*50; }
+    if (fxFwTimer<=0){ spawnFirework(W,H); fxFwTimer = (40+Math.random()*50)/fxIntensity; }
   }
-  if (shown.bubbles && Math.random()<0.15) fxParticles.push({type:'bubble', x:Math.random()*W, y:H+10, r:6+Math.random()*18, sp:1+Math.random()*1.6, sway:Math.random()*1.5});
-  if (shown.leaves && Math.random()<0.12) fxParticles.push({type:'leaf', x:Math.random()*W, y:-10, sp:1+Math.random()*1.4, sz:16+Math.random()*14, sway:1+Math.random()*2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.1, emoji: Math.random()<0.5?'🍂':'🍁'});
-  if (shown.stars && Math.random()<0.18) fxParticles.push({type:'star', x:Math.random()*W, y:Math.random()*H, life:60+Math.random()*40, max:100, r:1+Math.random()*2.5});
-  if (shown.sparkles && Math.random()<0.25) fxParticles.push({type:'sparkle', x:Math.random()*W, y:Math.random()*H, life:30+Math.random()*30, max:60, sz:8+Math.random()*10});
-  if (shown.confetti && Math.random()<0.4) for(let i=0;i<2;i++) fxParticles.push({type:'confetti', x:Math.random()*W, y:-10, sp:2+Math.random()*2.5, sway:1+Math.random()*2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.3, w:6+Math.random()*5, h:9+Math.random()*6, color:['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ff9f1c','#06d6a0'][Math.floor(Math.random()*6)]});
+  if (shown.bubbles && Math.random()<0.15*fxIntensity) fxParticles.push({type:'bubble', x:Math.random()*W, y:H+10, r:6+Math.random()*18, sp:1+Math.random()*1.6, sway:Math.random()*1.5});
+  if (shown.leaves && Math.random()<0.12*fxIntensity) fxParticles.push({type:'leaf', x:Math.random()*W, y:-10, sp:1+Math.random()*1.4, sz:16+Math.random()*14, sway:1+Math.random()*2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.1, emoji: Math.random()<0.5?'🍂':'🍁'});
+  if (shown.stars && Math.random()<0.18*fxIntensity) fxParticles.push({type:'star', x:Math.random()*W, y:Math.random()*H, life:60+Math.random()*40, max:100, r:1+Math.random()*2.5});
+  if (shown.sparkles && Math.random()<0.25*fxIntensity) fxParticles.push({type:'sparkle', x:Math.random()*W, y:Math.random()*H, life:30+Math.random()*30, max:60, sz:8+Math.random()*10});
+  if (shown.confetti && Math.random()<0.4*fxIntensity) for(let i=0;i<2;i++) fxParticles.push({type:'confetti', x:Math.random()*W, y:-10, sp:2+Math.random()*2.5, sway:1+Math.random()*2, rot:Math.random()*6.28, vr:(Math.random()-0.5)*0.3, w:6+Math.random()*5, h:9+Math.random()*6, color:['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ff9f1c','#06d6a0'][Math.floor(Math.random()*6)]});
 
   for (let i=fxParticles.length-1;i>=0;i--){
     const p = fxParticles[i];
@@ -678,11 +1097,20 @@ function openFxPanel(){
   [['snow','❄️ שלג'],['rain','🌧️ גשם'],['fireworks','🎆 זיקוקים'],['hearts','💛 לבבות'],['bubbles','🫧 בועות'],['leaves','🍂 עלים'],['stars','⭐ כוכבים'],['sparkles','✨ נצנוצים'],['confetti','🎉 קונפטי']].forEach(([fx,label])=>{
     const b=document.createElement('button'); b.className='btn ghost sm'+(fxActive[fx]?' on':''); b.textContent=label;
     if(fxActive[fx]){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
-    b.onclick=()=>{ fxActive[fx]=!fxActive[fx]; if(fxActive[fx]){b.style.background='var(--gold)';b.style.color='#1a2342';}else{b.style.background='';b.style.color='';} };
+    b.onclick=()=>{ fxActive[fx]=!fxActive[fx]; if(fxActive[fx]){b.style.background='var(--gold)';b.style.color='#1a2342';}else{b.style.background='';b.style.color='';} updateFxBtn(); };
     fRow.appendChild(b);
   });
 
-  const close=document.createElement('button'); close.className='btn'; close.textContent='✓ סגירה'; close.style.cssText+='margin-top:14px; width:100%;';
+  // עוצמת האפקטים (כמה חלקיקים ובאיזו תכיפות)
+  const iRow = group('עוצמת האפקטים');
+  [[0.4,'נמוכה'],[0.7,'בינונית'],[1.0,'גבוהה']].forEach(([val,label])=>{
+    const b=document.createElement('button'); b.className='btn ghost sm'; b.textContent=label;
+    if(Math.abs(fxIntensity-val)<0.01){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
+    b.onclick=()=>{ fxIntensity=val; [...iRow.children].forEach(c=>{c.style.background='';c.style.color='';}); b.style.background='var(--gold)'; b.style.color='#1a2342'; };
+    iRow.appendChild(b);
+  });
+
+  const close=document.createElement('button'); close.className='btn'; close.textContent='✓ אישור'; close.style.cssText+='margin-top:14px; width:100%;';
   close.onclick=()=>ov.remove();
   box.appendChild(close);
 
@@ -771,6 +1199,7 @@ function startShow(){
 function step(){
   if(paused) return;
   if(idx>=order.length){ idx=0; shuffle(order); }
+  updateCap(idx);
   const sel=selTrans(); const t=sel[transCycle%sel.length]; transCycle++;
   setTrans(t);
   const cur=flip?imgB:imgA, prev=flip?imgA:imgB;
@@ -802,22 +1231,34 @@ function toggleMute(){
 }
 
 /* ---- כיתובים ---- */
+function capIdxForSlide(slideNum, total, numCaps){
+  if(numCaps<=1) return 0;
+  const perCap=total/numCaps;
+  let i=Math.floor(slideNum/perCap);
+  if(i>=numCaps) i=numCaps-1;
+  return i;
+}
 function startCaptions(){
   const cap=document.getElementById('cap');
   if(!capList.length){ return; }
   if(capList.length===1){ cap.textContent=capList[0]; cap.classList.add('vis'); return; }
-  capIdx=0;
-  function show(){
-    cap.classList.remove('vis');
-    setTimeout(()=>{ cap.textContent=capList[capIdx%capList.length]; cap.classList.add('vis'); capIdx++; }, 700);
-  }
-  show();
-  capTimer=setInterval(()=>{ if(!paused) show(); }, 6000);
+  capIdx=-1; // יתעדכן ב-updateCap
+}
+function updateCap(slideNum){
+  if(capList.length<=1) return;
+  const cap=document.getElementById('cap');
+  if(!cap) return;
+  const total=(DATA.images&&DATA.images.length)?DATA.images.length:1;
+  const wanted=capIdxForSlide(slideNum, total, capList.length);
+  if(wanted===capIdx) return;
+  cap.classList.remove('vis');
+  setTimeout(()=>{ capIdx=wanted; cap.textContent=capList[wanted]; cap.classList.add('vis'); }, 350);
 }
 
 /* ---- אפקטים (fx) ---- */
 let fxc, fxx, fxRAF, parts=[], fxSwitch=0, fxShown=0, fwTimer=0;
 const FX=DATA.effects||[];
+const FXI=DATA.intensity||0.7;
 function startFx(){
   if(!FX.length) return;
   fxc=document.getElementById('fxc'); fxx=fxc.getContext('2d');
@@ -832,15 +1273,15 @@ function fxLoop(){
   let shown={};
   if(FX.length<=1){ FX.forEach(k=>shown[k]=true); }
   else { fxSwitch++; if(fxSwitch>12*60){fxSwitch=0;fxShown=(fxShown+1)%FX.length;} shown[FX[fxShown%FX.length]]=true; }
-  if(shown.snow&&Math.random()<0.4) parts.push({type:'snow',x:Math.random()*W,y:-10,r:2+Math.random()*4,sp:1+Math.random()*1.5,sw:Math.random()*1});
-  if(shown.rain&&Math.random()<0.9) for(let i=0;i<2;i++) parts.push({type:'rain',x:Math.random()*W,y:-10,len:12+Math.random()*16,sp:9+Math.random()*6});
-  if(shown.hearts&&Math.random()<0.08) parts.push({type:'heart',x:Math.random()*W,y:H+10,sp:1+Math.random()*1.5,sz:14+Math.random()*16,sway:Math.random()*2});
-  if(shown.fireworks){ fwTimer--; if(fwTimer<=0){ spawnFw(W,H); fwTimer=40+Math.random()*50; } }
-  if(shown.bubbles&&Math.random()<0.15) parts.push({type:'bubble',x:Math.random()*W,y:H+10,r:6+Math.random()*18,sp:1+Math.random()*1.6,sway:Math.random()*1.5});
-  if(shown.leaves&&Math.random()<0.12) parts.push({type:'leaf',x:Math.random()*W,y:-10,sp:1+Math.random()*1.4,sz:16+Math.random()*14,sway:1+Math.random()*2,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.1,emoji:Math.random()<0.5?'🍂':'🍁'});
-  if(shown.stars&&Math.random()<0.18) parts.push({type:'star',x:Math.random()*W,y:Math.random()*H,life:60+Math.random()*40,max:100,r:1+Math.random()*2.5});
-  if(shown.sparkles&&Math.random()<0.25) parts.push({type:'sparkle',x:Math.random()*W,y:Math.random()*H,life:30+Math.random()*30,max:60,sz:8+Math.random()*10});
-  if(shown.confetti&&Math.random()<0.4) for(let i=0;i<2;i++) parts.push({type:'confetti',x:Math.random()*W,y:-10,sp:2+Math.random()*2.5,sway:1+Math.random()*2,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.3,w:6+Math.random()*5,h:9+Math.random()*6,color:['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ff9f1c','#06d6a0'][Math.floor(Math.random()*6)]});
+  if(shown.snow&&Math.random()<0.4*FXI) parts.push({type:'snow',x:Math.random()*W,y:-10,r:2+Math.random()*4,sp:1+Math.random()*1.5,sw:Math.random()*1});
+  if(shown.rain&&Math.random()<0.9*FXI) for(let i=0;i<2;i++) parts.push({type:'rain',x:Math.random()*W,y:-10,len:12+Math.random()*16,sp:9+Math.random()*6});
+  if(shown.hearts&&Math.random()<0.08*FXI) parts.push({type:'heart',x:Math.random()*W,y:H+10,sp:1+Math.random()*1.5,sz:14+Math.random()*16,sway:Math.random()*2});
+  if(shown.fireworks){ fwTimer--; if(fwTimer<=0){ spawnFw(W,H); fwTimer=(40+Math.random()*50)/FXI; } }
+  if(shown.bubbles&&Math.random()<0.15*FXI) parts.push({type:'bubble',x:Math.random()*W,y:H+10,r:6+Math.random()*18,sp:1+Math.random()*1.6,sway:Math.random()*1.5});
+  if(shown.leaves&&Math.random()<0.12*FXI) parts.push({type:'leaf',x:Math.random()*W,y:-10,sp:1+Math.random()*1.4,sz:16+Math.random()*14,sway:1+Math.random()*2,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.1,emoji:Math.random()<0.5?'🍂':'🍁'});
+  if(shown.stars&&Math.random()<0.18*FXI) parts.push({type:'star',x:Math.random()*W,y:Math.random()*H,life:60+Math.random()*40,max:100,r:1+Math.random()*2.5});
+  if(shown.sparkles&&Math.random()<0.25*FXI) parts.push({type:'sparkle',x:Math.random()*W,y:Math.random()*H,life:30+Math.random()*30,max:60,sz:8+Math.random()*10});
+  if(shown.confetti&&Math.random()<0.4*FXI) for(let i=0;i<2;i++) parts.push({type:'confetti',x:Math.random()*W,y:-10,sp:2+Math.random()*2.5,sway:1+Math.random()*2,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.3,w:6+Math.random()*5,h:9+Math.random()*6,color:['#ffd166','#2ec4b6','#ff6b6b','#8d8df2','#ff9f1c','#06d6a0'][Math.floor(Math.random()*6)]});
   for(let i=parts.length-1;i>=0;i--){
     const p=parts[i];
     if(p.type==='snow'){ p.y+=p.sp; p.x+=Math.sin(p.y/40)*p.sw; fxx.globalAlpha=0.85; fxx.fillStyle='#fff'; fxx.beginPath(); fxx.arc(p.x,p.y,p.r,0,7); fxx.fill(); if(p.y>H+10) parts.splice(i,1); }
@@ -924,13 +1365,14 @@ function fmtMB(bytes){
 
 /* בניית קובץ ה-HTML העצמאי */
 function buildStandaloneHTML(opts){
-  // opts: { title, images:[dataURL], music:[{name,dataURL}], captions:[str], transitions:[str], effects:[str] }
+  // opts: { title, images:[dataURL], music:[{name,dataURL}], captions:[str], transitions:[str], effects:[str], intensity:number }
   const data = {
     images: opts.images,
     music: opts.music.map(m => m.dataURL),
     captions: opts.captions,
     transitions: opts.transitions.length ? opts.transitions : ['fade'],
-    effects: opts.effects
+    effects: opts.effects,
+    intensity: opts.intensity || 0.7
   };
   const json = JSON.stringify(data);
   const safeTitle = (opts.title || 'מצגת').replace(/</g, '').replace(/>/g, '');
@@ -957,17 +1399,33 @@ function downloadHTMLFile(htmlString, filename){
 async function exportMontage(){
   if (!pics.length){ alert('קודם בחרו תמונות למצגת.'); return; }
 
+  // בדיקה: יותר כתוביות מתמונות — חוסם
+  const capsCheck = (typeof getCaptions === 'function') ? getCaptions() : [];
+  if (capsCheck.length > pics.length){
+    alert('יש יותר כותרות מתמונות. הסירו כותרות או הוסיפו תמונות.');
+    return;
+  }
+
   const btn = document.getElementById('export-btn');
   const origText = btn ? btn.textContent : '';
   if (btn){ btn.disabled = true; btn.textContent = '⏳ מכין את הקובץ...'; }
 
   try {
-    // 1. דחיסת תמונות
+    // 1. דחיסת תמונות (כל תמונה מוגנת בנפרד — תמונה שנכשלת מדולגת)
     const images = [];
+    let skipped = 0;
     for (let i = 0; i < pics.length; i++){
       if (btn) btn.textContent = '⏳ מעבד תמונה ' + (i+1) + ' מתוך ' + pics.length + '...';
-      const dataUrl = await compressImageToDataURL(pics[i], 1600, 0.8);
-      images.push(dataUrl);
+      try {
+        const dataUrl = await compressImageToDataURL(pics[i], 1600, 0.8);
+        images.push(dataUrl);
+      } catch(imgErr){
+        console.warn('image ' + (i+1) + ' failed:', imgErr);
+        skipped++;
+      }
+    }
+    if (!images.length){
+      throw new Error('אף תמונה לא עובדה בהצלחה');
     }
 
     // 2. המרת מוזיקה (מחשב + גלריה) ל-Base64
@@ -1016,14 +1474,15 @@ async function exportMontage(){
     // 6. בניית הקובץ והורדה
     if (btn) btn.textContent = '⏳ יוצר קובץ...';
     const title = (document.getElementById('mon-title') && document.getElementById('mon-title').value.trim()) || 'מצגת';
-    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects });
+    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects, intensity: fxIntensity });
     const fname = (title.replace(/[\\/:*?"<>|]/g, '') || 'מצגת') + '.html';
     downloadHTMLFile(html, fname);
 
     if (btn){ btn.disabled = false; btn.textContent = '✓ הקובץ ירד!'; setTimeout(()=>{ btn.textContent = origText; }, 2500); }
   } catch(e){
     console.error(e);
-    alert('משהו השתבש ביצירת הקובץ. נסו שוב, או עם פחות תמונות.');
+    const detail = (e && e.message) ? e.message : String(e);
+    alert('משהו השתבש ביצירת הקובץ.\n\nפרטים: ' + detail + '\n\nנסו שוב, או עם פחות תמונות.');
     if (btn){ btn.disabled = false; btn.textContent = origText; }
   }
 }
