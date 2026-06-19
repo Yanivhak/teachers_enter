@@ -110,7 +110,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v51</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v52</div>
   <h1>🎬 מצגת תמונות</h1>
 
   <!-- שורת התחברות -->
@@ -229,6 +229,24 @@ function signInGoogle(){
 function signOutGoogle(){ if (fauth) fauth.signOut(); }
 
 /* ===== בנק משפטים (Firebase, רק למחוברים) — שני בנקים נפרדים: captions ו-endings ===== */
+/*
+ * ┌─────────────────────────────────────────────────────────────────────┐
+ * │ ⚠️ מבנה הנתיבים ב-Firebase — חשוב לשמירת נתונים קיימים:               │
+ * │                                                                      │
+ * │   sentence_bank/{uid}/captions   ← בנק הכיתובים                       │
+ * │   sentence_bank/{uid}/endings    ← בנק משפטי הסיום                    │
+ * │                                                                      │
+ * │ כלל ברזל: לא משנים נתיבים קיימים! שינוי נתיב שובר את הנתונים           │
+ * │ של המשתמשים (הם נשמרים בנתיב הישן והקוד מחפש בחדש).                   │
+ * │                                                                      │
+ * │ להוספת בנק חדש בעתיד (למשל מוזיקה): פשוט מוסיפים תת-תיקייה חדשה,       │
+ * │ נניח sentence_bank/{uid}/music — בלי לגעת ב-captions/endings.         │
+ * │ ככה לא שוברים כלום ולא צריך מיגרציה.                                  │
+ * │                                                                      │
+ * │ אם בכל זאת *חייבים* לשנות נתיב — חובה לכתוב פונקציית מיגרציה           │
+ * │ (כמו migrateOldBank למטה) שמעבירה מהישן לחדש פעם אחת.                 │
+ * └─────────────────────────────────────────────────────────────────────┘
+ */
 let bankData = { captions: [], endings: [] };   // לכל סוג: [{key, text}]
 let bankOpen = { captions: false, endings: false };   // האם הרשימה פתוחה
 function bankRef(kind){
@@ -245,6 +263,28 @@ function loadBank(kind, cb){
       .sort((a, b) => a.text.localeCompare(b.text, 'he'));
     if (cb) cb();
   }).catch(() => { bankData[kind] = []; if (cb) cb(); });
+}
+
+/* מיגרציה חד-פעמית: מעבירה משפטים מהנתיב הישן (גרסה 50: sentence_bank/{uid} ישירות)
+   לבנק הכיתובים החדש (sentence_bank/{uid}/captions). רצה פעם אחת; אם אין מה להעביר — לא עושה כלום. */
+function migrateOldBank(cb){
+  if (!fdb || !myUid){ if (cb) cb(); return; }
+  const rootRef = fdb.ref('sentence_bank/' + myUid);
+  rootRef.once('value').then(snap => {
+    const val = snap.val() || {};
+    // משפטים ישנים = מפתחות שיש להם שדה text ישירות (לא 'captions'/'endings' שהם אובייקטים מקוננים)
+    const oldKeys = Object.keys(val).filter(k => k !== 'captions' && k !== 'endings' && val[k] && typeof val[k] === 'object' && typeof val[k].text === 'string');
+    if (!oldKeys.length){ if (cb) cb(); return; }
+    // מעבירים ל-captions ומוחקים מהנתיב הישן
+    const capRef = fdb.ref('sentence_bank/' + myUid + '/captions');
+    const ops = [];
+    oldKeys.forEach(k => {
+      const newRef = capRef.push();
+      ops.push(newRef.set({ text: val[k].text, ts: val[k].ts || Date.now() }));
+      ops.push(rootRef.child(k).remove());
+    });
+    Promise.all(ops).then(() => { if (cb) cb(); }).catch(() => { if (cb) cb(); });
+  }).catch(() => { if (cb) cb(); });
 }
 function saveToBank(kind, text, cb){
   const ref = bankRef(kind);
@@ -592,9 +632,9 @@ function openCapPanel(){
   box.appendChild(close);
 
   renderCapList();
-  // טוען ומציג את בנק הכיתובים
+  // טוען ומציג את בנק הכיתובים (כולל מיגרציה חד-פעמית מהנתיב הישן)
   if (myUid){
-    loadBank('captions', () => renderCaptionBank());
+    migrateOldBank(() => loadBank('captions', () => renderCaptionBank()));
   } else {
     renderCaptionBank();
   }
