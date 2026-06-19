@@ -633,29 +633,37 @@ function startShow(){
   paused = false;
   $('mon-pause').textContent = '⏸️ עצירה';
 
-  // מציג תמונה אחת (לפי monIdx) ומתזמן את הצעד הבא
-  showSlide();
+  // מתחילים: צעד ראשון מיד, ואז interval קבוע (כמו הגרסה המוכחת)
+  monStep();
+  clearInterval(monTimer);
+  monTimer = setInterval(monStep, MON_SLIDE_MS);
 }
 
-/* ===== ניהול הלולאה (תזמון רציף, לא interval) ===== */
+/* ===== ניהול הלולאה ===== */
 let monIdx = 0;
 const MON_SLIDE_MS = 4500;
 const MON_END_MS = 6500;
+let monEndShowing = false;
 
-function showSlide(){
+function monStep(){
   if (paused) return;
   const order = monOrder;
   const fill = $('mon-progress-fill');
 
-  // סוף סבב — שקופית סיום (מינימלי: סטטי, בלי טיימרים מתוחכמים)
+  // סוף סבב — אם יש שקופית סיום, מציגים אותה (עוצרים את ה-interval בזמן הזה)
   if (monIdx >= order.length){
-    if (hasEndSlide()){
+    if (hasEndSlide() && !monEndShowing){
+      monEndShowing = true;
+      clearInterval(monTimer);
       showMonEnd();
       monTimer = setTimeout(() => {
         hideMonEnd();
+        monEndShowing = false;
         monIdx = 0;
         shuffle(order);
-        showSlide();
+        monStep();
+        clearInterval(monTimer);
+        monTimer = setInterval(monStep, MON_SLIDE_MS);
       }, MON_END_MS);
       return;
     }
@@ -676,8 +684,6 @@ function showSlide(){
   monFlip = !monFlip;
   monIdx++;
   if (fill) fill.style.width = Math.round((monIdx / order.length) * 100) + '%';
-
-  monTimer = setTimeout(showSlide, MON_SLIDE_MS);
 }
 
 function showMonEnd(){
@@ -701,19 +707,25 @@ function shuffle(arr){
 function togglePause(){
   paused = !paused;
   if (paused){
-    if (monTimer){ clearTimeout(monTimer); monTimer = null; }
+    clearTimeout(monTimer); clearInterval(monTimer); monTimer = null;
     if (audio){ try{ audio.pause(); }catch(e){} }
     $('mon-pause').textContent = '▶️ המשך';
   } else {
     if (audio && !monMusicMuted){ audio.play().catch(()=>{}); }
     $('mon-pause').textContent = '⏸️ עצירה';
-    showSlide(); // ממשיך מהמקום שבו עצר
+    // ממשיך את הלולאה הרגילה (לא באמצע שקופית סיום)
+    if (!monEndShowing){
+      monStep();
+      clearInterval(monTimer);
+      monTimer = setInterval(monStep, MON_SLIDE_MS);
+    }
   }
 }
 
 /* סיום: קפיצה לתמונה האחרונה ועצירת הכול (תמונות + מוזיקה) */
 function finishToLast(){
-  if (monTimer){ clearTimeout(monTimer); monTimer = null; }
+  clearTimeout(monTimer); clearInterval(monTimer); monTimer = null;
+  monEndShowing = false;
   if (audio){ try{ audio.pause(); }catch(e){} }
   hideMonEnd();
   if (monOrder.length && monImgA && monImgB){
@@ -741,7 +753,8 @@ function toggleMontageMusic(){
 
 /* חזרה לעריכה: למסך ההגדרות */
 function backToSetup(){
-  if (monTimer){ clearTimeout(monTimer); monTimer = null; }
+  clearTimeout(monTimer); clearInterval(monTimer); monTimer = null;
+  monEndShowing = false;
   if (capTimer){ clearInterval(capTimer); capTimer = null; }
   if (audio){ try{ audio.pause(); }catch(e){} }
   hideMonEnd();
