@@ -64,6 +64,10 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .monwrap.motion img.vis{animation:kenburns 7s ease-out forwards;}
 .trans-btn.on, .motion-btn.on{background:var(--gold); color:#1a2342; border-color:var(--gold);}
 .moncap{position:fixed; bottom:42px; left:0; right:0; text-align:center; z-index:4; font-family:'Secular One'; font-size:clamp(28px,4vw,52px); color:var(--gold); text-shadow:0 2px 14px rgba(0,0,0,.9); transition:opacity .7s ease; opacity:0;}
+#mon-end{position:fixed; inset:0; z-index:7; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8vw; background:radial-gradient(1200px 700px at 50% 30%, #16223f 0%, #0a1020 55%, #05080f 100%); opacity:0; transition:opacity 1.2s ease; pointer-events:none;}
+#mon-end.vis{opacity:1;}
+#mon-end .end-title{font-family:'Secular One'; font-size:clamp(34px,6vw,72px); color:var(--gold); text-shadow:0 2px 20px rgba(0,0,0,.7); margin-bottom:24px; line-height:1.2;}
+#mon-end .end-text{font-family:'Heebo'; font-weight:700; font-size:clamp(18px,3vw,32px); color:var(--ink); line-height:1.5; max-width:900px; white-space:pre-wrap;}
 #mon-progress{position:fixed; bottom:0; left:0; right:0; height:14px; background:rgba(0,0,0,.55); z-index:5;}
 #mon-progress i{display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold), #ffe9a8); transition:width .5s linear; box-shadow:0 0 12px var(--gold);}
 #mon-controls{position:fixed; top:16px; right:16px; z-index:6; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; max-width:60vw;}
@@ -87,6 +91,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
     <button class="btn ghost" id="music-btn" onclick="openMusicPanel()">🎵 מוזיקה</button>
     <button class="btn ghost" id="cap-btn" onclick="openCapPanel()">✏️ כיתוב</button>
     <button class="btn ghost" id="fx-btn" onclick="openFxPanel()">✨ אפקטים ומעברים</button>
+    <button class="btn ghost" id="end-btn" onclick="openEndPanel()">🏁 שקופית סיום</button>
     <span class="info-i" onclick="showInfo(event, 'התמונות והמוזיקה נשמרות כל עוד הדף פתוח — אפשר להציג, לחזור לעריכה ולשנות. הן אינן נשמרות לצמיתות (נמחקות כשסוגרים את הדף), כדי שהקבצים שלכם לא ייחשפו לרשת. את המצגת המוגמרת אפשר לשמור על המחשב — כקובץ, או כסרטון (בטא) — בכפתורים שבתחתית.')">i</span>
   </div>
 
@@ -127,6 +132,7 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
   <div class="monwrap" id="monwrap"></div>
   <canvas id="fx-canvas" style="position:fixed; inset:0; z-index:5; pointer-events:none;"></canvas>
   <div class="moncap" id="moncap"></div>
+  <div id="mon-end"><div class="end-title" id="mon-end-title"></div><div class="end-text" id="mon-end-text"></div></div>
   <div id="mon-progress"><i id="mon-progress-fill"></i></div>
   <div id="mon-controls">
     <button onclick="toggleMontageMusic()" id="mon-music">🔊 מוזיקה</button>
@@ -479,6 +485,54 @@ function getCaptions(){
   return captions.slice();
 }
 
+/* ---------- שקופית סיום ---------- */
+let endTitle = '', endText = '';
+function openEndPanel(){
+  if ($('mon-modal')){ closeModal(); return; }
+  const box = openModal('שקופית סיום');
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
+  sub.textContent = 'הוסיפו מסך סיום שיופיע בסוף המצגת (ובסרטון). אפשר למלא כותרת, טקסט, או שניהם. אם הכול ריק — לא תופיע שקופית סיום.';
+  box.appendChild(sub);
+
+  const lbl1 = document.createElement('div');
+  lbl1.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:6px;';
+  lbl1.textContent = 'כותרת סיום';
+  box.appendChild(lbl1);
+  const inp1 = document.createElement('input');
+  inp1.type = 'text'; inp1.id = 'end-title-input'; inp1.maxLength = 50; inp1.placeholder = 'למשל: תודה על הדרך המשותפת';
+  inp1.value = endTitle;
+  inp1.style.cssText = "width:100%; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center; margin-bottom:14px;";
+  box.appendChild(inp1);
+
+  const lbl2 = document.createElement('div');
+  lbl2.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:6px;';
+  lbl2.textContent = 'טקסט סיום';
+  box.appendChild(lbl2);
+  const inp2 = document.createElement('textarea');
+  inp2.id = 'end-text-input'; inp2.maxLength = 200; inp2.rows = 3; inp2.placeholder = 'למשל: מאחלים לכולם הצלחה בהמשך הדרך';
+  inp2.value = endText;
+  inp2.style.cssText = "width:100%; font-family:'Heebo'; font-size:16px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center; resize:vertical;";
+  box.appendChild(inp2);
+
+  const close = document.createElement('button');
+  close.className = 'btn'; close.textContent = '✓ אישור'; close.style.cssText += 'margin-top:16px; width:100%;';
+  close.onclick = () => {
+    endTitle = inp1.value.trim();
+    endText = inp2.value.trim();
+    updateEndBtn();
+    closeModal();
+  };
+  box.appendChild(close);
+  inp1.focus();
+}
+function updateEndBtn(){
+  const btn = $('end-btn');
+  if (!btn) return;
+  btn.textContent = (endTitle || endText) ? '🏁 שקופית סיום ✓' : '🏁 שקופית סיום';
+}
+function hasEndSlide(){ return !!(endTitle || endText); }
+
 function refreshStart(){
   $('start-btn').disabled = pics.length === 0;
   const hint = $('start-hint');
@@ -550,6 +604,8 @@ function startShow(){
   }
   startCaptions(caps, pics.length);
   show('show');
+  // ודא ששקופית הסיום מוסתרת בתחילת ההצגה
+  const endEl = $('mon-end'); if (endEl) endEl.classList.remove('vis');
   playIdx = 0;
   monMusicMuted = false;
   $('mon-music').textContent = '🔊 מוזיקה';
@@ -573,7 +629,14 @@ function startShow(){
   const fill = $('mon-progress-fill');
 
   function step(){
-    if (idx >= order.length){ idx = 0; shuffle(order); }
+    // סוף סבב — אם יש שקופית סיום, מציגים אותה לפני שממשיכים ללולאה הבאה
+    if (idx >= order.length){
+      if (hasEndSlide()){
+        showEndSlide(() => { idx = 0; shuffle(order); hideEndSlide(); step(); });
+        return;
+      }
+      idx = 0; shuffle(order);
+    }
     // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
     updateCaptionForSlide(idx);
     // בחירת מעבר לתמונה הזו: אם נבחר אחד — קבוע; אם כמה — מתחלפים
@@ -595,6 +658,29 @@ function startShow(){
   stepFn = step;
   intervalMs = SLIDE_MS;
   $('mon-pause').textContent = '⏸️ עצירה';
+}
+
+// מציג את שקופית הסיום (עוצר את המעבר הרגיל), ואז קורא ל-callback
+const END_SLIDE_MS = 6500;
+let endSlideTimer = null;
+function showEndSlide(done){
+  clearInterval(monIv); // עוצר את מעבר התמונות בזמן הסיום
+  const el = $('mon-end');
+  $('mon-end-title').textContent = endTitle || '';
+  $('mon-end-text').textContent = endText || '';
+  // מסתיר את הכתובית והתמונות מאחור
+  const cap = $('moncap'); if (cap) cap.style.opacity = '0';
+  el.classList.add('vis');
+  endSlideTimer = setTimeout(() => {
+    if (typeof done === 'function') done();
+  }, END_SLIDE_MS);
+}
+function hideEndSlide(){
+  const el = $('mon-end');
+  el.classList.remove('vis');
+  // מחדש את מעבר התמונות
+  clearInterval(monIv);
+  if (stepFn) monIv = setInterval(stepFn, intervalMs);
 }
 
 function shuffle(arr){
