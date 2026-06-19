@@ -84,14 +84,29 @@ a.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decorat
       <div style="margin-top:4px;">• העיבוד לוקח זמן (כמה דקות לפי כמות התמונות). אנא המתינו ואל תסגרו את הדף.</div>
     </div>
 
-    <div class="row">
-      <button class="btn big" id="make-btn" onclick="makeVideo()">🎬 יצירת הווידאו</button>
+    <div id="action-area">
+      <div class="row">
+        <button class="btn big" id="make-btn" onclick="makeVideo()">🎬 יצירת הווידאו</button>
+      </div>
+      <button class="btn ghost" style="margin-top:10px;" onclick="resetAll()">↻ העלאת מצגת אחרת</button>
     </div>
-    <button class="btn ghost" style="margin-top:10px;" onclick="resetAll()">↻ העלאת מצגת אחרת</button>
 
     <div id="prog-wrap" class="hidden">
       <div id="prog-bar"><div id="prog-fill"></div></div>
       <div id="prog-text">מתחילים...</div>
+      <button class="btn" id="cancel-btn" onclick="cancelVideo()" style="margin-top:12px;">✖ ביטול</button>
+    </div>
+
+    <!-- חלון אישור ביטול -->
+    <div id="cancel-confirm" class="hidden" style="position:fixed; inset:0; z-index:100; background:rgba(5,8,15,.8); display:flex; align-items:center; justify-content:center; padding:24px;">
+      <div style="background:#1a2342; border-radius:18px; padding:28px; max-width:380px; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.5);">
+        <div style="font-family:'Secular One'; font-size:22px; color:#ffd166; margin-bottom:12px;">לבטל את יצירת הווידאו?</div>
+        <div style="font-size:15px; color:#cfd6e6; margin-bottom:22px; line-height:1.5;">העבודה שנעשתה עד כה תימחק ותצטרכו להתחיל מחדש.</div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn" style="flex:1; background:#e54848;" onclick="confirmCancel()">כן, בטל</button>
+          <button class="btn ghost" style="flex:1;" onclick="dismissCancel()">לא, המשך</button>
+        </div>
+      </div>
     </div>
 
     <div id="result" class="hidden">
@@ -115,8 +130,38 @@ a.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decorat
 
 let parsed = null;       // { images:[dataURL], music:[dataURL], transitions:[], effects:[] }
 let lastVideoUrl = null;
+let videoCancelled = false;   // דגל ביטול יצירת וידאו
 const SECONDS_PER_IMAGE = 4;  // משך הצגת כל תמונה
 const FADE = 1;               // משך מעבר דהייה בשניות
+
+/* ביטול יצירת הווידאו — מציג חלון אישור */
+function cancelVideo(){
+  document.getElementById('cancel-confirm').classList.remove('hidden');
+}
+/* המשתמש סגר את חלון האישור — ממשיכים כרגיל */
+function dismissCancel(){
+  document.getElementById('cancel-confirm').classList.add('hidden');
+}
+/* המשתמש אישר ביטול — עוצרים ומנקים הכול */
+function confirmCancel(){
+  document.getElementById('cancel-confirm').classList.add('hidden');
+  doCancel();
+}
+/* עצירה בפועל + ניקוי זיכרון (משמש גם בביטול וגם בהעלאת קובץ חדש) */
+function doCancel(){
+  videoCancelled = true;
+  document.getElementById('prog-text').textContent = 'מבטל...';
+  // עוצרים את מנוע הקידוד (אם רץ) — זה יקטע את exec וינקה את הזיכרון
+  if (ffInstance){
+    try { ffInstance.terminate(); } catch(e){}
+    ffInstance = null;   // יטען מחדש בהמרה הבאה (זיכרון נקי)
+  }
+}
+/* האם יצירת וידאו רצה כרגע? */
+function isMaking(){
+  const pw = document.getElementById('prog-wrap');
+  return pw && !pw.classList.contains('hidden');
+}
 
 /* ---------- העלאת קובץ ---------- */
 const drop = document.getElementById('drop');
@@ -128,6 +173,11 @@ fileInput.onchange = () => { if (fileInput.files[0]) handleFile(fileInput.files[
 drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
 
 function handleFile(file){
+  // אם יצירת וידאו רצה כרגע — לא מאפשרים להעלות קובץ חדש; מבקשים אישור ביטול
+  if (isMaking()){
+    document.getElementById('cancel-confirm').classList.remove('hidden');
+    return;
+  }
   if (!/\.html?$/i.test(file.name) && file.type !== 'text/html'){
     alert('צריך להעלות קובץ HTML שהורד מכלי המצגת.');
     return;
@@ -190,6 +240,7 @@ function resetAll(){
   document.getElementById('upload-card').classList.remove('hidden');
   document.getElementById('result').classList.add('hidden');
   document.getElementById('prog-wrap').classList.add('hidden');
+  const aa = document.getElementById('action-area'); if (aa) aa.classList.remove('hidden');
   document.getElementById('make-btn').disabled = false;
   fileInput.value = '';
 }
@@ -204,8 +255,10 @@ function setProg(pct, text){
 
 async function makeVideo(){
   if (!parsed) return;
+  videoCancelled = false;
   const makeBtn = document.getElementById('make-btn');
   makeBtn.disabled = true;
+  document.getElementById('action-area').classList.add('hidden');
   document.getElementById('prog-wrap').classList.remove('hidden');
   document.getElementById('result').classList.add('hidden');
 
@@ -430,6 +483,7 @@ async function makeVideo(){
     // 2. כתיבת התמונות (עם כתוביות צרובות) למערכת הקבצים של ffmpeg
     const imgs = parsed.images;
     for (let i = 0; i < imgs.length; i++){
+      if (videoCancelled) throw new Error('__CANCELLED__');
       const name = 'img' + String(i).padStart(4,'0') + '.jpg';
       const capText = capForImage(i, imgs.length, caps.length);
       let imgData;
@@ -515,9 +569,11 @@ async function makeVideo(){
     try {
       await ffInstance.exec(args);
     } catch(execErr){
+      if (videoCancelled) throw new Error('__CANCELLED__');
       const tail = ffLog.slice(-6).join(' | ');
       throw new Error('הקידוד נכשל (exec). לוג: ' + (tail || (execErr && execErr.message) || execErr));
     }
+    if (videoCancelled) throw new Error('__CANCELLED__');
 
     setProg(96, 'מסיים...');
 
@@ -534,6 +590,8 @@ async function makeVideo(){
     lastVideoUrl = URL.createObjectURL(blob);
 
     setProg(100, '✓ הווידאו מוכן!');
+    document.getElementById('prog-wrap').classList.add('hidden');
+    document.getElementById('action-area').classList.remove('hidden');
     const vid = document.getElementById('out-video');
     vid.src = lastVideoUrl;
     document.getElementById('result').classList.remove('hidden');
@@ -548,10 +606,20 @@ async function makeVideo(){
     makeBtn.disabled = false;
 
   } catch(e){
+    const detail = (e && e.message) ? e.message : String(e);
+    if (videoCancelled || detail === '__CANCELLED__'){
+      // המשתמש ביטל — הודעה נקייה, בלי שגיאה
+      document.getElementById('prog-wrap').classList.add('hidden');
+      document.getElementById('action-area').classList.remove('hidden');
+      setProg(0, '');
+      makeBtn.disabled = false;
+      videoCancelled = false;
+      return;
+    }
     console.error(e);
     setProg(0, '');
-    const detail = (e && e.message) ? e.message : String(e);
     document.getElementById('prog-text').innerHTML = '<span class="err">משהו השתבש ביצירת הווידאו.<br>פרטים: ' + detail + '</span>';
+    document.getElementById('action-area').classList.remove('hidden');
     makeBtn.disabled = false;
   }
 }
