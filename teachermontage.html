@@ -533,7 +533,7 @@ function updateEndBtn(){
   if (!btn) return;
   btn.textContent = (endTitle || endText) ? '🏁 שקופית סיום ✓' : '🏁 שקופית סיום';
 }
-function hasEndSlide(){ return !!(endTitle || endText); }
+function hasEndSlide(){ return false; /* בדיקה זמנית: שקופית הסיום מנוטרלת לחלוטין */ }
 
 function refreshStart(){
   $('start-btn').disabled = pics.length === 0;
