@@ -89,7 +89,6 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">v41</div>
   <h1>🎬 מצגת תמונות</h1>
   <p class="sub">בחרו תמונות ומוזיקה, הוסיפו כיתובים ואפקטים, ולחצו להתחיל. בסיום אפשר לשמור את המצגת כקובץ או כסרטון. הכול נשאר אצלכם — שום דבר לא נשלח לאינטרנט.</p>
 
@@ -183,122 +182,13 @@ function show(id){ document.querySelectorAll('.screen').forEach(s => s.classList
 
 /* ---------- בחירת תמונות ---------- */
 let pics = [];
-function isHeicFile(f){
-  return /\.(heic|heif)$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
-}
-
-// טוען את ספריית heic2any מהריפו (מקומי), פעם אחת
-let heicLibPromise = null;
-function loadHeicLib(){
-  if (window.heic2any) return Promise.resolve(true);
-  if (heicLibPromise) return heicLibPromise;
-  heicLibPromise = new Promise((resolve) => {
-    const s = document.createElement('script');
-    s.src = 'heic2any.min.js';   // קובץ מקומי בשורש הריפו
-    s.onload = () => resolve(true);
-    s.onerror = () => resolve(false);
-    document.head.appendChild(s);
-  });
-  return heicLibPromise;
-}
-
-// ניסיון 1: createImageBitmap — מנוע הפענוח של מערכת ההפעלה (לרוב עובד על Mac גם כש-<img> מציג שחור)
-async function heicViaImageBitmap(file){
-  const bmp = await createImageBitmap(file);
-  const canvas = document.createElement('canvas');
-  canvas.width = bmp.width; canvas.height = bmp.height;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(bmp, 0, 0);
-  bmp.close && bmp.close();
-  // אם הקנבס יצא ריק (גודל 0) — נכשל
-  if (canvas.width === 0 || canvas.height === 0) throw new Error('empty bitmap');
-  const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.9));
-  if (!blob) throw new Error('toBlob failed');
-  return blob;
-}
-
-// ניסיון 2: heic2any (הספרייה) — גיבוי
-async function heicViaLib(file){
-  const ok = await loadHeicLib();
-  if (!ok || !window.heic2any) throw new Error('library not loaded');
-  const blob = await window.heic2any({ blob: file, toType: 'image/jpeg', quality: 0.9 });
-  return Array.isArray(blob) ? blob[0] : blob;
-}
-
-// ממיר תמונת HEIC ל-JPG בכמה שיטות, מחזיר File חדש או זורק שגיאה
-async function convertHeic(file){
-  const newName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-  let lastErr = '';
-  // שיטה 1
-  try {
-    const blob = await heicViaImageBitmap(file);
-    return new File([blob], newName, { type: 'image/jpeg' });
-  } catch(e){ lastErr = 'ImageBitmap: ' + ((e&&e.message)||e); }
-  // שיטה 2
-  try {
-    const blob = await heicViaLib(file);
-    return new File([blob], newName, { type: 'image/jpeg' });
-  } catch(e){ lastErr += ' | Lib: ' + ((e&&e.message)||e); }
-  throw new Error(lastErr);
-}
-
-async function picsChosen(files){
+function picsChosen(files){
   if (!files || !files.length) return;
-  let fileArr = [...files];
-  $('pics-input').value = '';
-
-  // ===== המרת HEIC ל-JPEG בתחילת השרשרת (כל שאר המערכת עובדת רק עם JPEG) =====
-  const heicCount = fileArr.filter(isHeicFile).length;
-  if (heicCount > 0){
-    showHeicProgress(0, heicCount);
-    let converted = 0, failed = 0;
-    const out = [];
-    for (const f of fileArr){
-      if (isHeicFile(f)){
-        try {
-          out.push(await convertHeic(f));
-          converted++;
-        } catch(e){
-          failed++;
-          console.error('HEIC conversion failed for', f.name, '→', e);
-          window._lastHeicError = (e && e.message) ? e.message : String(e);
-        }
-        showHeicProgress(converted + failed, heicCount);
-      } else {
-        out.push(f);
-      }
-    }
-    fileArr = out;
-    hideHeicProgress();
-    if (failed > 0){
-      alert('הומרו ' + converted + ' מתוך ' + heicCount + ' תמונות HEIC. ' + failed + ' לא הצליחו והושמטו.\n\nשגיאה: ' + (window._lastHeicError || 'לא ידועה'));
-    }
-  }
-
-  if (!fileArr.length){ refreshStart(); return; }
-
   pics.forEach(u => URL.revokeObjectURL(u));
-  pics = fileArr.map(f => URL.createObjectURL(f));
+  pics = [...files].map(f => URL.createObjectURL(f));
   $('pics-btn').textContent = '📷 ' + pics.length + ' תמונות ✓ (לחיצה מחליפה)';
+  $('pics-input').value = '';
   refreshStart();
-}
-
-// פס התקדמות פשוט להמרת HEIC
-function showHeicProgress(done, total){
-  let el = $('heic-progress');
-  if (!el){
-    el = document.createElement('div');
-    el.id = 'heic-progress';
-    el.style.cssText = 'position:fixed; inset:0; z-index:50; background:rgba(5,8,15,.85); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#f7f4ec; font-family:Heebo,sans-serif; text-align:center; padding:30px;';
-    document.body.appendChild(el);
-  }
-  el.innerHTML = '<div style="font-family:\'Secular One\'; font-size:26px; color:#ffd166; margin-bottom:14px;">ממיר תמונות...</div>' +
-    '<div style="font-size:17px; margin-bottom:18px;">מכין ' + done + ' מתוך ' + total + ' תמונות מהאייפון (HEIC)</div>' +
-    '<div style="width:280px; max-width:80vw; height:12px; background:rgba(255,255,255,.18); border-radius:8px; overflow:hidden;"><div style="height:100%; width:' + Math.round((done/Math.max(total,1))*100) + '%; background:#2ec4b6; transition:width .3s;"></div></div>';
-}
-function hideHeicProgress(){
-  const el = $('heic-progress');
-  if (el) el.remove();
 }
 
 /* ---------- בחירת מוזיקה ---------- */
