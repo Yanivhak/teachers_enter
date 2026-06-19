@@ -500,34 +500,55 @@ function playMusic(){
 /* ---------- המצגת ---------- */
 let monIv = null, paused = false, stepFn = null, intervalMs = 4500;
 let monOrder = [], monImgA = null, monImgB = null, monFlip = false, monMusicMuted = false;
-let capList = [], capIdx = 0, capTimer = null;
+let capList = [], capIdx = -1, capTimer = null, capTotalSlides = 0;
 
-function startCaptions(caps){
+function startCaptions(caps, totalSlides){
   capList = caps || [];
-  capIdx = 0;
+  capIdx = -1;
+  capTotalSlides = totalSlides || (pics.length || 1);
   if (capTimer){ clearInterval(capTimer); capTimer = null; }
   const el = $('moncap');
   if (!capList.length){ el.textContent = ''; el.style.opacity = '0'; return; }
-  // שורה ראשונה
-  el.textContent = capList[0];
-  el.style.opacity = '1';
-  if (capList.length === 1) return; // שורה אחת = קבוע
-  // התחלפות בדהייה כל ~6.5 שניות
-  capTimer = setInterval(() => {
-    if (paused) return;
-    el.style.opacity = '0';
-    setTimeout(() => {
-      capIdx = (capIdx + 1) % capList.length;
-      el.textContent = capList[capIdx];
-      el.style.opacity = '1';
-    }, 700);
-  }, 6500);
+  // שורה אחת = קבוע לכל המצגת
+  if (capList.length === 1){ el.textContent = capList[0]; el.style.opacity = '1'; return; }
+  // כמה שורות — מתחלקות לפי מקטעים של תמונות (מתעדכן ב-updateCaptionForSlide)
+}
+
+// מחשב איזו כתובית פעילה לפי מספר התמונה (חלוקה שווה למקטעים)
+function captionIndexForSlide(slideNum, totalSlides, numCaps){
+  if (numCaps <= 1) return 0;
+  // כל כתובית מקבלת מקטע שווה מהתמונות
+  const perCap = totalSlides / numCaps;
+  let i = Math.floor(slideNum / perCap);
+  if (i >= numCaps) i = numCaps - 1;
+  return i;
+}
+
+// מעדכן את הכתובית לפי התמונה הנוכחית (נקרא מ-step)
+function updateCaptionForSlide(slideNum){
+  if (capList.length <= 1) return; // קבוע — לא משתנה
+  const el = $('moncap');
+  if (!el) return;
+  const wanted = captionIndexForSlide(slideNum, capTotalSlides, capList.length);
+  if (wanted === capIdx) return; // אותה כתובית — לא צריך לשנות
+  // דהייה והחלפה
+  el.style.opacity = '0';
+  setTimeout(() => {
+    capIdx = wanted;
+    el.textContent = capList[wanted];
+    el.style.opacity = '1';
+  }, 350);
 }
 
 function startShow(){
   if (!pics.length) return;
   const caps = getCaptions();
-  startCaptions(caps);
+  // בדיקה: יותר כתוביות מתמונות — חוסם
+  if (caps.length > pics.length){
+    alert('יש יותר כתוביות מתמונות (' + caps.length + ' כתוביות, ' + pics.length + ' תמונות).\n\nכל כתובית מלווה קבוצת תמונות, אז צריך לפחות תמונה אחת לכל כתובית. חזרו והסירו כתוביות, או הוסיפו תמונות.');
+    return;
+  }
+  startCaptions(caps, pics.length);
   show('show');
   playIdx = 0;
   monMusicMuted = false;
@@ -553,6 +574,8 @@ function startShow(){
 
   function step(){
     if (idx >= order.length){ idx = 0; shuffle(order); }
+    // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
+    updateCaptionForSlide(idx);
     // בחירת מעבר לתמונה הזו: אם נבחר אחד — קבוע; אם כמה — מתחלפים
     const sel = selectedTransitions();
     const t = sel.length ? sel[transCycle % sel.length] : 'fade';
@@ -932,6 +955,7 @@ function startShow(){
 function step(){
   if(paused) return;
   if(idx>=order.length){ idx=0; shuffle(order); }
+  updateCap(idx);
   const sel=selTrans(); const t=sel[transCycle%sel.length]; transCycle++;
   setTrans(t);
   const cur=flip?imgB:imgA, prev=flip?imgA:imgB;
@@ -963,17 +987,28 @@ function toggleMute(){
 }
 
 /* ---- כיתובים ---- */
+function capIdxForSlide(slideNum, total, numCaps){
+  if(numCaps<=1) return 0;
+  const perCap=total/numCaps;
+  let i=Math.floor(slideNum/perCap);
+  if(i>=numCaps) i=numCaps-1;
+  return i;
+}
 function startCaptions(){
   const cap=document.getElementById('cap');
   if(!capList.length){ return; }
   if(capList.length===1){ cap.textContent=capList[0]; cap.classList.add('vis'); return; }
-  capIdx=0;
-  function show(){
-    cap.classList.remove('vis');
-    setTimeout(()=>{ cap.textContent=capList[capIdx%capList.length]; cap.classList.add('vis'); capIdx++; }, 700);
-  }
-  show();
-  capTimer=setInterval(()=>{ if(!paused) show(); }, 6000);
+  capIdx=-1; // יתעדכן ב-updateCap
+}
+function updateCap(slideNum){
+  if(capList.length<=1) return;
+  const cap=document.getElementById('cap');
+  if(!cap) return;
+  const total=(DATA.images&&DATA.images.length)?DATA.images.length:1;
+  const wanted=capIdxForSlide(slideNum, total, capList.length);
+  if(wanted===capIdx) return;
+  cap.classList.remove('vis');
+  setTimeout(()=>{ capIdx=wanted; cap.textContent=capList[wanted]; cap.classList.add('vis'); }, 350);
 }
 
 /* ---- אפקטים (fx) ---- */
@@ -1119,6 +1154,13 @@ function downloadHTMLFile(htmlString, filename){
 /* התהליך המלא — נקרא בלחיצה על הכפתור */
 async function exportMontage(){
   if (!pics.length){ alert('קודם בחרו תמונות למצגת.'); return; }
+
+  // בדיקה: יותר כתוביות מתמונות — חוסם
+  const capsCheck = (typeof getCaptions === 'function') ? getCaptions() : [];
+  if (capsCheck.length > pics.length){
+    alert('יש יותר כתוביות מתמונות (' + capsCheck.length + ' כתוביות, ' + pics.length + ' תמונות).\n\nכל כתובית מלווה קבוצת תמונות, אז צריך לפחות תמונה אחת לכל כתובית. חזרו והסירו כתוביות, או הוסיפו תמונות.');
+    return;
+  }
 
   const btn = document.getElementById('export-btn');
   const origText = btn ? btn.textContent : '';
