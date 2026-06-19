@@ -190,33 +190,34 @@ function picsChosen(files){
   (function diagnoseImages(){
     const fileArr = [...files];
     let report = [];
-    let done = 0;
+    const status = fileArr.map(() => 'תקועה (לא הגיב)');
     fileArr.forEach((f, i) => {
       const t0 = performance.now();
       const im = new Image();
       const isHeic = /\.heic$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
+      const tag = (i+1) + '. ' + f.name + (isHeic ? ' [HEIC]' : '');
       im.onload = () => {
         const ms = Math.round(performance.now() - t0);
-        const line = (i+1) + '. ' + f.name + (isHeic ? ' [HEIC]' : '') + ' → onload (' + ms + 'ms)';
-        console.log(line);
-        report.push(line);
-        if (++done === fileArr.length) showDiag(report);
+        status[i] = 'onload (' + ms + 'ms)';
+        console.log(tag + ' → ' + status[i]);
       };
       im.onerror = () => {
         const ms = Math.round(performance.now() - t0);
-        const line = (i+1) + '. ' + f.name + (isHeic ? ' [HEIC]' : '') + ' → ❌ onerror (' + ms + 'ms)';
-        console.log(line);
-        report.push(line);
-        if (++done === fileArr.length) showDiag(report);
+        status[i] = '❌ onerror (' + ms + 'ms)';
+        console.log(tag + ' → ' + status[i]);
       };
       im.src = pics[i];
     });
-    function showDiag(lines){
-      // מציג רק את ה-HEIC ואת הכשלים, כדי שלא יהיה ארוך מדי
-      const relevant = lines.filter(l => l.includes('[HEIC]') || l.includes('onerror'));
-      const msg = 'בדיקת טעינת תמונות:\n\n' + (relevant.length ? relevant.join('\n') : 'כל התמונות נטענו בהצלחה, אין HEIC או כשלים.') + '\n\n(הפרטים המלאים ב-Console / F12)';
+    // אחרי 8 שניות — מציגים דוח של מה שקרה (כולל תמונות שנתקעו)
+    setTimeout(() => {
+      const lines = fileArr.map((f, i) => {
+        const isHeic = /\.heic$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
+        return (i+1) + '. ' + f.name + (isHeic ? ' [HEIC]' : '') + ' → ' + status[i];
+      });
+      const relevant = lines.filter(l => l.includes('[HEIC]') || l.includes('onerror') || l.includes('תקועה'));
+      const msg = 'בדיקת טעינה (אחרי 8 שניות):\n\n' + (relevant.length ? relevant.join('\n') : 'כל התמונות נטענו בהצלחה.') + '\n\n(פירוט מלא ב-Console / F12)';
       alert(msg);
-    }
+    }, 8000);
   })();
 
   refreshStart();
