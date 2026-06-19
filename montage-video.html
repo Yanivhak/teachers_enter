@@ -105,8 +105,8 @@ a.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decorat
   <a class="back" href="index.html">→ חזרה לתפריט הראשי</a>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js" onerror="window._ffmpegLoadError='ffmpeg.js לא נטען'"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js" onerror="window._ffmpegLoadError='util לא נטען'"></script>
 <script>
 /* ============================================================
    כלי וידאו עצמאי — קורא קובץ HTML של מצגת שמורה,
@@ -218,12 +218,17 @@ async function makeVideo(){
       await new Promise(r => setTimeout(r, 250));
       waited += 250;
     }
-    if (typeof FFmpegWASM === 'undefined' || typeof FFmpegUtil === 'undefined'){
-      throw new Error('רכיב העיבוד לא נטען מהרשת. ייתכן שחומת אש או חוסם פרסומות מונעים את הטעינה. נסו לרענן, או דפדפן אחר.');
+    // אבחון מפורט: מה בדיוק חסר
+    const hasWASM = (typeof FFmpegWASM !== 'undefined');
+    const hasUtil = (typeof FFmpegUtil !== 'undefined');
+    if (!hasWASM || !hasUtil){
+      throw new Error('הספריות לא נטענו. FFmpegWASM=' + hasWASM + ', FFmpegUtil=' + hasUtil + '. ייתכן חסימת רשת/CDN.');
     }
     const FFmpeg = FFmpegWASM.FFmpeg;
     const fetchFile = FFmpegUtil.fetchFile;
     const toBlobURL = FFmpegUtil.toBlobURL;
+    if (typeof FFmpeg !== 'function'){ throw new Error('FFmpeg אינו זמין (FFmpegWASM.FFmpeg חסר).'); }
+    if (typeof toBlobURL !== 'function'){ throw new Error('toBlobURL אינו זמין (FFmpegUtil.toBlobURL חסר).'); }
 
     // 1. טעינת ffmpeg.wasm (הורדה חד-פעמית)
     if (!ffInstance){
@@ -236,10 +241,18 @@ async function makeVideo(){
       });
       const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
       // טוענים את ליבת ffmpeg כ-blob URLs — דרוש כדי שה-worker יוכל לטעון מ-CDN
-      await ffInstance.load({
-        coreURL: await toBlobURL(base + '/ffmpeg-core.js', 'text/javascript'),
-        wasmURL: await toBlobURL(base + '/ffmpeg-core.wasm', 'application/wasm')
-      });
+      let coreURL, wasmURL;
+      try {
+        coreURL = await toBlobURL(base + '/ffmpeg-core.js', 'text/javascript');
+        wasmURL = await toBlobURL(base + '/ffmpeg-core.wasm', 'application/wasm');
+      } catch(dlErr){
+        throw new Error('הורדת ליבת העיבוד נכשלה (toBlobURL): ' + (dlErr && dlErr.message ? dlErr.message : dlErr));
+      }
+      try {
+        await ffInstance.load({ coreURL, wasmURL });
+      } catch(loadErr){
+        throw new Error('טעינת ליבת העיבוד נכשלה (load): ' + (loadErr && loadErr.message ? loadErr.message : loadErr));
+      }
     }
 
     setProg(15, 'מכין תמונות...');
@@ -297,12 +310,27 @@ async function makeVideo(){
     args.push('-movflags','+faststart');
     args.push('output.mp4');
 
-    await ffInstance.exec(args);
+    // לכידת הלוג של ffmpeg עצמו — מראה את הסיבה האמיתית לקריסה
+    let ffLog = [];
+    try { ffInstance.on('log', ({ message }) => { ffLog.push(message); }); } catch(e){}
+
+    try {
+      await ffInstance.exec(args);
+    } catch(execErr){
+      const tail = ffLog.slice(-6).join(' | ');
+      throw new Error('הקידוד נכשל (exec). לוג: ' + (tail || (execErr && execErr.message) || execErr));
+    }
 
     setProg(96, 'מסיים...');
 
     // 6. קריאת הפלט והצגתו
-    const out = await ffInstance.readFile('output.mp4');
+    let out;
+    try {
+      out = await ffInstance.readFile('output.mp4');
+    } catch(readErr){
+      const tail = ffLog.slice(-6).join(' | ');
+      throw new Error('קריאת הפלט נכשלה — ייתכן שהקידוד לא הסתיים. לוג: ' + (tail || readErr));
+    }
     const blob = new Blob([out.buffer], { type: 'video/mp4' });
     if (lastVideoUrl) URL.revokeObjectURL(lastVideoUrl);
     lastVideoUrl = URL.createObjectURL(blob);
