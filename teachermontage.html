@@ -110,7 +110,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v50</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v51</div>
   <h1>🎬 מצגת תמונות</h1>
 
   <!-- שורת התחברות -->
@@ -228,40 +228,40 @@ function signInGoogle(){
 }
 function signOutGoogle(){ if (fauth) fauth.signOut(); }
 
-/* ===== בנק משפטים (Firebase, רק למחוברים) ===== */
-let sentenceBank = [];   // [{key, text}]
-function bankRef(){
+/* ===== בנק משפטים (Firebase, רק למחוברים) — שני בנקים נפרדים: captions ו-endings ===== */
+let bankData = { captions: [], endings: [] };   // לכל סוג: [{key, text}]
+let bankOpen = { captions: false, endings: false };   // האם הרשימה פתוחה
+function bankRef(kind){
   if (!fdb || !myUid) return null;
-  return fdb.ref('sentence_bank/' + myUid);
+  return fdb.ref('sentence_bank/' + myUid + '/' + kind);
 }
-function loadSentenceBank(cb){
-  const ref = bankRef();
-  if (!ref){ sentenceBank = []; if (cb) cb(); return; }
+function loadBank(kind, cb){
+  const ref = bankRef(kind);
+  if (!ref){ bankData[kind] = []; if (cb) cb(); return; }
   ref.once('value').then(snap => {
     const val = snap.val() || {};
-    sentenceBank = Object.keys(val).map(k => ({ key: k, text: val[k].text || '' }))
+    bankData[kind] = Object.keys(val).map(k => ({ key: k, text: val[k].text || '' }))
       .filter(s => s.text)
       .sort((a, b) => a.text.localeCompare(b.text, 'he'));
     if (cb) cb();
-  }).catch(() => { sentenceBank = []; if (cb) cb(); });
+  }).catch(() => { bankData[kind] = []; if (cb) cb(); });
 }
-function saveSentenceToBank(text, cb){
-  const ref = bankRef();
+function saveToBank(kind, text, cb){
+  const ref = bankRef(kind);
   if (!ref || !text){ if (cb) cb(false); return; }
-  // בדיקה אם כבר קיים (לא שומרים כפילויות)
-  if (sentenceBank.some(s => s.text === text)){ if (cb) cb('exists'); return; }
+  if (bankData[kind].some(s => s.text === text)){ if (cb) cb('exists'); return; }
   const newRef = ref.push();
   newRef.set({ text: text, ts: Date.now() }).then(() => {
-    sentenceBank.push({ key: newRef.key, text: text });
-    sentenceBank.sort((a, b) => a.text.localeCompare(b.text, 'he'));
+    bankData[kind].push({ key: newRef.key, text: text });
+    bankData[kind].sort((a, b) => a.text.localeCompare(b.text, 'he'));
     if (cb) cb(true);
   }).catch(() => { if (cb) cb(false); });
 }
-function deleteSentenceFromBank(key, cb){
-  const ref = bankRef();
+function deleteFromBank(kind, key, cb){
+  const ref = bankRef(kind);
   if (!ref || !key){ if (cb) cb(false); return; }
   ref.child(key).remove().then(() => {
-    sentenceBank = sentenceBank.filter(s => s.key !== key);
+    bankData[kind] = bankData[kind].filter(s => s.key !== key);
     if (cb) cb(true);
   }).catch(() => { if (cb) cb(false); });
 }
@@ -592,67 +592,88 @@ function openCapPanel(){
   box.appendChild(close);
 
   renderCapList();
-  // טוען ומציג את בנק המשפטים
+  // טוען ומציג את בנק הכיתובים
   if (myUid){
-    loadSentenceBank(() => renderSentenceBank());
+    loadBank('captions', () => renderCaptionBank());
   } else {
-    renderSentenceBank();
+    renderCaptionBank();
   }
   inp.focus();
 }
 
-/* מציג את בנק המשפטים השמורים בתוך חלון הכיתוב */
-function renderSentenceBank(){
-  const wrap = $('cap-bank-wrap');
+/* מציג בנק משפטים מתקפל (כללי — לכיתוב או לסיום) בתוך אלמנט נתון.
+   kind: 'captions' או 'endings'. onPick: מה לעשות בלחיצה על משפט. */
+function renderBank(kind, wrapId, onPick){
+  const wrap = $(wrapId);
   if (!wrap) return;
   wrap.innerHTML = '';
-  // כותרת
+
+  // כותרת עם כפתור הצג/הסתר
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none;';
   const title = document.createElement('div');
-  title.style.cssText = 'font-size:14px; color:var(--gold); font-weight:700; margin-bottom:8px;';
-  title.textContent = '💾 משפטים שמורים';
-  wrap.appendChild(title);
+  title.style.cssText = 'font-size:14px; color:var(--gold); font-weight:700;';
+  const count = myUid ? (' (' + bankData[kind].length + ')') : '';
+  title.textContent = '💾 משפטים שמורים' + count;
+  const arrow = document.createElement('span');
+  arrow.style.cssText = 'font-size:13px; color:var(--ink-dim);';
+  arrow.textContent = bankOpen[kind] ? '▲ הסתר' : '▼ הצג';
+  head.appendChild(title); head.appendChild(arrow);
+  wrap.appendChild(head);
+
+  // גוף הבנק (מוצג רק כשפתוח)
+  const body = document.createElement('div');
+  body.style.cssText = 'margin-top:10px;';
+  body.style.display = bankOpen[kind] ? 'block' : 'none';
+  wrap.appendChild(body);
+
+  head.onclick = () => {
+    bankOpen[kind] = !bankOpen[kind];
+    arrow.textContent = bankOpen[kind] ? '▲ הסתר' : '▼ הצג';
+    body.style.display = bankOpen[kind] ? 'block' : 'none';
+  };
 
   if (!myUid){
-    // אורח — הזמנה להתחבר
     const msg = document.createElement('div');
     msg.style.cssText = 'font-size:13px; color:var(--ink-dim); line-height:1.5;';
     msg.textContent = 'התחברו עם Google (בראש המסך) כדי לשמור משפטים ולהשתמש בהם שוב בכל מצגת.';
-    wrap.appendChild(msg);
+    body.appendChild(msg);
     return;
   }
-  if (!sentenceBank.length){
+  if (!bankData[kind].length){
     const empty = document.createElement('div');
     empty.style.cssText = 'font-size:13px; color:var(--ink-dim);';
     empty.textContent = 'הבנק ריק. לחצו 💾 ליד משפט כדי לשמור אותו כאן.';
-    wrap.appendChild(empty);
+    body.appendChild(empty);
     return;
   }
-  // רשימת המשפטים
   const listEl = document.createElement('div');
   listEl.className = 'list';
-  sentenceBank.forEach(s => {
+  bankData[kind].forEach(s => {
     const row = document.createElement('div'); row.className = 'item';
     const txt = document.createElement('span');
     txt.textContent = s.text;
     txt.style.cssText = 'cursor:pointer; flex:1;';
-    txt.title = 'לחיצה להוספה לכיתוב';
-    txt.onclick = () => {
-      // מוסיף את המשפט לכיתוב (אם לא קיים כבר)
-      if (!captions.includes(s.text)){
-        captions.push(s.text);
-        renderCapList();
-        const fb = $('cap-feedback');
-        if (fb){ fb.textContent = 'נוסף לכיתוב ✓'; fb.style.opacity = '1'; setTimeout(() => { fb.style.opacity = '0'; }, 1500); }
-      }
-    };
+    txt.title = 'לחיצה לשימוש';
+    txt.onclick = () => onPick(s.text);
     const del = document.createElement('button'); del.className = 'x'; del.textContent = '🗑️'; del.title = 'מחיקה מהבנק';
-    del.onclick = () => {
-      deleteSentenceFromBank(s.key, (ok) => { if (ok) renderSentenceBank(); });
-    };
+    del.onclick = () => { deleteFromBank(kind, s.key, (ok) => { if (ok) renderBank(kind, wrapId, onPick); }); };
     row.appendChild(txt); row.appendChild(del);
     listEl.appendChild(row);
   });
-  wrap.appendChild(listEl);
+  body.appendChild(listEl);
+}
+
+/* בנק הכיתובים — מרענן את התצוגה בחלון הכיתוב */
+function renderCaptionBank(){
+  renderBank('captions', 'cap-bank-wrap', (text) => {
+    if (!captions.includes(text)){
+      captions.push(text);
+      renderCapList();
+      const fb = $('cap-feedback');
+      if (fb){ fb.textContent = 'נוסף לכיתוב ✓'; fb.style.opacity = '1'; setTimeout(() => { fb.style.opacity = '0'; }, 1500); }
+    }
+  });
 }
 function addCapLine(){
   const inp = $('cap-input');
@@ -720,8 +741,8 @@ function renderCapList(){
         if (myUid){
           const save = document.createElement('button'); save.className = 'x'; save.textContent = '💾'; save.title = 'שמירה לבנק המשפטים';
           save.onclick = () => {
-            saveSentenceToBank(c, (res) => {
-              if (res === true){ save.textContent = '✓'; renderSentenceBank(); }
+            saveToBank('captions', c, (res) => {
+              if (res === true){ save.textContent = '✓'; renderCaptionBank(); }
               else if (res === 'exists'){ save.textContent = '✓'; }
             });
           };
@@ -769,21 +790,47 @@ function openEndPanel(){
   lbl1.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:6px;';
   lbl1.textContent = 'כותרת סיום';
   box.appendChild(lbl1);
+  const row1 = document.createElement('div');
+  row1.style.cssText = 'display:flex; gap:8px; align-items:stretch; margin-bottom:14px;';
   const inp1 = document.createElement('input');
   inp1.type = 'text'; inp1.id = 'end-title-input'; inp1.maxLength = 50; inp1.placeholder = 'למשל: תודה על הדרך המשותפת';
   inp1.value = endTitle;
-  inp1.style.cssText = "width:100%; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center; margin-bottom:14px;";
-  box.appendChild(inp1);
+  inp1.style.cssText = "flex:1; font-family:'Heebo'; font-size:17px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center;";
+  row1.appendChild(inp1);
+  if (myUid){
+    const save1 = document.createElement('button');
+    save1.textContent = '💾'; save1.title = 'שמירת הכותרת לבנק';
+    save1.style.cssText = "border:none; border-radius:12px; padding:0 14px; cursor:pointer; background:rgba(255,255,255,.12); font-size:18px;";
+    save1.onclick = () => {
+      const t = inp1.value.trim();
+      if (t) saveToBank('endings', t, (res) => { if (res === true || res === 'exists'){ save1.textContent = '✓'; renderEndingBank(); } });
+    };
+    row1.appendChild(save1);
+  }
+  box.appendChild(row1);
 
   const lbl2 = document.createElement('div');
   lbl2.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:6px;';
   lbl2.textContent = 'טקסט סיום';
   box.appendChild(lbl2);
+  const row2 = document.createElement('div');
+  row2.style.cssText = 'display:flex; gap:8px; align-items:stretch;';
   const inp2 = document.createElement('textarea');
   inp2.id = 'end-text-input'; inp2.maxLength = 200; inp2.rows = 3; inp2.placeholder = 'למשל: מאחלים לכולם הצלחה בהמשך הדרך';
   inp2.value = endText;
-  inp2.style.cssText = "width:100%; font-family:'Heebo'; font-size:16px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center; resize:vertical;";
-  box.appendChild(inp2);
+  inp2.style.cssText = "flex:1; font-family:'Heebo'; font-size:16px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center; resize:vertical;";
+  row2.appendChild(inp2);
+  if (myUid){
+    const save2 = document.createElement('button');
+    save2.textContent = '💾'; save2.title = 'שמירת הטקסט לבנק';
+    save2.style.cssText = "border:none; border-radius:12px; padding:0 14px; cursor:pointer; background:rgba(255,255,255,.12); font-size:18px;";
+    save2.onclick = () => {
+      const t = inp2.value.trim();
+      if (t) saveToBank('endings', t, (res) => { if (res === true || res === 'exists'){ save2.textContent = '✓'; renderEndingBank(); } });
+    };
+    row2.appendChild(save2);
+  }
+  box.appendChild(row2);
 
   // בחירת רקע לשקופית הסיום
   const lbl3 = document.createElement('div');
@@ -814,6 +861,12 @@ function openEndPanel(){
   });
   box.appendChild(bgRow);
 
+  // אזור בנק משפטי הסיום השמורים
+  const endBankWrap = document.createElement('div');
+  endBankWrap.id = 'end-bank-wrap';
+  endBankWrap.style.cssText = 'margin-top:16px; border-top:1px solid rgba(255,255,255,.12); padding-top:14px;';
+  box.appendChild(endBankWrap);
+
   const close = document.createElement('button');
   close.className = 'btn'; close.textContent = '✓ אישור'; close.style.cssText += 'margin-top:16px; width:100%;';
   close.onclick = () => {
@@ -824,7 +877,25 @@ function openEndPanel(){
     closeModal();
   };
   box.appendChild(close);
+
+  // טוען ומציג את בנק הסיום. לחיצה על משפט ממלאת כותרת (אם ריקה) או טקסט.
+  window._endPickTargets = { inp1, inp2 };
+  if (myUid){
+    loadBank('endings', () => renderEndingBank());
+  } else {
+    renderEndingBank();
+  }
   inp1.focus();
+}
+
+/* בנק משפטי הסיום — לחיצה ממלאת את הכותרת אם ריקה, אחרת את הטקסט */
+function renderEndingBank(){
+  renderBank('endings', 'end-bank-wrap', (text) => {
+    const t = window._endPickTargets;
+    if (!t) return;
+    if (!t.inp1.value.trim()){ t.inp1.value = text; }
+    else { t.inp2.value = (t.inp2.value.trim() ? t.inp2.value.trim() + '\n' : '') + text; }
+  });
 }
 function updateEndBtn(){
   const btn = $('end-btn');
