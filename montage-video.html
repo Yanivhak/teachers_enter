@@ -198,7 +198,7 @@ function resetAll(){
 /* ---------- יצירת הווידאו ---------- */
 const { FFmpeg } = FFmpegWASM;
 const { fetchFile, toBlobURL } = FFmpegUtil;
-let ffmpeg = null;
+let ffInstance = null;
 
 function setProg(pct, text){
   document.getElementById('prog-fill').style.width = Math.round(pct) + '%';
@@ -214,17 +214,17 @@ async function makeVideo(){
 
   try {
     // 1. טעינת ffmpeg.wasm (הורדה חד-פעמית)
-    if (!ffmpeg){
+    if (!ffInstance){
       setProg(2, 'מוריד רכיב עיבוד (פעם ראשונה, עד דקה)...');
-      ffmpeg = new FFmpeg();
-      ffmpeg.on('progress', ({ progress }) => {
+      ffInstance = new FFmpeg();
+      ffInstance.on('progress', ({ progress }) => {
         // התקדמות הקידוד עצמו (40%-95%)
         const p = 40 + Math.max(0, Math.min(1, progress)) * 55;
         setProg(p, 'מקודד וידאו... ' + Math.round(progress*100) + '%');
       });
       const base = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
       // טוענים את ליבת ffmpeg כ-blob URLs — דרוש כדי שה-worker יוכל לטעון מ-CDN
-      await ffmpeg.load({
+      await ffInstance.load({
         coreURL: await toBlobURL(base + '/ffmpeg-core.js', 'text/javascript'),
         wasmURL: await toBlobURL(base + '/ffmpeg-core.wasm', 'application/wasm')
       });
@@ -236,7 +236,7 @@ async function makeVideo(){
     const imgs = parsed.images;
     for (let i = 0; i < imgs.length; i++){
       const name = 'img' + String(i).padStart(4,'0') + '.jpg';
-      await ffmpeg.writeFile(name, await fetchFile(imgs[i]));
+      await ffInstance.writeFile(name, await fetchFile(imgs[i]));
       setProg(15 + (i/imgs.length)*10, 'מכין תמונה ' + (i+1) + ' מתוך ' + imgs.length + '...');
     }
 
@@ -245,7 +245,7 @@ async function makeVideo(){
     let hasMusic = parsed.music && parsed.music.length > 0;
     if (hasMusic){
       setProg(27, 'מכין מוזיקה...');
-      await ffmpeg.writeFile('audio0.mp3', await fetchFile(parsed.music[0]));
+      await ffInstance.writeFile('audio0.mp3', await fetchFile(parsed.music[0]));
     }
 
     // 4. בניית קובץ רשימת תמונות עבור ffmpeg (concat demuxer)
@@ -258,7 +258,7 @@ async function makeVideo(){
     }
     // התמונה האחרונה חייבת להופיע פעם נוספת (דרישת concat demuxer)
     listLines.push("file 'img" + String(imgs.length-1).padStart(4,'0') + ".jpg'");
-    await ffmpeg.writeFile('list.txt', listLines.join('\n'));
+    await ffInstance.writeFile('list.txt', listLines.join('\n'));
 
     setProg(38, 'מתחיל בקידוד...');
 
@@ -285,12 +285,12 @@ async function makeVideo(){
     args.push('-movflags','+faststart');
     args.push('output.mp4');
 
-    await ffmpeg.exec(args);
+    await ffInstance.exec(args);
 
     setProg(96, 'מסיים...');
 
     // 6. קריאת הפלט והצגתו
-    const out = await ffmpeg.readFile('output.mp4');
+    const out = await ffInstance.readFile('output.mp4');
     const blob = new Blob([out.buffer], { type: 'video/mp4' });
     if (lastVideoUrl) URL.revokeObjectURL(lastVideoUrl);
     lastVideoUrl = URL.createObjectURL(blob);
