@@ -105,8 +105,8 @@ a.back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decorat
   <a class="back" href="index.html">→ חזרה לתפריט הראשי</a>
 </div>
 
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js"></script>
-<script src="https://unpkg.com/@ffmpeg/util@0.12.2/dist/umd/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.15/dist/umd/ffmpeg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/umd/index.js"></script>
 <script>
 /* ============================================================
    כלי וידאו עצמאי — קורא קובץ HTML של מצגת שמורה,
@@ -211,9 +211,15 @@ async function makeVideo(){
   document.getElementById('result').classList.add('hidden');
 
   try {
-    // גישה לספריות רק עכשיו (אחרי שנטענו) — עם בדיקה ברורה
+    // גישה לספריות רק עכשיו (אחרי שנטענו) — עם המתנה קצרה אם עדיין נטענות
+    let waited = 0;
+    while ((typeof FFmpegWASM === 'undefined' || typeof FFmpegUtil === 'undefined') && waited < 5000){
+      setProg(1, 'טוען רכיב עיבוד...');
+      await new Promise(r => setTimeout(r, 250));
+      waited += 250;
+    }
     if (typeof FFmpegWASM === 'undefined' || typeof FFmpegUtil === 'undefined'){
-      throw new Error('רכיב העיבוד לא נטען. בדקו חיבור לאינטרנט ונסו לרענן את הדף.');
+      throw new Error('רכיב העיבוד לא נטען מהרשת. ייתכן שחומת אש או חוסם פרסומות מונעים את הטעינה. נסו לרענן, או דפדפן אחר.');
     }
     const FFmpeg = FFmpegWASM.FFmpeg;
     const fetchFile = FFmpegUtil.fetchFile;
@@ -228,7 +234,7 @@ async function makeVideo(){
         const p = 40 + Math.max(0, Math.min(1, progress)) * 55;
         setProg(p, 'מקודד וידאו... ' + Math.round(progress*100) + '%');
       });
-      const base = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
+      const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd';
       // טוענים את ליבת ffmpeg כ-blob URLs — דרוש כדי שה-worker יוכל לטעון מ-CDN
       await ffInstance.load({
         coreURL: await toBlobURL(base + '/ffmpeg-core.js', 'text/javascript'),
