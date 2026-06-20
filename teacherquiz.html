@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v51 - תיקון 2 באגים בקישורים: (א) קישור שיתוף-לעריכה (?share=) לא עבד — pendingShareId הוגדר אחרי השימוש ואופס; הוגדר בראש + קריאה מיידית אם המשתמש כבר מחובר. (ב) קישור-משחק שהוצג היה בלי קוד המשחק (הוביל לדף ריק); עכשיו מציג את הקישור המלא + כפתור "העתקת קישור"
+  v50 - שיפור UX לחצי ההזזה: החצים מובלטים (זהב) וגלויים גם באזור המחיקה (רק המספר והטקסט מעומעמים), + שורת עזרה קצרה שמדגישה את אפשרות שינוי הסדר
   v49 - פריט 5: רשימת שאלות ממוספרת בחלון ה-AI (עריכת חידון קיים) — סימון "החלף" סלקטיבי, חצים להזזת סדר, בורר ששולט בכמות הסופית (מוחק מהסוף עם אזור אפור + מונה), פרומפט שמבקש בדיוק את מספר השאלות החדשות הנדרש
   v48 - תיקון 2 באגים: (1) כפתור ה-AI בעמוד העריכה מתחלף ל"עריכה" בחידון קיים; (2) סינון שורות placeholder (<...>) שה-AI מעתיק מהפרומפט
   v47 - פריט 1: שמירת בחירות ה-AI עם החידון + טעינה מלאה בעריכה חוזרת + כותרת "עריכה"/"יצירה" לפי הקשר
@@ -149,7 +151,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v49</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v51</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -364,7 +366,8 @@ input:focus{border-color:var(--gold); outline:none;}
     <p class="sub">המשתתפים נכנסים לכתובת, מקלידים את הקוד, ומצטרפים.</p>
     <div>קוד למשחק:</div>
     <span class="codepill" id="play-code">----</span>
-    <p style="font-size:15px; color:var(--ink-dim);" id="join-addr"></p>
+    <p style="font-size:14px; color:var(--ink-dim); word-break:break-all; margin:10px auto 4px; max-width:340px;" id="join-addr"></p>
+    <button id="copy-join-link" class="btn ghost sm" style="margin:0 auto 6px; display:none;">📋 העתקת קישור ההצטרפות</button>
     <div class="qrbox" id="qrbox" style="background:#fff; padding:14px; border-radius:18px; display:none; margin:10px auto; width:max-content;">
       <img id="qr" alt="QR להצטרפות" style="display:block; width:190px; height:190px;">
     </div>
@@ -608,8 +611,18 @@ let myEmail = '', myEmailKey = '';
 let myStoreKey = '';   // מפתח השמירה של החידונים — מבוסס UID למשתמש מחובר
 let myUid = null, myAuthName = '';
 let isGuest = false;
+let pendingShareId = null;   // מזהה שיתוף ממתין (מקישור ?share=). מוגדר מוקדם כדי שלא יתאפס בטעות.
 
 function genCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
+// העתקה ללוח — גיבוי לדפדפנים שאין בהם navigator.clipboard
+function legacyCopy(text){
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+  } catch(e){}
+}
 // מגריל קוד 4 ספרות שעדיין לא תפוס (בודק גם בחידונים המשותפים וגם במשחקים הפעילים)
 async function genUniqueCode(){
   for (let attempt = 0; attempt < 25; attempt++){
@@ -1156,7 +1169,7 @@ function renderImpQuestionList(){
   wrap.appendChild(head);
   const sub = document.createElement('div');
   sub.style.cssText = 'font-size:12px; color:var(--ink-dim); margin-bottom:10px; line-height:1.5;';
-  sub.textContent = 'סמנו "החלף" ליד כל שאלה שתרצו שה-AI ייצר מחדש. אפשר לשנות סדר עם החצים. מה שלא סומן יישאר כפי שהוא.';
+  sub.innerHTML = 'סמנו "החלף" לכל שאלה שה-AI ייצר מחדש. <span style="color:var(--gold);">בחצים ▲▼ אפשר לשנות את סדר השאלות.</span>';
   wrap.appendChild(sub);
 
   if (toDelete > 0){
@@ -1172,33 +1185,33 @@ function renderImpQuestionList(){
     const row = document.createElement('div');
     row.style.cssText = 'display:flex; align-items:center; gap:8px; padding:8px 10px; margin-bottom:6px; border-radius:9px; background:' +
       (inDeleteZone ? 'rgba(255,107,107,.07)' : 'rgba(255,255,255,.05)') + '; border:1px solid ' +
-      (inDeleteZone ? 'rgba(255,107,107,.25)' : 'rgba(255,255,255,.1)') + ';' +
-      (inDeleteZone ? 'opacity:.55;' : '');
+      (inDeleteZone ? 'rgba(255,107,107,.25)' : 'rgba(255,255,255,.1)') + ';';
 
-    // מספר
+    // מספר (מעומעם באזור המחיקה)
     const num = document.createElement('div');
-    num.style.cssText = 'font-weight:800; color:var(--gold); min-width:24px; text-align:center; font-size:15px;';
+    num.style.cssText = 'font-weight:800; color:var(--gold); min-width:24px; text-align:center; font-size:15px;' + (inDeleteZone ? 'opacity:.5;' : '');
     num.textContent = (pos+1);
     row.appendChild(num);
 
     // טקסט השאלה (מקוצר, עד 2 שורות)
     const txt = document.createElement('div');
-    txt.style.cssText = 'flex:1; font-size:13px; color:var(--ink); line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; max-height:38px;';
+    txt.style.cssText = 'flex:1; font-size:13px; color:var(--ink); line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; max-height:38px;' + (inDeleteZone ? 'opacity:.5;' : '');
     txt.textContent = (q.text && q.text.trim()) ? q.text : '(שאלה ללא נוסח)';
     row.appendChild(txt);
 
-    // חצים (עובדים גם באזור המחיקה — כדי להציל שאלה)
+    // חצים (עובדים גם באזור המחיקה — כדי להציל שאלה). מובלטים כדי שיהיה ברור שאפשר ללחוץ.
     const arrows = document.createElement('div');
-    arrows.style.cssText = 'display:flex; flex-direction:column; gap:2px;';
+    arrows.style.cssText = 'display:flex; flex-direction:column; gap:3px;';
+    const arrowStyle = 'background:rgba(243,200,90,.18); border:1px solid rgba(243,200,90,.4); color:var(--gold); border-radius:5px; width:30px; height:20px; cursor:pointer; font-size:11px; padding:0; font-weight:700;';
     const up = document.createElement('button');
     up.textContent = '▲'; up.title = 'העבר למעלה';
-    up.style.cssText = 'background:rgba(255,255,255,.1); border:none; color:var(--ink); border-radius:5px; width:26px; height:18px; cursor:pointer; font-size:10px; padding:0;';
-    up.disabled = (pos===0); if(pos===0) up.style.opacity='.3';
+    up.style.cssText = arrowStyle;
+    up.disabled = (pos===0); if(pos===0){ up.style.opacity='.25'; up.style.cursor='default'; }
     up.onclick = ()=>{ if(pos>0){ const t=impOrder[pos-1]; impOrder[pos-1]=impOrder[pos]; impOrder[pos]=t; renderImpQuestionList(); refreshImpAfterChange(); } };
     const down = document.createElement('button');
     down.textContent = '▼'; down.title = 'העבר למטה';
-    down.style.cssText = 'background:rgba(255,255,255,.1); border:none; color:var(--ink); border-radius:5px; width:26px; height:18px; cursor:pointer; font-size:10px; padding:0;';
-    down.disabled = (pos===total-1); if(pos===total-1) down.style.opacity='.3';
+    down.style.cssText = arrowStyle;
+    down.disabled = (pos===total-1); if(pos===total-1){ down.style.opacity='.25'; down.style.cursor='default'; }
     down.onclick = ()=>{ if(pos<total-1){ const t=impOrder[pos+1]; impOrder[pos+1]=impOrder[pos]; impOrder[pos]=t; renderImpQuestionList(); refreshImpAfterChange(); } };
     arrows.appendChild(up); arrows.appendChild(down);
     row.appendChild(arrows);
@@ -1986,11 +1999,27 @@ async function goPlay(){
   if ($('join-code-echo')) $('join-code-echo').textContent = playCode;
   $('lobby-title').textContent = quiz.title || 'החידון';
   const baseUrl = location.origin.startsWith('http') ? (location.origin + location.pathname) : '';
-  const dispUrl = baseUrl.replace(/^https?:\/\//,'');
-  $('join-addr').textContent = baseUrl ? ('כתובת: ' + dispUrl) : '';
+  // הקישור המלא — כולל קוד המשחק. זה מה שמוצג וזה מה שמועתק (באג ב': קודם הוצג בלי הקוד).
+  const joinUrl = baseUrl ? (baseUrl + '?game=' + playCode) : '';
+  const dispUrl = joinUrl.replace(/^https?:\/\//,'');
+  $('join-addr').textContent = dispUrl ? ('קישור: ' + dispUrl) : '';
+  // כפתור העתקת קישור מלא
+  const copyJoinBtn = $('copy-join-link');
+  if (copyJoinBtn){
+    if (joinUrl){
+      copyJoinBtn.style.display = 'block';
+      copyJoinBtn.onclick = ()=>{
+        const done = ()=>{ copyJoinBtn.textContent='✓ הקישור הועתק!'; setTimeout(()=>copyJoinBtn.textContent='📋 העתקת קישור ההצטרפות',1600); };
+        if (navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(joinUrl).then(done).catch(()=>{ legacyCopy(joinUrl); done(); });
+        } else { legacyCopy(joinUrl); done(); }
+      };
+    } else {
+      copyJoinBtn.style.display = 'none';
+    }
+  }
   // קוד QR שמוביל ישר למסך ההצטרפות עם קוד המשחק (לאותו קובץ עצמו)
-  if (baseUrl){
-    const joinUrl = baseUrl + '?game=' + playCode;
+  if (joinUrl){
     $('qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=380x380&margin=2&data=' + encodeURIComponent(joinUrl);
     $('qrbox').style.display = 'block';
   } else {
@@ -2768,11 +2797,13 @@ let myName='', myTeam=-1, joined=false, pTimer=null, sentThisQ=false, lastPick=-
   const shareParam = params.get('share');
   if (shareParam && /^[A-Za-z0-9_]+$/.test(shareParam)){
     pendingShareId = shareParam;
+    // אם המשתמש כבר מחובר (onAuthStateChanged כבר רץ) — מטפלים מיד.
+    // אחרת, handlePendingShare ייקרא מתוך onAuthStateChanged כשההתחברות תושלם.
+    if (myUid && myStoreKey) handlePendingShare();
   }
 })();
 
 // אם נכנסו דרך קישור שיתוף — מטפלים בו ברגע שיש משתמש מחובר
-let pendingShareId = null;
 function handlePendingShare(){
   if (!pendingShareId) return;
   if (!myUid || !myStoreKey){
