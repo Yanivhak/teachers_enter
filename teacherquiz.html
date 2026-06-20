@@ -837,6 +837,7 @@ function renderQuizList(all){
 async function newQuiz(){
   editCode = await genUniqueCode();
   quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
+  resetAiMeta();             // חידון חדש — בחירות AI מתאפסות (פריט 1)
   aiCardDismissed = false;   // חידון חדש — הכרטיס יוצג שוב
   quiz.questions.push({ text:'', answers:['',''], correct:0 });  // שאלה ריקה ראשונה — לפני הרינדור, כדי לרנדר פעם אחת בלבד
   $('edit-code').textContent = editCode;
@@ -854,6 +855,8 @@ function openExisting(code, data){
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
+  if (data.aiMeta) quiz.aiMeta = data.aiMeta;   // משמרים את ה-meta באובייקט
+  loadAiMeta(data.aiMeta);                       // טוענים את הבחירות לשדות (פריט 1)
   aiCardDismissed = false;   // פתיחת חידון — מאפסים; אם יש בו תוכן הכרטיס ממילא לא יוצג
   $('edit-code').textContent = editCode;
   renderEditor();
@@ -967,6 +970,45 @@ let impTrack = 'study';        // 'study' = לימודים, 'fun' = פעילות
 let impOpenSection = 'topics'; // איזה סעיף פתוח באקורדיון
 let impNote = '';              // הערה חופשית שהמנחה מוסיף לפרומפט
 
+// אוסף את כל בחירות ה-AI לאובייקט אחד (לשמירה עם החידון)
+function collectAiMeta(){
+  return {
+    track: impTrack,
+    topics: [...impTopics],
+    topicFree: ($('imp-topic-free') ? $('imp-topic-free').value.trim() : ''),
+    age: impAge,
+    ageFree: ($('imp-age-free') ? $('imp-age-free').value.trim() : ''),
+    traits: [...impTraits],
+    traitFree: ($('imp-trait-free') ? $('imp-trait-free').value.trim() : ''),
+    goals: [...impGoals],
+    goalFree: ($('imp-goal-free') ? $('imp-goal-free').value.trim() : ''),
+    note: impNote,
+    qCount: impQCount,
+    aCount: impACount
+  };
+}
+// טוען בחירות שמורות בחזרה למשתני המצב (כשפותחים חידון קיים)
+function loadAiMeta(m){
+  if (!m){ resetAiMeta(); return; }
+  impTrack   = m.track || 'study';
+  impTopics  = new Set(m.topics || []);
+  impAge     = m.age || '';
+  impTraits  = new Set(m.traits || []);
+  impGoals   = new Set(m.goals || []);
+  impNote    = m.note || '';
+  impQCount  = m.qCount || 10;
+  impACount  = m.aCount || 4;
+  // השדות החופשיים נשמרים לאובייקט זמני שייקרא בעת בניית החלון
+  impFreeCache = { topic: m.topicFree||'', age: m.ageFree||'', trait: m.traitFree||'', goal: m.goalFree||'' };
+}
+// איפוס לערכי ברירת מחדל (חידון חדש)
+function resetAiMeta(){
+  impTrack='study'; impTopics=new Set(); impAge=''; impTraits=new Set();
+  impGoals=new Set(); impNote=''; impQCount=10; impACount=4;
+  impFreeCache = { topic:'', age:'', trait:'', goal:'' };
+}
+let impFreeCache = { topic:'', age:'', trait:'', goal:'' };  // ערכי השדות החופשיים שנטענו מחידון קיים
+
 /* תוכן שני המסלולים — כל מסלול עם אותם שדות אבל ערכים שונים */
 const IMP_CONTENT = {
   study: {
@@ -1051,6 +1093,9 @@ function impChipRow(parent, items, set, refresh){
 function impFreeInput(parent, id, placeholder){
   const inp = document.createElement('input'); inp.type='text'; inp.id=id; inp.placeholder=placeholder;
   inp.style.cssText='width:100%; margin-top:8px; padding:9px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); font-family:Heebo; font-size:14px;';
+  // טעינת ערך שמור מחידון קיים (פריט 1)
+  const cacheMap = { 'imp-topic-free':'topic', 'imp-age-free':'age', 'imp-trait-free':'trait', 'imp-goal-free':'goal' };
+  if (cacheMap[id] && impFreeCache[cacheMap[id]]) inp.value = impFreeCache[cacheMap[id]];
   inp.oninput = ()=>{ $('imp-prompt').value = buildImportPrompt(); };
   parent.appendChild(inp);
 }
@@ -1099,7 +1144,7 @@ function openImport(){
   const box = document.createElement('div');
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:580px; width:100%; text-align:right; margin:auto;';
   box.innerHTML =
-    '<div style="font-family:\'Secular One\'; font-size:24px; color:var(--gold); margin-bottom:6px;">🤖 יצירת חידון באמצעות בינה מלאכותית</div>' +
+    '<div style="font-family:\'Secular One\'; font-size:24px; color:var(--gold); margin-bottom:6px;">🤖 ' + (quizHasRealContent() ? 'עריכת חידון באמצעות בינה מלאכותית' : 'יצירת חידון באמצעות בינה מלאכותית') + '</div>' +
     '<div style="font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;">' +
     'בחרו את סוג החידון ואת הפרטים, העתיקו את הטקסט המוכן לכלי בינה מלאכותית (ChatGPT, Claude, Gemini ועוד), והדביקו כאן בחזרה את התשובה. המערכת תבנה את החידון לבד.' +
     '</div>';
@@ -1119,6 +1164,7 @@ function openImport(){
       impTrack=t.key;
       // איפוס הבחירות כשמחליפים מסלול (כי התוכן שונה)
       impTopics.clear(); impGoals.clear(); impTraits.clear(); impAge='';
+      impFreeCache = { topic:'', age:'', trait:'', goal:'' };  // ניקוי ערכים חופשיים שמורים
       impOpenSection='topics';
       const cur = $('imp-overlay'); if (cur) cur.remove();
       openImport(); // בנייה מחדש עם המסלול החדש
@@ -1293,6 +1339,7 @@ function parseImport(){
   const hadContent = quiz.questions.some(q=>q.text || q.answers.some(a=>a));
   if (!hadContent) quiz.questions = [];
   valid.forEach(q => quiz.questions.push(q));
+  quiz.aiMeta = collectAiMeta();   // שומרים את בחירות ה-AI עם החידון (פריט 1)
   renderQuestions(); touch(); saveQuiz();
   const ov = $('imp-overlay'); if (ov) ov.remove();
   // בדיקת אורך — מסמנים שאלות/תשובות שחורגות, כדי שהמורה יקצר
