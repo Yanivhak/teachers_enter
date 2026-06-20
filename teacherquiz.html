@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v56 - רשימת החידונים: (א) הצגת "📩 שותף על ידי X" לחידונים שהתקבלו משיתוף (השם נשמר עכשיו בעותק); (ב) תיקון שהתפריט זז כשהשם ארוך — הכפתורים מקובעים בצד, הכותרת נחתכת ב-...
   v55 - "חידון חדש" ממסך הסיום + "נקה הכל" בתחתית העורך (שומר קוד/שיתוף, רק כשיש תוכן)
   v54 - פריט 12: חצי הזזה (▲▼) לכל שאלה בעורך הראשי — שינוי סדר ישיר, אותו עיצוב כמו החצים בחלון ה-AI
   v53 - בורר כמות השאלות ב-AI: סדרה מורחבת 5,10,15,20,25,30 (היה עד 20)
@@ -155,7 +156,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v55</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v56</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -854,11 +855,16 @@ function renderQuizList(all){
   codes.forEach(code => {
     const q = all[code];
     const row = document.createElement('div');
-    row.style.cssText = 'background:var(--card); border-radius:12px; padding:14px 18px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;';
-    const info = document.createElement('div'); info.style.textAlign='right';
-    info.innerHTML = '<div style="font-weight:800; font-size:18px;">' + (q.title || 'חידון ללא שם') + '</div>' +
-                     '<div style="font-size:13px; color:var(--ink-dim);">מספר ' + code + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>';
-    const btns = document.createElement('div'); btns.style.cssText='display:flex; gap:8px; flex-wrap:wrap;';
+    row.style.cssText = 'background:var(--card); border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:12px;';
+    const info = document.createElement('div'); info.style.cssText='text-align:right; flex:1; min-width:0;';
+    // שורת "שותף על ידי" — רק אם החידון הגיע משיתוף ויש שם
+    const sharedLine = (q.copiedFrom && q.copiedFrom.ownerName)
+      ? '<div style="font-size:12px; color:var(--teal); margin-top:2px;">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
+      : '';
+    info.innerHTML = '<div style="font-weight:800; font-size:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
+                     '<div style="font-size:13px; color:var(--ink-dim);">מספר ' + code + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
+                     sharedLine;
+    const btns = document.createElement('div'); btns.style.cssText='display:flex; gap:8px; flex-shrink:0;';
     const play = document.createElement('button'); play.className='btn teal sm'; play.textContent='▶️ משחק'; play.onclick=()=>playExisting(code, q);
     const test = document.createElement('button'); test.className='btn ghost sm'; test.textContent='👁️ בדיקה'; test.onclick=()=>testExisting(code, q);
     const edit = document.createElement('button'); edit.className='btn ghost sm'; edit.textContent='✏️ עריכה'; edit.onclick=()=>openExisting(code, q);
@@ -2072,7 +2078,7 @@ function confirmAddShared(shareId, data, ov){
       updated: Date.now(),
       ownerEmail: myEmail,
       share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
-      copiedFrom: { ownerUid: data.ownerUid || null, shareId: shareId, originalQuizCode: data.quizCode || null }
+      copiedFrom: { ownerUid: data.ownerUid || null, ownerName: data.ownerName || '', shareId: shareId, originalQuizCode: data.quizCode || null }
     };
     fdb.ref('teachers/'+myStoreKey+'/'+newCode).set(copy).then(()=>{
       if (ov) ov.remove();
