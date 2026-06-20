@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v55 - בורר הכמות: הוספת 25 (סדרה עקבית 5,10,15,20,25,30)
+  v54 - פריט 12: חצי הזזה (▲▼) לכל שאלה בעורך הראשי — שינוי סדר השאלות ישירות, אותו עיצוב כמו החצים בחלון ה-AI
+  v53 - בורר כמות השאלות ב-AI: הוספת אפשרות 30 (היה עד 20). פריט 5 מטפל בזה אוטומטית
+  v52 - פריט 13: דיאלוג אישור בקבלת חידון משותף — במקום הוספה שקטה לספרייה, מוצג חלון עם שם החידון, שם המשתף ומספר השאלות, וכפתור "הוספה"/"ביטול". מטפל בכל מצבי השיתוף: ציבורי/ספרייה (פתוח), מייל-מורשה (בודק הרשאה, דורש התחברות לבדיקה)
   v51 - תיקון 2 באגים בקישורים: (א) קישור שיתוף-לעריכה (?share=) לא עבד — pendingShareId הוגדר אחרי השימוש ואופס; הוגדר בראש + קריאה מיידית אם המשתמש כבר מחובר. (ב) קישור-משחק שהוצג היה בלי קוד המשחק (הוביל לדף ריק); עכשיו מציג את הקישור המלא + כפתור "העתקת קישור"
   v50 - שיפור UX לחצי ההזזה: החצים מובלטים (זהב) וגלויים גם באזור המחיקה (רק המספר והטקסט מעומעמים), + שורת עזרה קצרה שמדגישה את אפשרות שינוי הסדר
   v49 - פריט 5: רשימת שאלות ממוספרת בחלון ה-AI (עריכת חידון קיים) — סימון "החלף" סלקטיבי, חצים להזזת סדר, בורר ששולט בכמות הסופית (מוחק מהסוף עם אזור אפור + מונה), פרומפט שמבקש בדיוק את מספר השאלות החדשות הנדרש
@@ -151,7 +155,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v51</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v55</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -614,6 +618,10 @@ let isGuest = false;
 let pendingShareId = null;   // מזהה שיתוף ממתין (מקישור ?share=). מוגדר מוקדם כדי שלא יתאפס בטעות.
 
 function genCode(){ return String(Math.floor(1000 + Math.random()*9000)); }
+// הימלטות HTML — להצגה בטוחה של שמות חידונים/משתפים בדיאלוג
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 // העתקה ללוח — גיבוי לדפדפנים שאין בהם navigator.clipboard
 function legacyCopy(text){
   try {
@@ -1427,7 +1435,7 @@ function openImport(){
 
   // מילוי כפתורי הכמות
   const qRow = $('imp-q-row');
-  [5,10,15,20].forEach(n=>{
+  [5,10,15,20,25,30].forEach(n=>{
     const b=document.createElement('button'); b.className='btn ghost sm'; b.textContent=n;
     if(n===impQCount){ b.style.background='var(--gold)'; b.style.color='#1a2342'; }
     b.onclick=()=>{ impQCount=n; [...qRow.children].forEach(c=>{c.style.background='';c.style.color='';}); b.style.background='var(--gold)'; b.style.color='#1a2342'; renderImpQuestionList(); refresh(); };
@@ -1552,14 +1560,33 @@ function delQuestion(i){
   quiz.questions.splice(i,1);
   renderQuestions(); touch();
 }
+// פריט 12: הזזת שאלה למעלה/למטה בעורך הראשי (dir: -1 למעלה, +1 למטה)
+function moveQuestion(i, dir){
+  const j = i + dir;
+  if (j < 0 || j >= quiz.questions.length) return;
+  const tmp = quiz.questions[i]; quiz.questions[i] = quiz.questions[j]; quiz.questions[j] = tmp;
+  renderQuestions(); touch();
+}
 function renderQuestions(){
   const list = $('q-list'); list.innerHTML = '';
   quiz.questions.forEach((q, qi) => {
     const card = document.createElement('div'); card.className='qcard';
     const top = document.createElement('div'); top.className='qtop';
     const lbl = document.createElement('span'); lbl.className='qlabel'; lbl.textContent = 'שאלה ' + (qi+1);
+
+    // ===== פריט 12: חצים להזזת שאלה בעורך הראשי =====
+    const moveWrap = document.createElement('span'); moveWrap.style.cssText='display:inline-flex; gap:4px; margin-inline-start:10px;';
+    const mvStyle = 'background:rgba(243,200,90,.18); border:1px solid rgba(243,200,90,.4); color:var(--gold); border-radius:6px; width:30px; height:26px; cursor:pointer; font-size:12px; font-weight:700; padding:0;';
+    const mvUp = document.createElement('button'); mvUp.textContent='▲'; mvUp.title='העבר שאלה למעלה'; mvUp.style.cssText=mvStyle;
+    mvUp.disabled = (qi===0); if(qi===0){ mvUp.style.opacity='.25'; mvUp.style.cursor='default'; }
+    mvUp.onclick = ()=>moveQuestion(qi, -1);
+    const mvDown = document.createElement('button'); mvDown.textContent='▼'; mvDown.title='העבר שאלה למטה'; mvDown.style.cssText=mvStyle;
+    mvDown.disabled = (qi===quiz.questions.length-1); if(qi===quiz.questions.length-1){ mvDown.style.opacity='.25'; mvDown.style.cursor='default'; }
+    mvDown.onclick = ()=>moveQuestion(qi, 1);
+    moveWrap.appendChild(mvUp); moveWrap.appendChild(mvDown);
+
     const del = document.createElement('button'); del.className='del'; del.textContent='🗑 מחיקה'; del.onclick = () => delQuestion(qi);
-    top.appendChild(lbl); top.appendChild(del); card.appendChild(top);
+    top.appendChild(lbl); top.appendChild(moveWrap); top.appendChild(del); card.appendChild(top);
 
     const qin = document.createElement('input'); qin.type='text'; qin.placeholder='נוסח השאלה'; qin.value=q.text;
     qin.style.marginBottom='10px';
@@ -1913,19 +1940,101 @@ function openSharedByInput(){
 }
 function openSharedById(shareId){
   $('home-msg').textContent = 'מחפש...';
-  fdb.ref('shared/'+shareId).once('value').then(async snap => {
+  fdb.ref('shared/'+shareId).once('value').then(snap => {
     const data = snap.val();
+    $('home-msg').textContent = '';
     if (!data){ $('home-msg').textContent = 'לא נמצא חידון משותף עם הקוד הזה (ייתכן שהשיתוף בוטל).'; return; }
-    // בדיקת הרשאה לשיתוף ספציפי (בצד הלקוח)
-    if (data.mode === 'specific'){
-      const allowed = (data.allowedEmails || []).map(e=>(e||'').toLowerCase());
-      if (allowed.indexOf((myEmail||'').toLowerCase()) === -1){
-        $('home-msg').textContent = 'החידון הזה משותף רק עם משתמשים מורשים. בקשו מהמנחה לשתף עם המייל שלכם.';
+    // מציגים דיאלוג עם פרטי החידון לפני ההוספה (פריט 13)
+    showSharedDialog(shareId, data);
+  }).catch(()=>{ $('home-msg').textContent = 'תקלה, נסו שוב.'; });
+}
+
+// דיאלוג אישור קבלת חידון משותף — מציג פרטים ושואל לפני ההוספה
+function showSharedDialog(shareId, data){
+  // הסרת דיאלוג קודם אם קיים
+  const old = $('shared-overlay'); if (old) old.remove();
+
+  const src = data.quiz || {};
+  const title = src.title || data.title || 'חידון';
+  const sharerName = data.ownerName || 'מנחה';
+  const qCount = (src.questions || []).length;
+
+  // האם המשתמש מורשה? (רלוונטי רק לשיתוף ספציפי לפי מייל)
+  const isSpecific = (data.mode === 'specific');
+  const allowed = (data.allowedEmails || []).map(e=>(e||'').toLowerCase());
+  const loggedIn = !!(myUid && myStoreKey);
+  const emailAllowed = allowed.indexOf((myEmail||'').toLowerCase()) !== -1;
+
+  const ov = document.createElement('div'); ov.id='shared-overlay';
+  ov.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:26px 24px; max-width:380px; width:100%; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.5);';
+
+  // כותרת
+  let html = '<div style="font-size:42px; margin-bottom:8px;">📩</div>';
+  html += '<div style="font-family:\'Secular One\'; font-size:22px; color:var(--gold); margin-bottom:4px;">קיבלתם חידון!</div>';
+  html += '<div style="font-size:14px; color:var(--ink-dim); margin-bottom:18px;">מישהו שיתף איתכם חידון</div>';
+  // כרטיס פרטים
+  html += '<div style="background:rgba(255,255,255,.05); border-radius:12px; padding:16px; margin-bottom:18px; text-align:right;">';
+  html += '<div style="font-size:13px; color:var(--ink-dim);">שם החידון</div>';
+  html += '<div style="font-size:18px; color:var(--ink); font-weight:700; margin-bottom:10px;">' + escapeHtml(title) + '</div>';
+  html += '<div style="font-size:13px; color:var(--ink-dim);">שותף על ידי</div>';
+  html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(sharerName) + '</div>';
+  html += '<div style="font-size:13px; color:var(--ink-dim);">מספר שאלות</div>';
+  html += '<div style="font-size:16px; color:var(--ink);">' + qCount + ' שאלות</div>';
+  html += '</div>';
+  box.innerHTML = html;
+
+  // אזור הכפתורים — תלוי במצב
+  const btnArea = document.createElement('div');
+
+  if (isSpecific && !loggedIn){
+    // מוגן-מייל אך לא מחובר — צריך להתחבר כדי לבדוק הרשאה
+    const info = document.createElement('div');
+    info.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:12px; line-height:1.5;';
+    info.textContent = 'החידון משותף עם משתמשים מורשים בלבד. התחברו עם Google כדי לבדוק אם יש לכם גישה.';
+    btnArea.appendChild(info);
+    const loginBtn = document.createElement('button'); loginBtn.className='btn teal'; loginBtn.style.width='100%'; loginBtn.style.marginBottom='8px';
+    loginBtn.textContent='🔑 התחברות עם Google';
+    loginBtn.onclick = ()=>{ pendingShareId = shareId; ov.remove(); signInGoogle(); };
+    btnArea.appendChild(loginBtn);
+  } else if (isSpecific && loggedIn && !emailAllowed){
+    // מוגן-מייל, מחובר, אך לא מורשה
+    const info = document.createElement('div');
+    info.style.cssText = 'font-size:14px; color:var(--coral); margin-bottom:12px; line-height:1.5; font-weight:600;';
+    info.textContent = 'לחשבון שלכם (' + (myEmail||'') + ') אין הרשאה לחידון הזה. בקשו מהמנחה לשתף עם המייל שלכם.';
+    btnArea.appendChild(info);
+  } else {
+    // ציבורי / ספרייה / מורשה — אפשר להוסיף
+    const addBtn = document.createElement('button'); addBtn.className='btn teal'; addBtn.style.width='100%'; addBtn.style.marginBottom='8px'; addBtn.style.fontSize='16px';
+    addBtn.textContent='✓ הוספה לחידונים שלי';
+    addBtn.onclick = ()=>{
+      if (!loggedIn){
+        // צריך להתחבר כדי לשמור — שומרים את הכוונה וממשיכים אחרי התחברות
+        pendingShareId = shareId; ov.remove(); signInGoogle();
         return;
       }
-    }
-    const src = data.quiz || {};
-    const newCode = await genUniqueCode();
+      addBtn.disabled = true; addBtn.textContent = 'מוסיף...';
+      confirmAddShared(shareId, data, ov);
+    };
+    btnArea.appendChild(addBtn);
+  }
+
+  // כפתור ביטול תמיד קיים
+  const cancelBtn = document.createElement('button'); cancelBtn.className='btn ghost sm'; cancelBtn.style.width='100%';
+  cancelBtn.textContent='ביטול';
+  cancelBtn.onclick = ()=>{ ov.remove(); $('share-input').value=''; };
+  btnArea.appendChild(cancelBtn);
+
+  box.appendChild(btnArea);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+}
+
+// ביצוע ההוספה בפועל — רק אחרי אישור בדיאלוג
+function confirmAddShared(shareId, data, ov){
+  const src = data.quiz || {};
+  genUniqueCode().then(newCode => {
     const copy = {
       title: (src.title || data.title || 'חידון') + ' (עותק)',
       time: src.time || 20,
@@ -1938,12 +2047,15 @@ function openSharedById(shareId){
       copiedFrom: { ownerUid: data.ownerUid || null, shareId: shareId, originalQuizCode: data.quizCode || null }
     };
     fdb.ref('teachers/'+myStoreKey+'/'+newCode).set(copy).then(()=>{
-      // מונה הורדות אם החידון בספרייה
+      if (ov) ov.remove();
       $('home-msg').textContent = '';
       $('share-input').value = '';
       refreshMyList();
-    }).catch(()=>{ $('home-msg').textContent = 'תקלה בשמירת העותק. נסו שוב.'; });
-  }).catch(()=>{ $('home-msg').textContent = 'תקלה, נסו שוב.'; });
+    }).catch(()=>{
+      if (ov){ const b = ov.querySelector('button'); if(b){ b.disabled=false; b.textContent='✓ הוספה לחידונים שלי'; } }
+      $('home-msg').textContent = 'תקלה בשמירת העותק. נסו שוב.';
+    });
+  });
 }
 
 function refreshMyList(){
