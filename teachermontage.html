@@ -107,6 +107,14 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .danger-link{background:none; border:none; color:var(--ink-dim); font-family:'Heebo'; font-size:14px; cursor:pointer; padding:0;}
 .danger-link:hover{color:var(--coral);}
 .info-pop{position:fixed; z-index:50; max-width:280px; background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.5; color:var(--ink); box-shadow:0 10px 30px rgba(0,0,0,.5);}
+
+/* ===== מובייל בלבד (≤640px): עריכת כפתורים אנכית. מעל זה — מחשב — ללא שינוי ===== */
+@media (max-width: 640px){
+  .btn{ font-size:16px; padding:12px 18px; }
+  .row{ flex-direction:column; align-items:stretch; }
+  .row > .btn{ width:100%; }
+  .row > .info-i{ align-self:center; margin-top:2px; }
+}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -130,7 +138,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v68</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v70</div>
   <h1>🎬 מצגת תמונות</h1>
 
   <!-- שורת התחברות + טעינת מצגת -->
@@ -630,9 +638,10 @@ function openAiPanel(){
   if ($('mon-modal')){ closeModal(); return; }
   aiReviewRows = [];
   const box = openModal('הצעות משפטים מ-AI');
+  box.firstChild.style.textAlign = 'center';   // מרכוז הכותרת
 
   const sub = document.createElement('div');
-  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5;';
+  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5; text-align:center;';
   sub.textContent = 'ממלאים את הפרטים, מעתיקים את הטקסט המוכן לכלי בינה מלאכותית (ChatGPT, Claude, Gemini ועוד), ומדביקים כאן בחזרה את התשובה. בוחרים אילו משפטים לשמור.';
   box.appendChild(sub);
 
@@ -2002,6 +2011,8 @@ html,body{height:100%; background:#000; overflow:hidden; font-family:'Heebo',san
 @keyframes endGrad{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
 #ctrls{position:fixed; top:14px; left:14px; z-index:8; display:flex; gap:8px;}
 #ctrls button{font-family:'Heebo'; font-weight:700; font-size:14px; border:none; border-radius:10px; padding:8px 14px; cursor:pointer; background:rgba(20,30,60,.8); color:#f7f4ec;}
+#info{position:fixed; top:14px; right:14px; z-index:8; display:flex; gap:8px; align-items:center; font-family:'Heebo'; font-weight:700; font-size:15px;}
+#info span{background:rgba(20,30,60,.8); color:#f7f4ec; border-radius:10px; padding:6px 12px; text-shadow:0 1px 2px rgba(0,0,0,.6);}
 #start{position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, #0a1020 45%, #05080f 100%); color:#f7f4ec; text-align:center; padding:30px;}
 #start h1{font-family:'Secular One'; font-size:clamp(30px,5vw,52px); color:#ffd166; margin-bottom:10px;}
 #start p{color:#aab4cf; font-size:18px; margin-bottom:30px;}
@@ -2019,9 +2030,13 @@ html,body{height:100%; background:#000; overflow:hidden; font-family:'Heebo',san
 <div class="moncap" id="cap"></div>
 <div id="endslide"><div class="ephoto" id="ephoto"></div><div class="eshade"></div><div class="etitle" id="etitle"></div><div class="etext" id="etext"></div></div>
 <div id="bar" style="display:none;"><div id="barfill"></div></div>
+<div id="info" style="display:flex;"><span id="sCount" style="display:none;"></span><span id="sTime" style="display:none;"></span></div>
 <div id="ctrls" style="display:none;">
   <button onclick="togglePause()" id="pauseBtn">⏸️ עצירה</button>
   <button onclick="toggleMute()" id="muteBtn">🔊 מוזיקה</button>
+  <button onclick="cycleSpeed()" id="speedBtn">⏩ ×1</button>
+  <button onclick="toggleCount()" id="countBtn">🔢 מונה</button>
+  <button onclick="toggleClock()" id="clockBtn">⏱️ שעון</button>
 </div>
 <script>
 const DATA = __DATA__;
@@ -2030,6 +2045,8 @@ let audio=null, playIdx=0, muted=false;
 let capList=DATA.captions||[], capIdx=0, capTimer=null;
 const SLIDE_MS=4500;
 const END_MS=6500;
+let playSpeed=1, showCount=false, showClock=false;
+function curMs(){ return SLIDE_MS/playSpeed; }
 let endShowing=false;
 function hasEnd(){ return !!((DATA.endTitle&&DATA.endTitle.length)||(DATA.endText&&DATA.endText.length)); }
 
@@ -2064,7 +2081,7 @@ function startShow(){
   w.appendChild(imgA); w.appendChild(imgB); flip=false;
   order=DATA.images.slice(); if(DATA.picsOrder!=='fixed') shuffle(order);
   startMusic(); startCaptions(); startFx();
-  step(); clearInterval(iv); iv=setInterval(step, SLIDE_MS);
+  step(); clearInterval(iv); iv=setInterval(step, curMs());
 }
 function step(){
   if(paused) return;
@@ -2076,7 +2093,7 @@ function step(){
       showEnd();
       iv=setTimeout(()=>{
         hideEnd(); endShowing=false; idx=0; if(DATA.picsOrder!=='fixed') shuffle(order); capIdx=0;
-        step(); clearInterval(iv); iv=setInterval(step, SLIDE_MS);
+        step(); clearInterval(iv); iv=setInterval(step, curMs());
       }, END_MS);
       return;
     }
@@ -2089,6 +2106,7 @@ function step(){
   cur.src=order[idx]; cur.classList.add('vis'); prev.classList.remove('vis');
   flip=!flip; idx++;
   document.getElementById('barfill').style.width=Math.round((idx/order.length)*100)+'%';
+  updateInfo();
 }
 function togglePause(){
   paused=!paused;
@@ -2111,6 +2129,31 @@ function toggleMute(){
   muted=!muted;
   document.getElementById('muteBtn').textContent = muted?'🔇 מוזיקה':'🔊 מוזיקה';
   if(audio){ if(muted) audio.pause(); else audio.play().catch(()=>{}); }
+}
+function cycleSpeed(){
+  playSpeed = playSpeed===1?2:(playSpeed===2?5:1);
+  document.getElementById('speedBtn').textContent='⏩ ×'+playSpeed;
+  if(iv && !paused && !endShowing){ clearInterval(iv); iv=setInterval(step, curMs()); }
+  updateInfo();
+}
+function toggleCount(){
+  showCount=!showCount;
+  var b=document.getElementById('countBtn');
+  b.style.background=showCount?'#ffd166':'rgba(20,30,60,.8)'; b.style.color=showCount?'#1a2342':'#f7f4ec';
+  document.getElementById('sCount').style.display=showCount?'inline-block':'none';
+  updateInfo();
+}
+function toggleClock(){
+  showClock=!showClock;
+  var b=document.getElementById('clockBtn');
+  b.style.background=showClock?'#ffd166':'rgba(20,30,60,.8)'; b.style.color=showClock?'#1a2342':'#f7f4ec';
+  document.getElementById('sTime').style.display=showClock?'inline-block':'none';
+  updateInfo();
+}
+function fmtT(ms){ var t=Math.max(0,Math.round(ms/1000)); var m=Math.floor(t/60), s=t%60; return m+':'+(s<10?'0':'')+s; }
+function updateInfo(){
+  if(showCount){ document.getElementById('sCount').textContent=Math.max(1,idx)+' / '+order.length; }
+  if(showClock){ var rem=(order.length-idx)*curMs()+(hasEnd()?END_MS:0); document.getElementById('sTime').textContent='נותרו '+fmtT(rem); }
 }
 
 /* ---- כיתובים ---- */
