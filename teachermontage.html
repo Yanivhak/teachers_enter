@@ -130,7 +130,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v63</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v65</div>
   <h1>🎬 מצגת תמונות</h1>
 
   <!-- שורת התחברות + טעינת מצגת -->
@@ -150,7 +150,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
   <p class="sub">הרכיבו את המצגת בשלבים (רק תמונות הן חובה), צפו בתצוגה מקדימה, ובסיום שמרו אותה למחשב — כקובץ או כסרטון. הכול נשאר אצלכם, שום דבר לא נשלח לאינטרנט.</p>
 
   <div class="row">
-    <button class="btn ghost stage" data-step="1" id="pics-btn" onclick="$('pics-input').click()">📷 תמונות</button>
+    <button class="btn ghost stage" data-step="1" id="pics-btn" onclick="openPicsPanel()">📷 תמונות</button>
     <button class="btn ghost stage" data-step="2" id="music-btn" onclick="openMusicPanel()">🎵 מוזיקה</button>
     <button class="btn ghost stage" data-step="3" id="cap-btn" onclick="openCapPanel()">✏️ כיתוב</button>
     <button class="btn ghost stage" data-step="4" id="fx-btn" onclick="openFxPanel()">✨ עיצוב ואפקטים</button>
@@ -166,6 +166,9 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
   <input type="file" id="pics-input" accept="image/*" multiple style="display:none" onchange="picsChosen(this.files)">
   <input type="file" id="music-input" accept="audio/*" multiple style="display:none" onchange="musicChosen(this.files)">
 
+  <div id="pics-summary-wrap" style="display:none; margin-top:10px;">
+    <div id="pics-summary" style="font-size:13px; text-align:center; line-height:1.5;"></div>
+  </div>
   <div id="music-summary-wrap" style="display:none; margin-top:10px;">
     <div style="font-size:13px; color:var(--ink-dim); margin-bottom:4px; text-align:center;">🎵 מוזיקה שנבחרה:</div>
     <div class="list" id="music-list"></div>
@@ -368,6 +371,7 @@ if (fauth){
 
 /* ---------- בחירת תמונות ---------- */
 let pics = [];
+let picsOrderMode = 'random';   // 'random' = ערבוב אוטומטי (ברירת מחדל), 'fixed' = לפי הסדר בחלון התמונות
 function isHeicFile(f){
   return /\.(heic|heif)$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
 }
@@ -428,9 +432,9 @@ async function picsChosen(files){
 
   if (!fileArr.length){ refreshStart(); return; }
 
-  pics.forEach(u => URL.revokeObjectURL(u));
-  pics = fileArr.map(f => URL.createObjectURL(f));
-  $('pics-btn').textContent = '📷 ' + pics.length + ' תמונות (לחיצה מחליפה)';
+  pics = pics.concat(fileArr.map(f => URL.createObjectURL(f)));
+  $('pics-btn').textContent = '📷 ' + pics.length + ' תמונות';
+  if ($('pics-grid')) renderPicsGrid();
   refreshStart();
 }
 
@@ -747,6 +751,125 @@ function approveAi(){
       if (res){ res.style.color = 'var(--teal)'; res.textContent = '✓ נקבע טקסט לשקופית הסיום.'; }
     }
   }
+}
+
+/* ---------- חלון תמונות ---------- */
+function openPicsPanel(){
+  if ($('mon-modal')){ closeModal(); return; }
+  const box = openModal('תמונות');
+
+  const sub = document.createElement('div');
+  sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5;';
+  sub.textContent = 'הוסיפו תמונות, סדרו או הסירו. בחרו אם המצגת תרוץ לפי הסדר שתקבעו, או בערבוב אקראי.';
+  box.appendChild(sub);
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn'; addBtn.textContent = '➕ הוספת תמונות';
+  addBtn.style.cssText += 'width:100%; font-size:16px; padding:12px; margin-bottom:14px;';
+  addBtn.onclick = () => $('pics-input').click();
+  box.appendChild(addBtn);
+
+  const orderTitle = document.createElement('div');
+  orderTitle.style.cssText = 'font-size:13px; color:var(--ink); font-weight:700; margin-bottom:6px;';
+  orderTitle.textContent = 'סדר התמונות במצגת:';
+  box.appendChild(orderTitle);
+  const orderRow = document.createElement('div');
+  orderRow.style.cssText = 'display:flex; gap:8px; margin-bottom:14px;';
+  const orderBtns = [];
+  const paintOrder = () => orderBtns.forEach(b => {
+    const on = b.dataset.mode === picsOrderMode;
+    b.style.background = on ? 'var(--gold)' : 'transparent';
+    b.style.color = on ? '#1a2342' : 'var(--ink)';
+  });
+  const mkOrderBtn = (mode, label) => {
+    const b = document.createElement('button');
+    b.className = 'btn ghost'; b.textContent = label; b.dataset.mode = mode;
+    b.style.cssText += 'flex:1; font-size:14px; padding:9px;';
+    b.onclick = () => { picsOrderMode = mode; paintOrder(); renderPicsGrid(); };
+    orderBtns.push(b); return b;
+  };
+  orderRow.appendChild(mkOrderBtn('fixed', '⬆⬇ לפי הסדר שאקבע'));
+  orderRow.appendChild(mkOrderBtn('random', '🔀 אקראי'));
+  box.appendChild(orderRow);
+  paintOrder();
+
+  const grid = document.createElement('div'); grid.id = 'pics-grid';
+  box.appendChild(grid);
+
+  const close = document.createElement('button');
+  close.className = 'btn'; close.textContent = '✓ סיום';
+  close.style.cssText += 'width:100%; margin-top:14px;';
+  close.onclick = closeModal;
+  box.appendChild(close);
+
+  renderPicsGrid();
+}
+
+function renderPicsGrid(){
+  const grid = $('pics-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (!pics.length){
+    grid.innerHTML = '<div style="font-size:13px; color:var(--ink-dim); text-align:center; padding:10px 0;">עדיין לא נוספו תמונות. לחצו "הוספת תמונות".</div>';
+    return;
+  }
+  const fixed = (picsOrderMode === 'fixed');
+  if (!fixed){
+    const note = document.createElement('div');
+    note.style.cssText = 'font-size:12px; color:var(--ink-dim); margin-bottom:8px; text-align:center;';
+    note.textContent = 'במצב אקראי הסדר מתערבב אוטומטית — אין צורך לסדר.';
+    grid.appendChild(note);
+  }
+  pics.forEach((url, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex; align-items:center; gap:8px; margin-bottom:6px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:6px 8px;';
+    const num = document.createElement('span');
+    num.textContent = (i + 1);
+    num.style.cssText = 'min-width:22px; text-align:center; font-weight:800; color:var(--ink-dim); font-size:13px; flex-shrink:0;';
+    row.appendChild(num);
+    const img = document.createElement('img');
+    img.src = url; img.loading = 'lazy';
+    img.style.cssText = 'width:52px; height:52px; object-fit:cover; border-radius:8px; flex-shrink:0;';
+    row.appendChild(img);
+    const spacer = document.createElement('div'); spacer.style.flex = '1'; row.appendChild(spacer);
+    if (fixed){
+      const up = document.createElement('button');
+      up.className = 'btn ghost'; up.textContent = '▲'; up.title = 'למעלה';
+      up.style.cssText += 'padding:5px 10px; font-size:13px;';
+      if (i === 0){ up.disabled = true; up.style.opacity = '.3'; }
+      up.onclick = () => movePic(i, -1);
+      row.appendChild(up);
+      const down = document.createElement('button');
+      down.className = 'btn ghost'; down.textContent = '▼'; down.title = 'למטה';
+      down.style.cssText += 'padding:5px 10px; font-size:13px;';
+      if (i === pics.length - 1){ down.disabled = true; down.style.opacity = '.3'; }
+      down.onclick = () => movePic(i, 1);
+      row.appendChild(down);
+    }
+    const del = document.createElement('button');
+    del.textContent = '✕'; del.title = 'הסרה';
+    del.style.cssText = 'background:none; border:1px solid rgba(255,255,255,.3); color:var(--coral); border-radius:50%; width:26px; height:26px; cursor:pointer; font-size:13px; line-height:1; flex-shrink:0;';
+    del.onclick = () => removePic(i);
+    row.appendChild(del);
+    grid.appendChild(row);
+  });
+}
+
+function movePic(i, dir){
+  const j = i + dir;
+  if (j < 0 || j >= pics.length) return;
+  const t = pics[i]; pics[i] = pics[j]; pics[j] = t;
+  renderPicsGrid();
+  refreshStart();
+}
+
+function removePic(i){
+  const url = pics[i];
+  pics.splice(i, 1);
+  try { URL.revokeObjectURL(url); } catch(e){}
+  if ($('pics-btn')) $('pics-btn').textContent = pics.length ? ('📷 ' + pics.length + ' תמונות') : '📷 תמונות';
+  renderPicsGrid();
+  refreshStart();
 }
 
 /* ---------- חלון מוזיקה ---------- */
@@ -1187,6 +1310,30 @@ function refreshStageBadges(){
   mark('cap-btn', captions.length > 0);
   mark('fx-btn', (typeof anyFx === 'function') ? anyFx() : false);
   mark('end-btn', !!(endTitle || endText));
+  updatePicsSummary();
+}
+
+/* משך מוערך בפורמט M:SS (בקצב הרגיל — 4.5 שניות לתמונה + 6.5 לשקופית סיום) */
+function fmtDuration(ms){
+  const total = Math.round(ms / 1000);
+  const m = Math.floor(total / 60), s = total % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+/* סיכום במסך הראשי: כמה תמונות, משך מוערך, ואזהרה אם יש יותר מדי */
+function updatePicsSummary(){
+  const wrap = $('pics-summary-wrap'), el = $('pics-summary');
+  if (!wrap || !el) return;
+  if (!pics.length){ wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  const totalMs = pics.length * MON_SLIDE_MS + (hasEndSlide() ? MON_END_MS : 0);
+  const line = '📷 נבחרו ' + pics.length + ' תמונות · משך מוערך ' + fmtDuration(totalMs);
+  let warn = '';
+  if (pics.length > 150){
+    warn = '<div style="color:var(--coral); font-weight:700; margin-top:5px;">⚠️ הרבה תמונות — הקובץ שיורד עלול לצאת כבד מאוד ולהיטען לאט (ובמכשירים חלשים אף להיתקע). שקלו לצמצם.</div>';
+  } else if (pics.length > 80){
+    warn = '<div style="color:var(--gold); margin-top:5px;">שימו לב: מספר תמונות גדול — הקובץ עשוי לצאת גדול.</div>';
+  }
+  el.innerHTML = '<span style="color:var(--ink-dim);">' + line + '</span>' + warn;
 }
 
 function refreshStart(){
@@ -1285,7 +1432,7 @@ function startShow(){
 
   // ערבוב חד-פעמי: עוברים על כל התמונות פעם אחת בלי כפילויות
   monOrder = pics.slice();
-  shuffle(monOrder);
+  if (picsOrderMode === 'random') shuffle(monOrder);
 
   monIdx = 0;
   paused = false;
@@ -1316,13 +1463,13 @@ function showSlide(){
       monTimer = setTimeout(() => {
         hideMonEnd();
         monIdx = 0;
-        shuffle(order);
+        if (picsOrderMode === 'random') shuffle(order);
         showSlide();
       }, MON_END_MS);
       return;
     }
     monIdx = 0;
-    shuffle(order);
+    if (picsOrderMode === 'random') shuffle(order);
   }
 
   // עדכון כתובית לפי מספר התמונה (חלוקה למקטעים)
@@ -1846,7 +1993,7 @@ function startShow(){
   w.innerHTML='';
   imgA=document.createElement('img'); imgB=document.createElement('img');
   w.appendChild(imgA); w.appendChild(imgB); flip=false;
-  order=DATA.images.slice(); shuffle(order);
+  order=DATA.images.slice(); if(DATA.picsOrder!=='fixed') shuffle(order);
   startMusic(); startCaptions(); startFx();
   step(); clearInterval(iv); iv=setInterval(step, SLIDE_MS);
 }
@@ -1859,12 +2006,12 @@ function step(){
       clearInterval(iv);
       showEnd();
       iv=setTimeout(()=>{
-        hideEnd(); endShowing=false; idx=0; shuffle(order); capIdx=0;
+        hideEnd(); endShowing=false; idx=0; if(DATA.picsOrder!=='fixed') shuffle(order); capIdx=0;
         step(); clearInterval(iv); iv=setInterval(step, SLIDE_MS);
       }, END_MS);
       return;
     }
-    idx=0; shuffle(order);
+    idx=0; if(DATA.picsOrder!=='fixed') shuffle(order);
   }
   updateCap(idx);
   const sel=selTrans(); const t=sel[transCycle%sel.length]; transCycle++;
@@ -2042,7 +2189,8 @@ function buildStandaloneHTML(opts){
     intensity: opts.intensity || 0.7,
     endTitle: opts.endTitle || '',
     endText: opts.endText || '',
-    endBg: opts.endBg || 'gradient'
+    endBg: opts.endBg || 'gradient',
+    picsOrder: opts.picsOrder || 'random'
   };
   const json = JSON.stringify(data);
   const safeTitle = (opts.title || 'מצגת').replace(/</g, '').replace(/>/g, '');
@@ -2144,7 +2292,7 @@ async function exportMontage(){
     // 6. בניית הקובץ והורדה
     if (btn) btn.textContent = '⏳ יוצר קובץ...';
     const title = (document.getElementById('mon-title') && document.getElementById('mon-title').value.trim()) || 'מצגת';
-    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects, intensity: fxIntensity, endTitle, endText, endBg });
+    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects, intensity: fxIntensity, endTitle, endText, endBg, picsOrder: picsOrderMode });
     const fname = (title.replace(/[\\/:*?"<>|]/g, '') || 'מצגת') + '.html';
     downloadHTMLFile(html, fname);
 
@@ -2198,7 +2346,8 @@ function restoreFromHTML(html){
   // תמונות
   pics.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} });
   pics = data.images.slice();
-  if ($('pics-btn')) $('pics-btn').textContent = '📷 ' + pics.length + ' תמונות (לחיצה מחליפה)';
+  picsOrderMode = (data.picsOrder === 'fixed') ? 'fixed' : 'random';
+  if ($('pics-btn')) $('pics-btn').textContent = '📷 ' + pics.length + ' תמונות';
 
   // מוזיקה (בקובץ נשמרים רק הצלילים, לא שמות הקבצים)
   playlist.forEach(s => { if (s && !s.gallery){ try { URL.revokeObjectURL(s.url); } catch(e){} } });
