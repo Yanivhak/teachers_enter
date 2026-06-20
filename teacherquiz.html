@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
-  v55 - בורר הכמות: הוספת 25 (סדרה עקבית 5,10,15,20,25,30)
-  v54 - פריט 12: חצי הזזה (▲▼) לכל שאלה בעורך הראשי — שינוי סדר השאלות ישירות, אותו עיצוב כמו החצים בחלון ה-AI
-  v53 - בורר כמות השאלות ב-AI: הוספת אפשרות 30 (היה עד 20). פריט 5 מטפל בזה אוטומטית
-  v52 - פריט 13: דיאלוג אישור בקבלת חידון משותף — במקום הוספה שקטה לספרייה, מוצג חלון עם שם החידון, שם המשתף ומספר השאלות, וכפתור "הוספה"/"ביטול". מטפל בכל מצבי השיתוף: ציבורי/ספרייה (פתוח), מייל-מורשה (בודק הרשאה, דורש התחברות לבדיקה)
-  v51 - תיקון 2 באגים בקישורים: (א) קישור שיתוף-לעריכה (?share=) לא עבד — pendingShareId הוגדר אחרי השימוש ואופס; הוגדר בראש + קריאה מיידית אם המשתמש כבר מחובר. (ב) קישור-משחק שהוצג היה בלי קוד המשחק (הוביל לדף ריק); עכשיו מציג את הקישור המלא + כפתור "העתקת קישור"
-  v50 - שיפור UX לחצי ההזזה: החצים מובלטים (זהב) וגלויים גם באזור המחיקה (רק המספר והטקסט מעומעמים), + שורת עזרה קצרה שמדגישה את אפשרות שינוי הסדר
-  v49 - פריט 5: רשימת שאלות ממוספרת בחלון ה-AI (עריכת חידון קיים) — סימון "החלף" סלקטיבי, חצים להזזת סדר, בורר ששולט בכמות הסופית (מוחק מהסוף עם אזור אפור + מונה), פרומפט שמבקש בדיוק את מספר השאלות החדשות הנדרש
-  v48 - תיקון 2 באגים: (1) כפתור ה-AI בעמוד העריכה מתחלף ל"עריכה" בחידון קיים; (2) סינון שורות placeholder (<...>) שה-AI מעתיק מהפרומפט
-  v47 - פריט 1: שמירת בחירות ה-AI עם החידון + טעינה מלאה בעריכה חוזרת + כותרת "עריכה"/"יצירה" לפי הקשר
+  v55 - "חידון חדש" ממסך הסיום + "נקה הכל" בתחתית העורך (שומר קוד/שיתוף, רק כשיש תוכן)
+  v54 - פריט 12: חצי הזזה (▲▼) לכל שאלה בעורך הראשי — שינוי סדר ישיר, אותו עיצוב כמו החצים בחלון ה-AI
+  v53 - בורר כמות השאלות ב-AI: סדרה מורחבת 5,10,15,20,25,30 (היה עד 20)
+  v52 - פריט 13: דיאלוג אישור בקבלת חידון משותף — חלון עם שם החידון, שם המשתף ומספר השאלות + "הוספה"/"ביטול". מטפל בכל מצבי השיתוף (ציבורי/ספרייה/מייל-מורשה)
+  v51 - תיקון 2 באגים בקישורים: (א) קישור שיתוף-לעריכה (?share=) לא עבד — pendingShareId הוגדר אחרי השימוש ואופס. (ב) קישור-משחק הוצג בלי קוד; עכשיו מלא + כפתור העתקה
+  v50 - שיפור UX לחצי ההזזה בחלון ה-AI: חצים מובלטים (זהב) + שורת עזרה
+  v49 - פריט 5: רשימת שאלות ממוספרת בחלון ה-AI — סימון "החלף" סלקטיבי, חצים, בורר ששולט בכמות הסופית, פרומפט שמבקש בדיוק את מספר השאלות הנדרש
+  v48 - תיקון 2 באגים: כפתור AI "עריכה"/"יצירה" לפי הקשר; סינון placeholder (<...>)
+  v47 - פריט 1: שמירת בחירות ה-AI עם החידון + טעינה בעריכה + כותרת דינמית
   v46 - פריט 3: שדה הערה חופשית בחלון ה-AI (נדבק לפרומפט)
   v45 - ניקוי מונחים: מורה→מנחה, תלמיד→משתתף, כיתה→קהל (בטקסט הממשק בלבד)
 -->
@@ -328,6 +328,10 @@ input:focus{border-color:var(--gold); outline:none;}
 
     <p class="help">איך זה עובד: מלאו שאלות, ולכל שאלה סמנו את התשובה הנכונה בעיגול הירוק. הכול נשמר אוטומטית. רוצים לראות איך זה ייראה? לחצו "בדיקה" ותעברו על השאלות בעצמכם, בלי שאף משתתף צריך להיכנס. כשתרצו לשחק עם הקהל, לחצו "התחלת משחק" ותקבלו קוד שאותו נותנים למשתתפים.</p>
 
+    <div id="clear-all-wrap" style="text-align:center; margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); display:none;">
+      <button class="btn ghost sm" onclick="clearAllQuiz()" style="color:var(--ink-dim); font-size:13px; opacity:.8;">🗑️ ניקוי החידון והתחלה מחדש</button>
+    </div>
+
     <div style="text-align:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
       <a href="index.html" id="editor-main-menu-link" style="color:var(--ink-dim); text-decoration:none; font-size:14px;">→ לתפריט הראשי (חידון · מצגת · מצגת+חידון)</a>
     </div>
@@ -450,6 +454,9 @@ input:focus{border-color:var(--gold); outline:none;}
     <div class="row">
       <button class="btn teal sm" onclick="restartGame()">🔄 התחלה מחדש</button>
       <button class="btn ghost sm" onclick="backToEditor()">→ חזרה לעריכה</button>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button class="btn sm" onclick="newQuizFromGame()" style="background:var(--violet); color:#0b0b2a;">➕ חידון חדש</button>
       <button class="btn ghost sm" onclick="finishToList()">📂 החידונים שלי</button>
     </div>
     <div id="guest-save-box" style="display:none; margin-top:20px; background:var(--card); border-radius:14px; padding:16px 20px; max-width:420px; margin-inline:auto;">
@@ -873,6 +880,25 @@ async function newQuiz(){
   renderEditor();   // רינדור יחיד עם המצב הסופי (בלי רינדור כפול ובלי הבהוב)
   show('editor');
   saveQuiz();
+}
+
+// ניקוי החידון הנוכחי — מרוקן כותרת/שאלות/קבוצות, אך שומר את הקוד ואת השיתוף (פריט: נקה הכל)
+function clearAllQuiz(){
+  if (!quiz) return;
+  if (!confirm('פעולה זו תמחק את כל השאלות, הכותרת והקבוצות בחידון זה, ותתחיל מחדש.\nהקוד והשיתוף יישמרו.\n\nלהמשיך?')) return;
+  quiz.title = '';
+  quiz.time = 20;
+  quiz.teamCount = 0;
+  quiz.teamNames = [];
+  quiz.questions = [{ text:'', answers:['',''], correct:0 }];
+  // share נשאר כפי שהוא — לא נוגעים (לפי החלטה: שיתוף שורד ניקוי)
+  resetAiMeta();             // בחירות ה-AI מתאפסות (חידון נקי)
+  delete quiz.aiMeta;
+  aiCardDismissed = false;   // הכרטיס "חסכו זמן" יוצג שוב
+  renderEditor();
+  saveQuiz();
+  // גלילה למעלה כדי שהמשתמש יראה שהחידון התרוקן
+  window.scrollTo({ top:0, behavior:'smooth' });
 }
 
 function openExisting(code, data){
@@ -1633,6 +1659,8 @@ function renderQuestions(){
   });
   // עדכון תווית כפתור ה-AI לפי הקשר: חידון מלא → "עריכה", ריק → "יצירה" (באג 1)
   if ($('ai-build-btn')) $('ai-build-btn').textContent = quizHasRealContent() ? '🤖 עריכת חידון באמצעות בינה מלאכותית' : '🤖 יצירת חידון באמצעות בינה מלאכותית';
+  // כפתור "נקה הכל" מוצג רק כשיש תוכן אמיתי לנקות
+  if ($('clear-all-wrap')) $('clear-all-wrap').style.display = quizHasRealContent() ? 'block' : 'none';
 }
 
 function touch(){
@@ -2741,6 +2769,8 @@ function hostJumpFinish(){ clearInterval(hostTimer); hostFinish(); }
 function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; renderEditor(); show('editor'); }
 function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; goPlay(); }
 function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; refreshMyList(); }
+// יצירת חידון חדש ישירות ממסך הסיום (אותו ניקוי מצב משחק, ואז newQuiz)
+function newQuizFromGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; newQuiz(); }
 
 function saveNow(){
   if (!myStoreKey){ alert('יש להתחבר עם Google כדי לשמור.'); return; }
