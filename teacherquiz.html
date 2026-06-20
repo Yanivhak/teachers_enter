@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v48 - תיקון 2 באגים: (1) כפתור ה-AI בעמוד העריכה מתחלף ל"עריכה" בחידון קיים; (2) סינון שורות placeholder (<...>) שה-AI מעתיק מהפרומפט
   v47 - פריט 1: שמירת בחירות ה-AI עם החידון + טעינה מלאה בעריכה חוזרת + כותרת "עריכה"/"יצירה" לפי הקשר
   v46 - פריט 3: שדה הערה חופשית בחלון ה-AI (נדבק לפרומפט)
   v45 - ניקוי מונחים: מורה→מנחה, תלמיד→משתתף, כיתה→קהל (בטקסט הממשק בלבד)
@@ -147,7 +148,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v47</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v48</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -262,7 +263,7 @@ input:focus{border-color:var(--gold); outline:none;}
     </div>
 
     <h2 style="margin-top:24px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
-    <button class="btn ghost" onclick="openImport()" style="margin-bottom:12px; background:rgba(141,141,242,.18);">🤖 יצירת חידון באמצעות בינה מלאכותית</button>
+    <button id="ai-build-btn" class="btn ghost" onclick="openImport()" style="margin-bottom:12px; background:rgba(141,141,242,.18);">🤖 יצירת חידון באמצעות בינה מלאכותית</button>
     <div id="q-list"></div>
     <button class="btn ghost" onclick="addQuestion()" style="margin-top:6px;">➕ הוספת שאלה</button>
 
@@ -1321,6 +1322,15 @@ function parseImport(){
   });
   if (cur && cur.answers.length>=2) parsed.push(cur);
 
+  // סינון placeholder-ים: לפעמים ה-AI מעתיק את שורת הדוגמה מהפרומפט (למשל "<נוסח השאלה>").
+  // מסירים כל טקסט שעטוף בסוגריים משולשים, ופוסלים שאלות/תשובות שנשארות ריקות אחרי הסינון.
+  const isPlaceholder = (s)=> !s || /^<.*>$/.test(s.trim()) || /<[^>]*>/.test(s);
+  parsed.forEach(q => {
+    if (isPlaceholder(q.text)) q.text = '';
+    q.answers = q.answers.filter(a => !isPlaceholder(a));
+    if (q.correct >= q.answers.length) q.correct = 0;
+  });
+
   // ניקוי: רק שאלות עם נוסח ולפחות 2 תשובות
   const valid = parsed.filter(q => q.text && q.answers.filter(a=>a).length>=2)
                       .map(q => ({ text:q.text, answers:q.answers.slice(0,4), correct: Math.min(q.correct, q.answers.length-1) }));
@@ -1423,6 +1433,8 @@ function renderQuestions(){
     }
     list.appendChild(card);
   });
+  // עדכון תווית כפתור ה-AI לפי הקשר: חידון מלא → "עריכה", ריק → "יצירה" (באג 1)
+  if ($('ai-build-btn')) $('ai-build-btn').textContent = quizHasRealContent() ? '🤖 עריכת חידון באמצעות בינה מלאכותית' : '🤖 יצירת חידון באמצעות בינה מלאכותית';
 }
 
 function touch(){
