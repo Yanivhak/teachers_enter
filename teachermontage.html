@@ -130,7 +130,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 
 <!-- מסך הגדרה -->
 <div class="screen on" id="setup">
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v62</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v63</div>
   <h1>🎬 מצגת תמונות</h1>
 
   <!-- שורת התחברות + טעינת מצגת -->
@@ -160,7 +160,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 
   <div class="row" style="margin-top:10px; justify-content:center; align-items:center;">
     <button class="btn ghost" id="ai-btn" onclick="openAiPanel()" style="font-size:14px;">✨ הצעות משפטים מ-AI</button>
-    <span class="info-i" onclick="showInfo(event, 'עוזר ליצור כיתובים או טקסט לשקופית הסיום בעזרת בינה מלאכותית. ממלאים נושא ומספר משפטים, מעתיקים את הטקסט המוכן ל-ChatGPT (או כלי אחר), מדביקים כאן בחזרה את התשובה, ובוחרים אילו משפטים לשמור. מחוברים — נשמר לבנק האישי. אורחים — נכנס למצגת הנוכחית בלבד.')">i</span>
+    <span class="info-i" onclick="showInfo(event, 'עוזר ליצור כיתובים או טקסט לשקופית הסיום בעזרת בינה מלאכותית. ממלאים נושא ומספר משפטים, מעתיקים את הטקסט המוכן לכלי בינה מלאכותית (ChatGPT, Claude, Gemini ועוד), מדביקים כאן בחזרה את התשובה, ובוחרים אילו משפטים לשמור. מחוברים — נשמר לבנק האישי. אורחים — נכנס למצגת הנוכחית בלבד.')">i</span>
   </div>
 
   <input type="file" id="pics-input" accept="image/*" multiple style="display:none" onchange="picsChosen(this.files)">
@@ -614,7 +614,7 @@ function openAiPanel(){
 
   const sub = document.createElement('div');
   sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:14px; line-height:1.5;';
-  sub.textContent = 'ממלאים את הפרטים, מעתיקים את הטקסט המוכן ל-ChatGPT (או כלי בינה מלאכותית אחר), ומדביקים כאן בחזרה את התשובה. בוחרים אילו משפטים לשמור.';
+  sub.textContent = 'ממלאים את הפרטים, מעתיקים את הטקסט המוכן לכלי בינה מלאכותית (ChatGPT, Claude, Gemini ועוד), ומדביקים כאן בחזרה את התשובה. בוחרים אילו משפטים לשמור.';
   box.appendChild(sub);
 
   const mkLabel = (t) => { const d = document.createElement('div'); d.style.cssText = 'font-size:13px; color:var(--ink); font-weight:700; margin:10px 0 4px;'; d.textContent = t; return d; };
