@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v74 - ליטוש נוסח ושם-משתף: (א) פאנל השיתוף — הכותרת המאוחדת שונתה ל"שתפו חידונים בקלות: באמצעות קוד קצר להזנה באתר או באמצעות קישור. המקבל יקבל עותק עצמאי של החידון." הוסרה תווית "📋 קוד לשיתוף" (מיותרת). "✓ הקישור הועתק! אפשר לשלוח" קוצר ל"✓ הועתק". (ב) הוסרה פסקת "איך זה עובד" מהעורך (מיותרת). (ג) שם המשתף הוחזר לדיאלוג הקבלה — "שותף על ידי [שם]", מוצג רק כשיש שם אמיתי (data.ownerName). הניסוח "שותף על ידי" ולא "נוצר על ידי" — כי היוצר המקורי לא נשמר לאורך שרשרת ההעתקות (copiedFrom.ownerName נושא רק את מי ששיתף את העותק הזה); "שותף על ידי" תמיד נכון. שדה originalAuthor לקרדיט-מחבר-לאורך-שרשרת — פרויקט עתידי אפשרי. (ד) תיאור חידון לשיתוף — נשקל ונדחה: תיאור שייך להקשר הפרסום (ספרייה), לא לחידון. התיאור הקיים בספרייה (openLibraryPublish, 30+ תווים) נשאר כפי שהוא; שיתוף בודד מזוהה ע"י שם+מספר שאלות+משתף, בלי תיאור
   v73 - ליטוש UI לקוד ולשיתוף: (א) הוסרה שורת "קוד החידון" מראש העורך — כפילות מיותרת (הקוד כבר מופיע בכרטיס ובפאנל השיתוף). כל הקריאות ל-edit-code הוסרו. (ב) הוסר ה-i ליד הסבר השיתוף. במקומו כותרת מאוחדת מעל שתי דרכי השיתוף: "שתי דרכים לשתף — שתיהן יוצרות עותק אצל מי שמקבל, ואי אפשר לבטל: 📋 קוד להכתבה / 🔗 קישור ללחיצה". האזהרה על אי-אפשרות הביטול נשמרה (גלויה, בלי i). תוויות הקוד והקישור קוצרו כי הכותרת מסבירה. (ג) דיאלוג הקבלה תוקן — "קיבלתם חידון! / מישהו שיתף איתכם" היה מטעה לקוד ציבורי (לא שיתוף אישי). עכשיו ניטרלי: "הוספת חידון" + שם + מספר שאלות + "הוספה לחידונים שלי". הוסרה שורת "שותף על ידי". נוסח אחיד לשני המסלולים (קוד וקישור)
   v72 - קוד-תצוגה אנושי לחידון (6 תווים) במקום 4 ספרות: כל חידון מקבל ביצירה קוד קבוע בן 6 תווים (אותיות+ספרות בלי תווים מבלבלים, genDisplayCode), ייחודי גלובלית מול נתיב חדש codes/. זהו הקוד היחיד שהמשתמש רואה — בכרטיס וברשימה ובעורך — במקום 4-הספרות, שהן מעתה מפתח-אחסון פנימי בלבד (teachers/{key}/{4ספרות} לא השתנה — כלל קשיח). שלושה קודים נפרדים במערכת: מפתח-אחסון (4 ספרות, פנימי), קוד-תצוגה (6 תווים, קבוע, מה שהמשתמש משתף), וקוד-משחק (playCode, מתחלף בכל משחק, מה שהתלמיד מקליד). שיתוף: לחיצת "שיתוף" מציגה אזהרה (העותקים אצל המקבלים בלתי-נגיעים, אין ביטול), ואז מפרסמת ל-shared/{shareId} כרגיל וגם רושמת codes/{displayCode}→shareId (אינדקס, מצביע ל-shareId; התוכן ב-shared/). פאנל השיתוף מציג קוד בולט (העתקה) כאפשרות ראשית + קישור כאפשרות שנייה. קבלה: שדה הבית מקבל קוד 6-תווים (openSharedByCode → codes/ → openSharedById), וגם קישור/shareId גולמי עדיין עובדים כ-fallback. ensureDisplayCode — רשת ביטחון עצלה לחידון בלי קוד, רק בפתיחת החידון עצמו, לא בטעינת הרשימה (לא הופך צפייה לכתיבה גורפת). syncShareCopies הוא המקום היחיד שכותב codes/ — לכל מצב שיתוף
   v71 - תיקון התחברות Google באייפון (אומת מול יועץ GPT): באייפון signInWithPopup לא אמין (כל הדפדפנים WebKit), והנפילה ל-redirect כ-fallback יצרה מצב לא-עקבי של "לשונית שגיאה אבל מחובר". התיקון: (א) זיהוי iOS (isIOS, כולל אייפד שמתחזה ל-Mac) — באייפון signInWithRedirect *ישירות*, בלי לנסות popup קודם. מחשב/אנדרואיד — popup כרגיל. (ב) getRedirectResult מלא — מציג שגיאה ברורה למשתמש + console.error לדיבוג, במקום catch ריק. (ג) תיקון אובדן חידון-אורח: ב-redirect הדף נטען מחדש וה-quiz בזיכרון אובד. עכשיו אורח באייפון ששומר — החידון נשמר ב-sessionStorage לפני ההפניה ומשוחזר אחרי החזרה (restorePendingGuestQuiz, נקרא מ-onAuthStateChanged). הערה: הפתרון היציב המלא לבעיות Safari/ITP הוא Custom Auth Domain על דומיין משלי (לא github.io) — פרויקט עתידי
@@ -206,7 +207,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v73</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v74</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -391,8 +392,6 @@ input:focus{border-color:var(--gold); outline:none;}
       <div style="font-size:13px; color:var(--ink-dim); margin-bottom:12px; text-align:center;">שלחו את החידון למישהו אחר — הוא יקבל עותק עצמאי משלו לעריכה ולמשחק.</div>
       <div id="share-panel" style="max-width:460px; margin:0 auto;"></div>
     </div>
-
-    <p class="help">איך זה עובד: מלאו שאלות, ולכל שאלה סמנו את התשובה הנכונה בעיגול הירוק. הכול נשמר אוטומטית. רוצים לראות איך זה ייראה? לחצו "בדיקה" ותעברו על השאלות בעצמכם, בלי שאף משתתף צריך להיכנס. כשתרצו לשחק עם הקהל, לחצו "התחלת משחק" ותקבלו קוד שאותו נותנים למשתתפים.</p>
 
     <div id="clear-all-wrap" style="text-align:center; margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); display:none;">
       <button class="btn ghost sm" onclick="clearAllQuiz()" style="color:var(--ink-dim); font-size:13px; opacity:.8;">🗑️ ניקוי החידון והתחלה מחדש</button>
@@ -2056,7 +2055,7 @@ function renderSharePanel(){
   if (sh.mode === 'specific'){
     panel.appendChild(shareStatusBox('🔒 משותף עם אנשים ספציפיים', sh));
   } else if (sh.mode === 'public'){
-    panel.appendChild(shareStatusBox(justCopiedLink ? '✓ הקישור הועתק! אפשר לשלוח' : '🔗 החידון משותף', sh));
+    panel.appendChild(shareStatusBox(justCopiedLink ? '✓ הועתק' : '🔗 החידון משותף', sh));
   } else {
     // לא משותף — שיתוף בקישור בלבד (שיתוף-מייל הוסר: יצר אשליית הגנה שקרית).
     // הקוד של מצב 'specific' נשאר כקוד מת למקרה שנרצה להחזיר בעתיד.
@@ -2074,12 +2073,10 @@ function shareStatusBox(titleText, sh){
   const t = document.createElement('span'); t.style.cssText='font-size:14px; font-weight:700; color:var(--teal);'; t.textContent=titleText;
   head.appendChild(t);
   box.appendChild(head);
-  // כותרת מאוחדת לשתי דרכי השיתוף + אזהרה שאי אפשר לבטל (במקום ה-i שהוסר)
+  // כותרת מאוחדת לשתי דרכי השיתוף + אזהרה שאי אפשר לבטל
   const explain = document.createElement('div');
   explain.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:12px; line-height:1.6;';
-  explain.innerHTML = 'שתי דרכים לשתף — שתיהן יוצרות עותק אצל מי שמקבל, ואי אפשר לבטל:' +
-    '<div style="margin-top:6px;">📋 <b style="color:var(--ink);">קוד</b> — להכתבה בעל-פה או על הלוח</div>' +
-    '<div style="margin-top:2px;">🔗 <b style="color:var(--ink);">קישור</b> — ללחיצה בוואטסאפ</div>';
+  explain.textContent='שתפו חידונים בקלות: באמצעות קוד קצר להזנה באתר או באמצעות קישור. המקבל יקבל עותק עצמאי של החידון.';
   box.appendChild(explain);
 
   if (sh.mode === 'specific'){
@@ -2104,9 +2101,6 @@ function shareStatusBox(titleText, sh){
   // קוד השיתוף האנושי — אפשרות ראשית
   if (quiz && quiz.displayCode){
     const codeWrap = document.createElement('div'); codeWrap.style.cssText='margin-top:6px; text-align:center;';
-    const codeLabel = document.createElement('div'); codeLabel.style.cssText='font-size:12px; color:var(--ink-dim); margin-bottom:4px;';
-    codeLabel.textContent='📋 קוד לשיתוף';
-    codeWrap.appendChild(codeLabel);
     const codePill = document.createElement('div'); codePill.style.cssText='display:inline-flex; align-items:center; gap:10px; background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:8px 16px;';
     const codeTxt = document.createElement('span'); codeTxt.style.cssText="font-family:'Secular One'; font-size:26px; letter-spacing:.12em; color:var(--gold);";
     codeTxt.textContent = quiz.displayCode;
@@ -2417,6 +2411,10 @@ function showSharedDialog(shareId, data){
   html += '<div style="background:rgba(255,255,255,.05); border-radius:12px; padding:16px; margin-bottom:18px; text-align:right;">';
   html += '<div style="font-size:13px; color:var(--ink-dim);">שם החידון</div>';
   html += '<div style="font-size:18px; color:var(--ink); font-weight:700; margin-bottom:10px;">' + escapeHtml(title) + '</div>';
+  if (data.ownerName){
+    html += '<div style="font-size:13px; color:var(--ink-dim);">שותף על ידי</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(data.ownerName) + '</div>';
+  }
   html += '<div style="font-size:13px; color:var(--ink-dim);">מספר שאלות</div>';
   html += '<div style="font-size:16px; color:var(--ink);">' + qCount + ' שאלות</div>';
   html += '</div>';
