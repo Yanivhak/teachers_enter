@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v69 - תיקון באג כפילות אינסופית בעדכון: אחרי שמירת גרסה "(מעודכן)", לחיצה חוזרת על הקישור הציעה שוב "יש גרסה מעודכנת" ושמרה עוד עותק, בלי סוף. הסיבה — הזיהוי בדק רק את העותק *האחרון* שנמצא (forEach שדרס matchCode), ואם הוא היה הישן, ההשוואה מול ה-received הישן תמיד אמרה "שונה". התיקון: בודקים את *כל* העותקים מאותו shareId — אם *לאחד מהם* ה-received תואם את התוכן הנוכחי, "כבר אצלך" וחוסם. רק אם *אף* עותק לא תואם — זו באמת גרסה חדשה
   v68 - זיהוי גרסה מעודכנת בקבלת חידון: כשמקבלים קישור לחידון שכבר קיים אצלי, משווים את תוכן ה-shared הנוכחי מול snapshot שנשמר ברגע הקבלה המקורית (copiedFrom.received — שם+שאלות). זהה → "כבר אצלך" וחוסם. שונה → דיאלוג "יש גרסה מעודכנת, לשמור כעותק נוסף?" → נוצר עותק בשם "(מעודכן)". ההשוואה מול ה-snapshot-של-הקבלה (לא מול העותק הנוכחי) כדי שעריכות של המקבל לא יספרו כשינוי; רק שינוי מצד המקור מפעיל הצעה. עותקים ישנים בלי snapshot מטופלים כ"זהה" (לא מציפים עדכוני-שווא). בחירה: עותק נוסף, לא החלפה (לא דורסים תוכן שהמקבל אולי ערך). הזיהוי עבר ל-openSharedById (לפני הדיאלוג); הבדיקה הישנה ב-confirmAddShared נשארה כרשת ביטחון
   v67 - שלושה שינויים: (א) רשימת החידונים מותאמת לנייד — כרטיס מוערם (שם + תפריט ⋯ למעלה, "משחק" גדול ברוחב מלא, "עריכה/בדיקה" מתחת). תיקן קריסת פריסה ב-390px שבה 4 כפתורים מעכו את הטקסט לרצועת אות-לשורה. שיתוף ומחיקה ירדו לתפריט ⋯ (מחיקה רחוקה מ"משחק" — אין לחיצה בטעות). (ב) מודאל שיתוף מהרשימה — לחיצה על "שיתוף" בכרטיס פותחת חלון עם פאנל השיתוף הקיים בלי לקפוץ לעורך (עומק 1: העברה זמנית של id "share-panel" למודאל, renderSharePanel ללא שינוי). (ג) תיקון באג re-fire של ?share= — הפרמטר נשאר בכתובת וגרם לדיאלוג "שותף איתך" לקפוץ בכל טעינה/רענון ולשמור עותקים. עכשיו מתנקה דרך replaceState אחרי טיפול ראשון + הגנה מפני עותק כפול לפי copiedFrom.shareId. (ד) הורדת שיתוף-מייל מהממשק — יצר אשליית הגנה שקרית (המורשה הראשון מקבל עותק ויכול לשתפו לכולם). נשאר רק "יצירת קישור שיתוף". קוד מצב 'specific' נשמר כקוד מת לשחזור עתידי
   v66 - UI: בחירת הקבוצות הועלתה מתוך "אפשרויות נוספות" לאזור המבני של בניית השאלון (כותרת → זמן → קבוצות → שאלות). קבוצות זו החלטה על אופי המשחק, לא קישוט כמו רקע/מוזיקה — לכן הוסתרה בטעות בתוך האפשרויות. נוסף i-הסבר. שאר הפיצ׳ר (בחירת קבוצה אצל המשתתף, ניקוד קבוצות ב-reveal, קבוצה מנצחת בסיום) היה תקין כל הזמן
@@ -201,7 +202,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v68</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v69</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -2127,27 +2128,31 @@ function openSharedById(shareId){
     if (myStoreKey){
       fdb.ref('teachers/'+myStoreKey).once('value').then(mineSnap => {
         const mine = mineSnap.val() || {};
-        let matchCode = null;
+        // אוספים את כל העותקים שלי מאותו שיתוף (יכולים להיות כמה — מקור + "מעודכן")
+        const matches = [];
         Object.keys(mine).forEach(c => {
-          if (mine[c] && mine[c].copiedFrom && mine[c].copiedFrom.shareId === shareId) matchCode = c;
+          if (mine[c] && mine[c].copiedFrom && mine[c].copiedFrom.shareId === shareId) matches.push(mine[c]);
         });
         $('home-msg').textContent = '';
-        if (!matchCode){
+        if (!matches.length){
           // אין עותק — זרימה רגילה
           showSharedDialog(shareId, data);
           return;
         }
-        // יש עותק — משווים את התוכן הנוכחי ב-shared מול ה-snapshot שהתקבל במקור
-        const received = (mine[matchCode].copiedFrom && mine[matchCode].copiedFrom.received) || null;
+        // יש עותק/ים — בודקים אם התוכן הנוכחי כבר קיים אצלי באחד מהם.
         const current = shareSnapshot(data.quiz || {});
-        // אם אין snapshot ישן (עותק שנוצר לפני הפיצ'ר) — מתייחסים כ"זהה" כדי לא להציף עדכוני-שווא
-        if (received === null || received === current){
-          // זהה למה שכבר קיבלתי — אין טעם לעותק נוסף
+        // עותק ישן בלי snapshot (מלפני הפיצ'ר) נחשב "כבר יש לי" כדי לא להציף עדכוני-שווא.
+        const haveThisVersion = matches.some(m => {
+          const rec = (m.copiedFrom && m.copiedFrom.received) || null;
+          return rec === null || rec === current;
+        });
+        if (haveThisVersion){
+          // כבר יש לי בדיוק את הגרסה הזו (או עותק ישן ללא snapshot) — אין טעם לעותק נוסף
           $('share-input').value = '';
           alert('החידון הזה כבר נמצא ברשימת החידונים שלכם.');
           refreshMyList();
         } else {
-          // שונה — מציעים לשמור גרסה מעודכנת כעותק נוסף
+          // אף עותק שלי לא תואם את התוכן הנוכחי — זו באמת גרסה חדשה
           showUpdatedDialog(shareId, data);
         }
       }).catch(()=>{ $('home-msg').textContent=''; showSharedDialog(shareId, data); });
