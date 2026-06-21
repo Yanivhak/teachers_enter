@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v78 - חובת שם בפעולות אקטיביות: כל פעולה אקטיבית — שמירה ידנית (saveNow), שיתוף (shareToEveryone + startSpecificShare), משחק (goPlay), בדיקה (previewQuiz) — דורשת עכשיו שם לחידון. בלי שם: הודעה "תנו שם לחידון לפני שתמשיכו" והפעולה נעצרת. בדיקת השם (quizNameMissing) רצה לפני בדיקת המוכנות (quizReady), כדי שההודעה הראשונה תהיה הרלוונטית. השמירה האוטומטית לא נוגעת בזה — היא ממשיכה לעבוד גם בלי שם, כדי לא לאבד עבודה תוך כדי כתיבה. כך חידון בלי שם נשמר אוטומטית (כטיוטה, "שמירה אוטומטית בלבד") אבל אי אפשר "לסגור" אותו כגמור עד שנותנים לו שם
   v77 - תיקוני זבל ושיפור הניקוי: (א) חידון ריק לגמרי (בלי כותרת ובלי תוכן בשאלות) לא נשמר עוד — newQuiz לא שומר ביצירה, ו-saveQuiz חוסם כתיבה של חידון ריק שאינו מאושר. מונע הצטברות חידוני-זבל. (ב) חסימת שיתוף של חידון לא-מוכן — shareToEveryone ו-startSpecificShare בודקים quizReady לפני, כמו שמירה/משחק. (ג) "בדיקה" (previewQuiz) נוספה לפעולות שמאשרות חידון (isConfirmed=true) — פעולה אקטיבית שמעידה על רצינות, ודורשת ממילא quizReady. כעת מאשרים: שמירה ידנית, שיתוף, משחק, בדיקה. (ד) תווית הכרטיס שונתה מ"לא נשמר ידנית" ל"● שמירה אוטומטית בלבד" — מדויק יותר (החידון כן נשמר, רק לא במכוון) ומסביר למה הוא ברשימה. (ה) כפתור הניקוי הפך לדיאלוג "הצלה": מציג את כל החידונים-בשמירה-אוטומטית-בלבד ממוינים לפי עדכון אחרון (חדש למעלה, עם "עודכן לפני..."), כולם מסומנים למחיקה כברירת מחדל, והמשתמש מסיר סימון כדי להשאיר חידון. מונה חי (יימחקו/יישארו), כפתור מחיקה מושבת אם לא נשאר מה למחוק, ואישור סופי. מטפל בתרחיש "מלא זבל ואחד טוב" בלי בחירה-מרובה כבדה. relativeTime — עזר ל"עודכן לפני..."
   v76 - תווית "לא נשמר ידנית" + ניקוי טיוטות: שדה חדש isConfirmed על רשומת החידון מבדיל בין חידון שבוצעה עליו פעולה משמעותית לבין חידון שנשמר רק אוטומטית תוך כדי עבודה (ואולי נזנח). חידון חדש נוצר ללא הדגל (isConfirmed=false). מסירים את הדגל (מציבים true ושומרים): saveNow (שמירה ידנית), shareToEveryone + startSpecificShare (שיתוף), goPlay (התחלת משחק). לא נוגעים: previewQuiz (בדיקה), שמירה אוטומטית (touch/saveQuiz), צפייה. הנימוק: שיתוף/משחק = אישור מפורש שהחידון אמיתי, גם בלי לחיצת "שמור". כרטיס לא-מאושר מציג תווית "● לא נשמר ידנית" (ענבר). כפתור "🗑 ניקוי חידונים שלא נשמרו ידנית" בראש הרשימה (cleanupDrafts) — מופיע רק כשיש כאלה, מוחק רק לא-מאושרים (כולל ניקוי הצמדה), עם דיאלוג אישור שמציין כמה יימחקו. אפס מיגרציה לאחור — חידון ישן בלי השדה מוצג כלא-מאושר (לא מנחשים). isConfirmed מסונכרן דרך openExisting/playExisting/testExisting; עותק שהתקבל (confirmAddShared) מתחיל false. שם השדה isConfirmed (ולא keepInList) כי הוא מתאר "אושר ע"י פעולה" ולא "המשתמש ביקש להשאיר ברשימה"
   v75 - קרדיט ליוצר המקורי (originalAuthor): שדה חדש שנקבע ביצירת חידון (newQuiz) = שם היוצר, ונישא קבוע לאורך כל שרשרת ההעתקות. בקבלת עותק (confirmAddShared) העותק יורש את originalAuthor מהמקור (לא מקבל את שם המקבל). מתפרסם ב-shared/ (לצד ownerName שהוא המשתף) וב-library entry. דיאלוג הקבלה מציג: "נוצר על ידי [יוצר]" + "שותף על ידי [משתף]". אם שניהם זהים (שיתוף ישיר מהיוצר) — רק "נוצר על ידי", בלי כפילות. אם אין יוצר (חידון שנוצר לפני הפיצ'ר) — רק "שותף על ידי", בלי מילוי-למפרע (לא מנחשים יוצר ישן — היה יוצר נתון שגוי). אותה לוגיקה גם בדיאלוג "גרסה מעודכנת". הערה: הצגת הקרדיט בלקיחה מהספרייה תלויה ב-teacher-library.html (קובץ נפרד) — הנתון זמין ב-entry, אך התצוגה שם דורשת עדכון נפרד. originalAuthor נשמר על quiz ומסונכרן דרך openExisting/playExisting/testExisting
@@ -211,7 +212,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v77</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v78</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -2276,6 +2277,8 @@ function shareStatusBox(titleText, sh){
 // --- פעולות שיתוף ספציפי ---
 async function startSpecificShare(){
   if (!myUid){ alert('צריך להתחבר עם Google כדי לשתף.'); return; }
+  const noName = quizNameMissing();
+  if (noName){ alert(noName); return; }
   const notReady = quizReady();
   if (notReady){ alert('אי אפשר לשתף חידון לא מוכן: ' + notReady); return; }
   const sh = ensureShareObj();
@@ -2309,6 +2312,8 @@ function unshareSpecificAll(){
 // --- פעולות שיתוף לכולם ---
 async function shareToEveryone(){
   if (!myUid){ alert('צריך להתחבר עם Google כדי לשתף.'); return; }
+  const noName = quizNameMissing();
+  if (noName){ alert(noName); return; }
   const notReady = quizReady();
   if (notReady){ alert('אי אפשר לשתף חידון לא מוכן: ' + notReady); return; }
   // אזהרה לפני שיתוף ראשון — השיתוף יוצר עותקים בלתי-נגיעים ואי אפשר לבטל אותו
@@ -2702,6 +2707,12 @@ function refreshMyList(){
 function backHome(){ refreshMyList(); }
 
 /* validation before play */
+// בדיקת שם — פעולה אקטיבית (שמירה/שיתוף/משחק/בדיקה) דורשת שם לחידון.
+// מחזיר הודעת שגיאה אם אין שם, או null אם תקין.
+function quizNameMissing(){
+  return (!quiz.title || !quiz.title.trim()) ? 'תנו שם לחידון לפני שתמשיכו.' : null;
+}
+
 function quizReady(){
   if (!quiz.questions.length) return 'צריך לפחות שאלה אחת.';
   for (let i=0;i<quiz.questions.length;i++){
@@ -2762,6 +2773,8 @@ let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
 
 async function goPlay(){
+  const noName = quizNameMissing();
+  if (noName){ alert(noName); return; }
   const err = quizReady();
   if (err){ alert(err); return; }
   // אורח שמנסה להציג לתלמידים — תזכורת חוסמת לשמור (אלא אם ביקש לא להציג שוב, או כבר בחר להמשיך)
@@ -3665,6 +3678,8 @@ function showReturnQR(){
 
 function saveNow(){
   if (!myStoreKey){ alert('יש להתחבר עם Google כדי לשמור.'); return; }
+  const noName = quizNameMissing();
+  if (noName){ alert(noName); return; }
   const err = quizReady();
   if (err){ alert(err); return; }
   quiz.isConfirmed = true;   // שמירה ידנית = אישור מפורש
@@ -3678,6 +3693,8 @@ function saveNow(){
    המורה משחק לבד (בלי Firebase, בלי תלמידים), בוחר תשובות בעצמו ורואה חשיפה כרגיל. */
 let solo = false;
 function previewQuiz(){
+  const noName = quizNameMissing();
+  if (noName){ alert(noName); return; }
   const err = quizReady();
   if (err){ alert(err); return; }
   quiz.isConfirmed = true;   // בדיקה = פעולה אקטיבית שמעידה על רצינות
