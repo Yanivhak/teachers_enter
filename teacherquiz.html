@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v67 - שלושה שינויים: (א) רשימת החידונים מותאמת לנייד — כרטיס מוערם (שם + תפריט ⋯ למעלה, "משחק" גדול ברוחב מלא, "עריכה/בדיקה" מתחת). תיקן קריסת פריסה ב-390px שבה 4 כפתורים מעכו את הטקסט לרצועת אות-לשורה. שיתוף ומחיקה ירדו לתפריט ⋯ (מחיקה רחוקה מ"משחק" — אין לחיצה בטעות). (ב) מודאל שיתוף מהרשימה — לחיצה על "שיתוף" בכרטיס פותחת חלון עם פאנל השיתוף הקיים בלי לקפוץ לעורך (עומק 1: העברה זמנית של id "share-panel" למודאל, renderSharePanel ללא שינוי). (ג) תיקון באג re-fire של ?share= — הפרמטר נשאר בכתובת וגרם לדיאלוג "שותף איתך" לקפוץ בכל טעינה/רענון ולשמור עותקים. עכשיו מתנקה דרך replaceState אחרי טיפול ראשון + הגנה מפני עותק כפול לפי copiedFrom.shareId. (ד) הורדת שיתוף-מייל מהממשק — יצר אשליית הגנה שקרית (המורשה הראשון מקבל עותק ויכול לשתפו לכולם). נשאר רק "יצירת קישור שיתוף". קוד מצב 'specific' נשמר כקוד מת לשחזור עתידי
   v66 - UI: בחירת הקבוצות הועלתה מתוך "אפשרויות נוספות" לאזור המבני של בניית השאלון (כותרת → זמן → קבוצות → שאלות). קבוצות זו החלטה על אופי המשחק, לא קישוט כמו רקע/מוזיקה — לכן הוסתרה בטעות בתוך האפשרויות. נוסף i-הסבר. שאר הפיצ׳ר (בחירת קבוצה אצל המשתתף, ניקוד קבוצות ב-reveal, קבוצה מנצחת בסיום) היה תקין כל הזמן
   v65 - חיזוקים: מרווח אישי (MIN_GAP=3) בין שתי קדחות של אותו תלמיד. מתקן מצב שבו תלמיד לבד ב-pool קיבל פעמיים בשאלות צמודות (3 ואז 4). עכשיו פעם שנייה רק אחרי לפחות 3 שאלות מהראשונה. חל רק על pool2 (פעם שנייה) — פעם ראשונה תמיד מותרת מיד, כך הכיסוי לא נפגע
   v64 - חיזוקים: דחיית התחלה — לא מחזקים בשאלות הראשונות (התלמידים עוד נכנסים), מתחיל אחרי ~15% מהשאלות אך לכל המאוחר בשאלה 3 (START_FRACTION/START_CAP). מאגר ההתמדה נוסח מחדש ללשון הווה ("ממשיכים יפה!" במקום "איתנו לכל אורך החידון" — שהיה שקרי באמצע משחק)
@@ -199,7 +200,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v66</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v67</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -378,7 +379,7 @@ input:focus{border-color:var(--gold); outline:none;}
     </div>
 
     <div id="share-card" style="margin-top:20px; padding-top:18px; border-top:1px solid rgba(255,255,255,.12);">
-      <div style="font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">🔗 שיתוף החידון <span class="info-i" onclick="showInfo(event, 'אפשר לשתף את החידון. בשיתוף עם אנשים ספציפיים — רק מי שתכניסו את המייל שלו יוכל לפתוח. בקישור שיתוף — כל מי שיש לו את הקישור. מי שפותח מקבל עותק עצמאי משלו לעריכה, והחידון המקורי שלכם לא משתנה.')">i</span></div>
+      <div style="font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">🔗 שיתוף החידון <span class="info-i" onclick="showInfo(event, 'יצירת קישור שיתוף נותנת לכם קישור שאפשר לשלוח למי שתרצו. כל מי שמקבל את הקישור פותח אותו ומקבל עותק עצמאי משלו לעריכה ולמשחק. החידון המקורי שלכם לא משתנה ולא נמחק.')">i</span></div>
       <div style="font-size:13px; color:var(--ink-dim); margin-bottom:12px; text-align:center;">שלחו את החידון למישהו אחר — הוא יקבל עותק עצמאי משלו לעריכה ולמשחק.</div>
       <div id="share-panel" style="max-width:460px; margin:0 auto;"></div>
     </div>
@@ -1912,11 +1913,11 @@ function renderSharePanel(){
   } else if (sh.mode === 'public'){
     panel.appendChild(shareStatusBox(justCopiedLink ? '✓ הקישור הועתק! אפשר לשלוח' : '🔗 החידון משותף', sh));
   } else {
-    // לא משותף — מציגים שני כפתורי בחירה
+    // לא משותף — שיתוף בקישור בלבד (שיתוף-מייל הוסר: יצר אשליית הגנה שקרית).
+    // הקוד של מצב 'specific' נשאר כקוד מת למקרה שנרצה להחזיר בעתיד.
     const row = document.createElement('div'); row.style.cssText='display:flex; flex-direction:column; gap:8px;';
     const b2 = document.createElement('button'); b2.className='btn teal sm'; b2.textContent='🔗 יצירת קישור שיתוף'; b2.onclick=shareToEveryone;
-    const b1 = document.createElement('button'); b1.className='btn ghost sm'; b1.textContent='🔒 שיתוף עם אנשים ספציפיים'; b1.onclick=startSpecificShare;
-    row.appendChild(b2); row.appendChild(b1);
+    row.appendChild(b2);
     panel.appendChild(row);
   }
 }
