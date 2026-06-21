@@ -2205,27 +2205,45 @@ function showSharedDialog(shareId, data){
 // ביצוע ההוספה בפועל — רק אחרי אישור בדיאלוג
 function confirmAddShared(shareId, data, ov){
   const src = data.quiz || {};
-  genUniqueCode().then(newCode => {
-    const copy = {
-      title: (src.title || data.title || 'חידון') + ' (עותק)',
-      time: src.time || 20,
-      teamCount: src.teamCount || 0,
-      teamNames: src.teamNames || [],
-      questions: src.questions || [],
-      updated: Date.now(),
-      ownerEmail: myEmail,
-      share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
-      copiedFrom: { ownerUid: data.ownerUid || null, ownerName: data.ownerName || '', shareId: shareId, originalQuizCode: data.quizCode || null }
-    };
-    fdb.ref('teachers/'+myStoreKey+'/'+newCode).set(copy).then(()=>{
+  // הגנה: אם כבר קיים אצלי עותק מאותו שיתוף — לא יוצרים כפול, פשוט פותחים את הרשימה
+  fdb.ref('teachers/'+myStoreKey).once('value').then(existingSnap => {
+    const existing = existingSnap.val() || {};
+    const already = Object.keys(existing).some(c =>
+      existing[c] && existing[c].copiedFrom && existing[c].copiedFrom.shareId === shareId
+    );
+    if (already){
       if (ov) ov.remove();
       $('home-msg').textContent = '';
       $('share-input').value = '';
+      alert('החידון הזה כבר נמצא ברשימת החידונים שלכם.');
       refreshMyList();
-    }).catch(()=>{
-      if (ov){ const b = ov.querySelector('button'); if(b){ b.disabled=false; b.textContent='✓ הוספה לחידונים שלי'; } }
-      $('home-msg').textContent = 'תקלה בשמירת העותק. נסו שוב.';
+      return;
+    }
+    genUniqueCode().then(newCode => {
+      const copy = {
+        title: (src.title || data.title || 'חידון') + ' (עותק)',
+        time: src.time || 20,
+        teamCount: src.teamCount || 0,
+        teamNames: src.teamNames || [],
+        questions: src.questions || [],
+        updated: Date.now(),
+        ownerEmail: myEmail,
+        share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
+        copiedFrom: { ownerUid: data.ownerUid || null, ownerName: data.ownerName || '', shareId: shareId, originalQuizCode: data.quizCode || null }
+      };
+      fdb.ref('teachers/'+myStoreKey+'/'+newCode).set(copy).then(()=>{
+        if (ov) ov.remove();
+        $('home-msg').textContent = '';
+        $('share-input').value = '';
+        refreshMyList();
+      }).catch(()=>{
+        if (ov){ const b = ov.querySelector('button'); if(b){ b.disabled=false; b.textContent='✓ הוספה לחידונים שלי'; } }
+        $('home-msg').textContent = 'תקלה בשמירת העותק. נסו שוב.';
+      });
     });
+  }).catch(()=>{
+    if (ov){ const b = ov.querySelector('button'); if(b){ b.disabled=false; b.textContent='✓ הוספה לחידונים שלי'; } }
+    $('home-msg').textContent = 'תקלה, נסו שוב.';
   });
 }
 
@@ -3381,8 +3399,21 @@ function handlePendingShare(){
     return;
   }
   const sid = pendingShareId; pendingShareId = null;
+  // מנקים את ?share= מהכתובת כדי שרענון/חזרה לטאב לא יפעילו שוב את הדיאלוג והשמירה
+  clearShareParamFromUrl();
   $('share-input').value = sid;
   openSharedById(sid);
+}
+
+// מסיר את פרמטר ?share= מכתובת הדפדפן בלי לטעון מחדש (מונע re-fire בכל טעינה)
+function clearShareParamFromUrl(){
+  try {
+    const url = new URL(location.href);
+    if (url.searchParams.has('share')){
+      url.searchParams.delete('share');
+      history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + url.hash);
+    }
+  } catch(e){ /* דפדפן ישן — מתעלמים */ }
 }
 
 // כשמקלידים קוד בהצטרפות, טוענים אם יש קבוצות
