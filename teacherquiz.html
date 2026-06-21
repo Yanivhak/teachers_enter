@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v70 - שני שיפורים לרשימת החידונים: (א) הצמדה לראש (📌) — פריט חדש בתפריט ⋯ מצמיד חידון לראש הרשימה מעל מיון-העדכון. נעוצים מסומנים ב-📌 ליד השם. ההצמדה נשמרת בנתיב נפרד teachers_meta/{key}/pinned (נתיב חדש, לא נוגע ב-teachers/) כדי ש-saveQuiz — שעושה set על הרשומה — לא ידרוס אותה. מיון: נעוצים קודם, ובכל קבוצה לפי עדכון אחרון. (ב) חיפוש לפי שם — שדה חיפוש בראש הרשימה, מסנן לפי כותרת בלבד (לא תוכן — נמנע מרעש). מופיע רק כשיש 6+ חידונים. בכוונה לא רב-שדה/מתקדם: כותרת מכסה את רוב המקרים, והרחבה תיעשה רק על בסיס משוב אמיתי
   v69 - תיקון באג כפילות אינסופית בעדכון: אחרי שמירת גרסה "(מעודכן)", לחיצה חוזרת על הקישור הציעה שוב "יש גרסה מעודכנת" ושמרה עוד עותק, בלי סוף. הסיבה — הזיהוי בדק רק את העותק *האחרון* שנמצא (forEach שדרס matchCode), ואם הוא היה הישן, ההשוואה מול ה-received הישן תמיד אמרה "שונה". התיקון: בודקים את *כל* העותקים מאותו shareId — אם *לאחד מהם* ה-received תואם את התוכן הנוכחי, "כבר אצלך" וחוסם. רק אם *אף* עותק לא תואם — זו באמת גרסה חדשה
   v68 - זיהוי גרסה מעודכנת בקבלת חידון: כשמקבלים קישור לחידון שכבר קיים אצלי, משווים את תוכן ה-shared הנוכחי מול snapshot שנשמר ברגע הקבלה המקורית (copiedFrom.received — שם+שאלות). זהה → "כבר אצלך" וחוסם. שונה → דיאלוג "יש גרסה מעודכנת, לשמור כעותק נוסף?" → נוצר עותק בשם "(מעודכן)". ההשוואה מול ה-snapshot-של-הקבלה (לא מול העותק הנוכחי) כדי שעריכות של המקבל לא יספרו כשינוי; רק שינוי מצד המקור מפעיל הצעה. עותקים ישנים בלי snapshot מטופלים כ"זהה" (לא מציפים עדכוני-שווא). בחירה: עותק נוסף, לא החלפה (לא דורסים תוכן שהמקבל אולי ערך). הזיהוי עבר ל-openSharedById (לפני הדיאלוג); הבדיקה הישנה ב-confirmAddShared נשארה כרשת ביטחון
   v67 - שלושה שינויים: (א) רשימת החידונים מותאמת לנייד — כרטיס מוערם (שם + תפריט ⋯ למעלה, "משחק" גדול ברוחב מלא, "עריכה/בדיקה" מתחת). תיקן קריסת פריסה ב-390px שבה 4 כפתורים מעכו את הטקסט לרצועת אות-לשורה. שיתוף ומחיקה ירדו לתפריט ⋯ (מחיקה רחוקה מ"משחק" — אין לחיצה בטעות). (ב) מודאל שיתוף מהרשימה — לחיצה על "שיתוף" בכרטיס פותחת חלון עם פאנל השיתוף הקיים בלי לקפוץ לעורך (עומק 1: העברה זמנית של id "share-panel" למודאל, renderSharePanel ללא שינוי). (ג) תיקון באג re-fire של ?share= — הפרמטר נשאר בכתובת וגרם לדיאלוג "שותף איתך" לקפוץ בכל טעינה/רענון ולשמור עותקים. עכשיו מתנקה דרך replaceState אחרי טיפול ראשון + הגנה מפני עותק כפול לפי copiedFrom.shareId. (ד) הורדת שיתוף-מייל מהממשק — יצר אשליית הגנה שקרית (המורשה הראשון מקבל עותק ויכול לשתפו לכולם). נשאר רק "יצירת קישור שיתוף". קוד מצב 'specific' נשמר כקוד מת לשחזור עתידי
@@ -202,7 +203,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v69</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v70</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -282,6 +283,9 @@ input:focus{border-color:var(--gold); outline:none;}
     <div class="row" style="margin-bottom:18px;">
       <button class="btn teal" onclick="newQuiz()">➕ בניית חידון חדש</button>
       <button class="btn ghost sm" onclick="show('home')">→ חזרה</button>
+    </div>
+    <div id="quiz-search-wrap" style="display:none; margin-bottom:14px;">
+      <input type="text" id="quiz-search" placeholder="🔍 חיפוש לפי שם החידון" oninput="filterQuizList()" style="width:100%; padding:11px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); font-family:'Heebo'; font-size:16px;">
     </div>
     <div id="quiz-list" style="display:flex; flex-direction:column; gap:10px;"></div>
     <p id="mylist-msg" style="color:var(--ink-dim); margin-top:14px;"></p>
@@ -914,58 +918,117 @@ function loginEmail(){
   }).catch(()=>{ $('home-msg').textContent = 'תקלה בטעינה, נסו שוב.'; });
 }
 
+let _quizListData = {};   // נשמר כדי שחיפוש יסנן בלי טעינה חוזרת מ-Firebase
+const QUIZ_SEARCH_MIN = 6;  // שדה חיפוש מופיע רק מכמות זו ומעלה
+
 function renderQuizList(all){
-  const box = $('quiz-list'); box.innerHTML = '';
-  const codes = Object.keys(all);
+  // ההצמדה נשמרת בנתיב נפרד (teachers_meta) כדי ש-saveQuiz (שעושה set על teachers/) לא ידרוס אותה.
+  // טוענים אותה וממזגים לפני הציור.
+  const base = all || {};
+  if (!myStoreKey){ _renderQuizListMerged(base, {}); return; }
+  fdb.ref('teachers_meta/'+myStoreKey+'/pinned').once('value')
+    .then(s => _renderQuizListMerged(base, s.val() || {}))
+    .catch(()=> _renderQuizListMerged(base, {}));
+}
+
+function _renderQuizListMerged(all, pinnedMap){
+  // ממזגים את דגל ההצמדה לכל חידון מתוך המפה הנפרדת
+  Object.keys(all).forEach(code => { all[code].pinned = !!pinnedMap[code]; });
+  _quizListData = all;
   $('mylist-title').textContent = 'החידונים של ' + myEmail;
-  if (!codes.length){ $('mylist-msg').textContent = 'עוד אין חידונים. לחצו "בניית חידון חדש" כדי להתחיל.'; return; }
+  const codes = Object.keys(_quizListData);
+  if (!codes.length){
+    $('quiz-list').innerHTML = '';
+    $('quiz-search-wrap').style.display = 'none';
+    $('mylist-msg').textContent = 'עוד אין חידונים. לחצו "בניית חידון חדש" כדי להתחיל.';
+    return;
+  }
   $('mylist-msg').textContent = '';
-  // מיון לפי זמן עדכון אחרון (חדש קודם)
-  codes.sort((a,b)=>(all[b].updated||0)-(all[a].updated||0));
-  codes.forEach(code => {
-    const q = all[code];
-    const card = document.createElement('div');
-    card.className = 'qlcard';
+  $('quiz-search-wrap').style.display = (codes.length >= QUIZ_SEARCH_MIN) ? 'block' : 'none';
+  drawQuizCards();
+}
 
-    // --- שורה עליונה: כותרת + תפריט ⋯ ---
-    const top = document.createElement('div'); top.className='qlcard-top';
-    const titleWrap = document.createElement('div'); titleWrap.className='qlcard-titlewrap';
-    // שורת "שותף על ידי" — רק אם החידון הגיע משיתוף ויש שם
-    const sharedLine = (q.copiedFrom && q.copiedFrom.ownerName)
-      ? '<div class="qlcard-shared">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
-      : '';
-    titleWrap.innerHTML = '<div class="qlcard-title">' + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
-                          '<div class="qlcard-meta">מספר ' + code + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
-                          sharedLine;
-
-    // כפתור ⋯ + תפריט נפתח
-    const menuWrap = document.createElement('div'); menuWrap.className='qlcard-menuwrap';
-    const dots = document.createElement('button'); dots.className='qlcard-dots'; dots.textContent='⋯'; dots.title='עוד פעולות';
-    const menu = document.createElement('div'); menu.className='qlcard-menu';
-    const shareItem = document.createElement('button'); shareItem.className='qlcard-menu-item'; shareItem.textContent='🔗 שיתוף';
-    shareItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); openShareModal(code, q); };
-    const delItem = document.createElement('button'); delItem.className='qlcard-menu-item danger'; delItem.textContent='🗑 מחיקה';
-    delItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myStoreKey+'/'+code).remove().then(()=>refreshMyList()); } };
-    menu.appendChild(shareItem); menu.appendChild(delItem);
-    dots.onclick=(e)=>{ e.stopPropagation(); const wasOpen = menu.classList.contains('on'); closeAllCardMenus(); if(!wasOpen) menu.classList.add('on'); };
-    menuWrap.appendChild(dots); menuWrap.appendChild(menu);
-
-    top.appendChild(titleWrap); top.appendChild(menuWrap);
-    card.appendChild(top);
-
-    // --- כפתור ראשי: משחק (רוחב מלא) ---
-    const play = document.createElement('button'); play.className='btn teal'; play.style.cssText='width:100%; margin-top:12px;'; play.textContent='▶️ משחק'; play.onclick=()=>playExisting(code, q);
-    card.appendChild(play);
-
-    // --- שורת משנה: עריכה · בדיקה ---
-    const subRow = document.createElement('div'); subRow.className='qlcard-subrow';
-    const edit = document.createElement('button'); edit.className='btn ghost sm'; edit.textContent='✏️ עריכה'; edit.onclick=()=>openExisting(code, q);
-    const test = document.createElement('button'); test.className='btn ghost sm'; test.textContent='👁️ בדיקה'; test.onclick=()=>testExisting(code, q);
-    subRow.appendChild(edit); subRow.appendChild(test);
-    card.appendChild(subRow);
-
-    box.appendChild(card);
+// ממיין ומצייר את הכרטיסים, עם סינון אופציונלי לפי טקסט חיפוש
+function drawQuizCards(){
+  const box = $('quiz-list'); box.innerHTML = '';
+  const all = _quizListData;
+  const term = ($('quiz-search') && $('quiz-search').value || '').trim().toLowerCase();
+  let codes = Object.keys(all);
+  // סינון לפי שם (אם יש חיפוש)
+  if (term){
+    codes = codes.filter(c => (all[c].title || '').toLowerCase().includes(term));
+  }
+  // מיון: נעוצים קודם, ובכל קבוצה לפי עדכון אחרון
+  codes.sort((a,b)=>{
+    const pa = all[a].pinned ? 1 : 0, pb = all[b].pinned ? 1 : 0;
+    if (pa !== pb) return pb - pa;
+    return (all[b].updated||0) - (all[a].updated||0);
   });
+  if (!codes.length){
+    box.innerHTML = '<div style="text-align:center; color:var(--ink-dim); padding:20px 0;">לא נמצאו חידונים שמתאימים לחיפוש.</div>';
+    return;
+  }
+  codes.forEach(code => box.appendChild(buildQuizCard(code, all[code])));
+}
+
+// סינון מחדש בעת הקלדה בשדה החיפוש
+function filterQuizList(){ drawQuizCards(); }
+
+function buildQuizCard(code, q){
+  const card = document.createElement('div');
+  card.className = 'qlcard';
+
+  // --- שורה עליונה: כותרת + תפריט ⋯ ---
+  const top = document.createElement('div'); top.className='qlcard-top';
+  const titleWrap = document.createElement('div'); titleWrap.className='qlcard-titlewrap';
+  const pinMark = q.pinned ? '📌 ' : '';
+  // שורת "שותף על ידי" — רק אם החידון הגיע משיתוף ויש שם
+  const sharedLine = (q.copiedFrom && q.copiedFrom.ownerName)
+    ? '<div class="qlcard-shared">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
+    : '';
+  titleWrap.innerHTML = '<div class="qlcard-title">' + pinMark + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
+                        '<div class="qlcard-meta">מספר ' + code + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
+                        sharedLine;
+
+  // כפתור ⋯ + תפריט נפתח
+  const menuWrap = document.createElement('div'); menuWrap.className='qlcard-menuwrap';
+  const dots = document.createElement('button'); dots.className='qlcard-dots'; dots.textContent='⋯'; dots.title='עוד פעולות';
+  const menu = document.createElement('div'); menu.className='qlcard-menu';
+  // פריט הצמדה/ביטול הצמדה
+  const pinItem = document.createElement('button'); pinItem.className='qlcard-menu-item';
+  pinItem.textContent = q.pinned ? '📌 ביטול הצמדה' : '📌 הצמדה לראש';
+  pinItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); togglePin(code, !q.pinned); };
+  const shareItem = document.createElement('button'); shareItem.className='qlcard-menu-item'; shareItem.textContent='🔗 שיתוף';
+  shareItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); openShareModal(code, q); };
+  const delItem = document.createElement('button'); delItem.className='qlcard-menu-item danger'; delItem.textContent='🗑 מחיקה';
+  delItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myStoreKey+'/'+code).remove().then(()=>refreshMyList()); } };
+  menu.appendChild(pinItem); menu.appendChild(shareItem); menu.appendChild(delItem);
+  dots.onclick=(e)=>{ e.stopPropagation(); const wasOpen = menu.classList.contains('on'); closeAllCardMenus(); if(!wasOpen) menu.classList.add('on'); };
+  menuWrap.appendChild(dots); menuWrap.appendChild(menu);
+
+  top.appendChild(titleWrap); top.appendChild(menuWrap);
+  card.appendChild(top);
+
+  // --- כפתור ראשי: משחק (רוחב מלא) ---
+  const play = document.createElement('button'); play.className='btn teal'; play.style.cssText='width:100%; margin-top:12px;'; play.textContent='▶️ משחק'; play.onclick=()=>playExisting(code, q);
+  card.appendChild(play);
+
+  // --- שורת משנה: עריכה · בדיקה ---
+  const subRow = document.createElement('div'); subRow.className='qlcard-subrow';
+  const edit = document.createElement('button'); edit.className='btn ghost sm'; edit.textContent='✏️ עריכה'; edit.onclick=()=>openExisting(code, q);
+  const test = document.createElement('button'); test.className='btn ghost sm'; test.textContent='👁️ בדיקה'; test.onclick=()=>testExisting(code, q);
+  subRow.appendChild(edit); subRow.appendChild(test);
+  card.appendChild(subRow);
+
+  return card;
+}
+
+// הצמדה/ביטול הצמדה — כותב לנתיב נפרד (teachers_meta) שלא נדרס ע"י saveQuiz, ומרענן
+function togglePin(code, pinned){
+  if (!myStoreKey) return;
+  fdb.ref('teachers_meta/'+myStoreKey+'/pinned/'+code).set(pinned ? true : null)
+    .then(()=>refreshMyList())
+    .catch(()=>{ alert('תקלה בעדכון ההצמדה. נסו שוב.'); });
 }
 
 // סגירת כל תפריטי ה-⋯ הפתוחים בכרטיסים
