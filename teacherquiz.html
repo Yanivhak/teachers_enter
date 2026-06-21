@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v71 - תיקון התחברות Google באייפון (אומת מול יועץ GPT): באייפון signInWithPopup לא אמין (כל הדפדפנים WebKit), והנפילה ל-redirect כ-fallback יצרה מצב לא-עקבי של "לשונית שגיאה אבל מחובר". התיקון: (א) זיהוי iOS (isIOS, כולל אייפד שמתחזה ל-Mac) — באייפון signInWithRedirect *ישירות*, בלי לנסות popup קודם. מחשב/אנדרואיד — popup כרגיל. (ב) getRedirectResult מלא — מציג שגיאה ברורה למשתמש + console.error לדיבוג, במקום catch ריק. (ג) תיקון אובדן חידון-אורח: ב-redirect הדף נטען מחדש וה-quiz בזיכרון אובד. עכשיו אורח באייפון ששומר — החידון נשמר ב-sessionStorage לפני ההפניה ומשוחזר אחרי החזרה (restorePendingGuestQuiz, נקרא מ-onAuthStateChanged). הערה: הפתרון היציב המלא לבעיות Safari/ITP הוא Custom Auth Domain על דומיין משלי (לא github.io) — פרויקט עתידי
   v70 - שני שיפורים לרשימת החידונים: (א) הצמדה לראש (📌) — פריט חדש בתפריט ⋯ מצמיד חידון לראש הרשימה מעל מיון-העדכון. נעוצים מסומנים ב-📌 ליד השם. ההצמדה נשמרת בנתיב נפרד teachers_meta/{key}/pinned (נתיב חדש, לא נוגע ב-teachers/) כדי ש-saveQuiz — שעושה set על הרשומה — לא ידרוס אותה. מיון: נעוצים קודם, ובכל קבוצה לפי עדכון אחרון. (ב) חיפוש לפי שם — שדה חיפוש בראש הרשימה, מסנן לפי כותרת בלבד (לא תוכן — נמנע מרעש). מופיע רק כשיש 6+ חידונים. בכוונה לא רב-שדה/מתקדם: כותרת מכסה את רוב המקרים, והרחבה תיעשה רק על בסיס משוב אמיתי
   v69 - תיקון באג כפילות אינסופית בעדכון: אחרי שמירת גרסה "(מעודכן)", לחיצה חוזרת על הקישור הציעה שוב "יש גרסה מעודכנת" ושמרה עוד עותק, בלי סוף. הסיבה — הזיהוי בדק רק את העותק *האחרון* שנמצא (forEach שדרס matchCode), ואם הוא היה הישן, ההשוואה מול ה-received הישן תמיד אמרה "שונה". התיקון: בודקים את *כל* העותקים מאותו shareId — אם *לאחד מהם* ה-received תואם את התוכן הנוכחי, "כבר אצלך" וחוסם. רק אם *אף* עותק לא תואם — זו באמת גרסה חדשה
   v68 - זיהוי גרסה מעודכנת בקבלת חידון: כשמקבלים קישור לחידון שכבר קיים אצלי, משווים את תוכן ה-shared הנוכחי מול snapshot שנשמר ברגע הקבלה המקורית (copiedFrom.received — שם+שאלות). זהה → "כבר אצלך" וחוסם. שונה → דיאלוג "יש גרסה מעודכנת, לשמור כעותק נוסף?" → נוצר עותק בשם "(מעודכן)". ההשוואה מול ה-snapshot-של-הקבלה (לא מול העותק הנוכחי) כדי שעריכות של המקבל לא יספרו כשינוי; רק שינוי מצד המקור מפעיל הצעה. עותקים ישנים בלי snapshot מטופלים כ"זהה" (לא מציפים עדכוני-שווא). בחירה: עותק נוסף, לא החלפה (לא דורסים תוכן שהמקבל אולי ערך). הזיהוי עבר ל-openSharedById (לפני הדיאלוג); הבדיקה הישנה ב-confirmAddShared נשארה כרשת ביטחון
@@ -203,7 +204,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v70</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v71</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -772,16 +773,30 @@ function guestPlayContinue(){
 }
 
 /* ===== התחברות Google (לא חובה) ===== */
+// זיהוי iOS (כולל אייפד מודרני שמדווח כמק עם מסך מגע). באייפון כל הדפדפנים הם WebKit,
+// ושם signInWithPopup לא אמין — לכן עוברים ישירות ל-redirect במקום לנסות popup קודם.
+function isIOS(){
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // אייפד עם iPadOS 13+ מתחזה ל-Mac — מזהים לפי מסך מגע
+  if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+  return false;
+}
+
 function signInGoogle(){
   const provider = new firebase.auth.GoogleAuthProvider();
+  // באייפון: redirect ישירות (popup לא אמין ב-WebKit). אחרת: popup עם נפילה ל-redirect.
+  if (isIOS()){
+    $('home-msg').textContent = 'מעביר אתכם להתחברות...';
+    fauth.signInWithRedirect(provider).catch(()=>{ $('home-msg').textContent = 'ההתחברות נכשלה. נסו שוב, או המשיכו עם מייל.'; });
+    return;
+  }
   $('home-msg').textContent = 'פותח חלון התחברות...';
-  // ננסה חלון קופץ; אם הדפדפן חוסם אותו — נעבור להפניה (redirect)
   fauth.signInWithPopup(provider).then(() => {
     $('home-msg').textContent = '';
   }).catch(err => {
     const code = err && err.code ? err.code : '';
     if (code === 'auth/popup-blocked' || code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request' || code === 'auth/operation-not-supported-in-this-environment'){
-      // מעבר להתחברות בהפניה — עובד גם כשחלונות קופצים חסומים
       $('home-msg').textContent = 'מעביר אתכם להתחברות...';
       fauth.signInWithRedirect(provider);
     } else {
@@ -793,9 +808,21 @@ function signOutGoogle(){
   fauth.signOut();
 }
 
-// אורח שמסיים משחק ורוצה לשמור — מתחבר ואז שומר את החידון הנוכחי
+// אורח שמסיים משחק ורוצה לשמור — מתחבר ואז שומר את החידון הנוכחי.
+// באייפון ההתחברות היא redirect (הדף נטען מחדש), לכן שומרים את החידון ב-sessionStorage
+// לפני ההפניה, ומשחזרים אחרי החזרה (ראו restorePendingGuestQuiz).
+const PENDING_GUEST_KEY = 'pendingGuestQuiz';
 function guestSaveWithGoogle(){
   const provider = new firebase.auth.GoogleAuthProvider();
+  if (isIOS()){
+    // שומרים את החידון שנבנה כאורח לפני שהדף נהרס ב-redirect
+    if (editCode && quiz){
+      try { sessionStorage.setItem(PENDING_GUEST_KEY, JSON.stringify({ code: editCode, quiz: quiz })); } catch(e){}
+    }
+    fauth.signInWithRedirect(provider).catch(()=>{ alert('ההתחברות נכשלה. נסו שוב.'); });
+    return;
+  }
+  // מחשב/אנדרואיד: popup — הדף לא נטען מחדש, החידון בזיכרון נשמר ישירות
   fauth.signInWithPopup(provider).then((res) => {
     const user = res.user;
     myUid = user.uid;
@@ -804,7 +831,6 @@ function guestSaveWithGoogle(){
     myEmailKey = myEmail ? emailToKey(myEmail) : '';
     myStoreKey = myUid;
     isGuest = false;
-    // שומרים את החידון שנבנה כאורח (לפי UID). נשאר פרטי — לא משתפים אוטומטית.
     if (editCode && quiz){
       const payload = Object.assign({}, quiz, { updated: Date.now(), ownerEmail: myEmail });
       Promise.all([
@@ -818,12 +844,32 @@ function guestSaveWithGoogle(){
       });
     }
   }).catch(()=>{
-    // אם נחסם חלון קופץ — ננסה הפניה (אך אז ייתכן שהחידון לא יישמר אוטומטית)
     alert('כדי לשמור צריך להתחבר. אם ההתחברות נחסמה, נסו שוב.');
   });
 }
-// אם חזרנו מהתחברות בהפניה — נטפל בתוצאה
-fauth.getRedirectResult().catch(()=>{});
+
+// משחזר חידון-אורח שנשמר לפני redirect (אחרי שהמשתמש חזר מההתחברות ומחובר)
+function restorePendingGuestQuiz(){
+  let raw = null;
+  try { raw = sessionStorage.getItem(PENDING_GUEST_KEY); } catch(e){ return; }
+  if (!raw) return;
+  try { sessionStorage.removeItem(PENDING_GUEST_KEY); } catch(e){}
+  if (!myStoreKey) return;   // עוד לא מחובר — לא אמור לקרות, אבל הגנה
+  let pending;
+  try { pending = JSON.parse(raw); } catch(e){ return; }
+  if (!pending || !pending.code || !pending.quiz) return;
+  const payload = Object.assign({}, pending.quiz, { updated: Date.now(), ownerEmail: myEmail });
+  fdb.ref('teachers/'+myStoreKey+'/'+pending.code).set(payload).catch(()=>{});
+}
+// אם חזרנו מהתחברות בהפניה — מטפלים בתוצאה (שגיאה מוצגת למשתמש במקום לשונית עירומה).
+// ההתחברות עצמה נתפסת ב-onAuthStateChanged; כאן בעיקר טיפול שגיאות.
+fauth.getRedirectResult().then(result => {
+  // אם יש result.user — ההתחברות הצליחה (onAuthStateChanged יטפל בשאר)
+}).catch(err => {
+  const msg = (err && err.message) ? err.message : '';
+  if ($('home-msg')) $('home-msg').textContent = 'ההתחברות לא הושלמה. נסו שוב, או המשיכו עם מייל.';
+  console.error('redirect sign-in error:', err && err.code, msg);
+});
 // מאזין למצב ההתחברות — שומר זהות גם אחרי רענון
 fauth.onAuthStateChanged(user => {
   if (user){
@@ -841,6 +887,8 @@ fauth.onAuthStateChanged(user => {
     fdb.ref('teacher_emails/'+myStoreKey).set({ email: myEmail, name: myAuthName, uid: myUid, last: Date.now() }).catch(()=>{});
     // הגירה חד-פעמית: אם אין עדיין חידונים תחת ה-UID אבל יש ישנים תחת המייל — מעבירים אותם
     migrateOldQuizzes();
+    // אם אורח שמר חידון לפני redirect (באייפון) — משחזרים ושומרים אותו עכשיו
+    restorePendingGuestQuiz();
     // אם נכנסו דרך קישור שיתוף — מטפלים בו עכשיו
     handlePendingShare();
   } else {
