@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v87 - תיקון פידבק בחלון ההוספה-לספרייה כשאין 30 תווים: עד כה כפתור "הוספה" היה disabled כשהתיאור קצר מ-30 תווים, אז לחיצה לא עשתה כלום בלי שום הסבר — נראה כאילו תקול. עכשיו הכפתור תמיד פעיל; בלחיצה עם פחות מ-30 תווים מופיעה הודעה ברורה ("יש לכתוב תיאור של לפחות 30 תווים... כתבתם עד כה X") + הדגשת מסגרת תיבת הטקסט (ענבר) + מיקוד בה. גם המונה שופר: גדול וברור יותר, מיושר לימין, ומראה "נכתבו X מתוך 30 תווים"
   v86 - הוספה לספרייה גלויה בעורך (נקודת-כניסה אחת): עד כה ההוספה-לספרייה בעורך הייתה חבויה — הופיעה רק בתוך פאנל השיתוף ורק אחרי שיתוף-לכולם (sh.mode==='public'). מורה שלא שיתף לא ראה אותה. עכשיו: (א) נוסף בלוק "📚 ספריית החידונים הציבורית" גלוי וקבוע בעורך, מתחת לבלוק השיתוף, עם renderLibraryPanel — כפתור "הוספה לספרייה הציבורית" כשלא בספרייה, או "✓ מופיע בספרייה" + "הסרה" כשכן. (ב) ההוספה המותנית הישנה הוסרה מפאנל השיתוף — כדי שלא תהיה כפילות (שתי הוספות-לספרייה בעורך). נקודת-כניסה אחת גלויה. (ג) ה-prompt הישן והמכוער (openLibraryPublish) הוסר; גם העורך וגם הרשימה משתמשים עכשיו באותו חלון מעוצב (openLibraryPublishFromCard) — קיבל פרמטר onDone כדי שהעורך ירענן את הפאנל שלו במקום לנווט לרשימה. תצוגת הקרדיט בספרייה עדיין תלויה ב-teacher-library.html (קובץ נפרד)
   v85 - הוספה לספרייה מהרשימה + הגדלת AI בעורך: (א) כפתור "עריכת החידון באמצעות AI" בעורך הוגדל מ-sm זעיר לכפתור מלא בצבע סגול בולט (פונקציה חשובה שאסור לפספס; עדיין מותנה-תוכן לפי הכלל מ-v84 — מופיע רק כשיש תוכן, אף פעם יחד עם הכרטיס העליון). (ב) בתפריט ⋯ של כרטיס ברשימה נוסף "📚 הוספה לספרייה" (אחרי "🔗 שיתוף" — שיתוף תכוף קודם, ספרייה נדירה אחריו). פותח חלון מעוצב (openLibraryPublishFromCard) עם תיבת-טקסט לתיאור, ספירת-תווים חיה ומינימום 30 תווים (כפתור ההוספה מושבת עד שמגיעים), כפתורי ביטול/הוספה. בונה entry זהה למבנה של openLibraryPublish הקיים, יוצר shareId אם חסר, וכותב את אובייקט share בחזרה ל-teachers/{key}/{code}/share בלי לגעת בשאר השדות. חידון שכבר בספרייה מציג "📚 נמצא בספרייה" מושבת. המטרה: לאפשר צמיחת הספרייה השיתופית בקלות מהרשימה
   v84 - תיקון רגרסיה מ-v82: גישה ל-AI לעריכה הוחזרה. ב-v82 הוסר בטעות כפתור ה-AI מאזור השאלות בהנחה שהוא כפילות של הכרטיס העליון — אבל הכרטיס נעלם כשיש תוכן, ולכן חידון עם תוכן נשאר בלי שום גישה ל-AI. למעשה אלה שני מצבים של אותו מסע: כרטיס "יצירה" (חידון ריק) וכפתור "עריכה" (יש תוכן). הכלל החדש ב-updateAiCard: quizHasRealContent()===false → כרטיס AI בלבד (אלא אם נסגר ב-X); ===true → כפתור AI בלבד. בכל רגע נקודת-כניסה אחת בדיוק ל-AI, והשניים לעולם לא מופיעים יחד (זו הייתה הבעיה המקורית). הכפתור (ai-edit-btn) ממוקם צמוד לכותרת "השאלות", קטן יותר מהמקור (כלי-עזר לעריכה, לא פעולה ראשית), טקסט "🤖 עריכת החידון באמצעות AI". updateAiCard נקרא גם מ-renderQuestions לסנכרון אחרי הוספת/מחיקת שאלה
@@ -221,7 +222,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v86</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v87</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -2446,12 +2447,12 @@ function openLibraryPublishFromCard(code, q, onDone){
   box.appendChild(ta);
 
   const counter = document.createElement('div');
-  counter.style.cssText='font-size:12px; color:var(--ink-dim); margin:6px 2px 14px; text-align:left;';
+  counter.style.cssText='font-size:13px; margin:6px 2px 14px; text-align:right; font-weight:600;';
   const MINLEN = 30;
   const updateCounter = ()=>{
     const n = ta.value.trim().length;
-    if (n < MINLEN){ counter.textContent = 'עוד ' + (MINLEN-n) + ' תווים לפחות'; counter.style.color='#d9a441'; pubBtn.disabled=true; pubBtn.style.opacity='.5'; }
-    else { counter.textContent = n + ' תווים ✓'; counter.style.color='var(--teal)'; pubBtn.disabled=false; pubBtn.style.opacity='1'; }
+    if (n < MINLEN){ counter.textContent = 'נכתבו ' + n + ' מתוך ' + MINLEN + ' תווים (לפחות)'; counter.style.color='#d9a441'; }
+    else { counter.textContent = n + ' תווים ✓'; counter.style.color='var(--teal)'; }
   };
   ta.oninput = updateCounter;
 
@@ -2461,7 +2462,13 @@ function openLibraryPublishFromCard(code, q, onDone){
   const pubBtn = document.createElement('button'); pubBtn.className='btn teal'; pubBtn.style.flex='1'; pubBtn.textContent='📚 הוספה';
   pubBtn.onclick=async ()=>{
     const desc = ta.value.trim();
-    if (desc.length < MINLEN) return;
+    if (desc.length < MINLEN){
+      alert('יש לכתוב תיאור של לפחות ' + MINLEN + ' תווים לפני ההוספה לספרייה.\nכתבתם עד כה ' + desc.length + ' תווים.');
+      ta.style.borderColor = '#d9a441';
+      ta.focus();
+      return;
+    }
+    ta.style.borderColor = 'rgba(255,255,255,.18)';
     pubBtn.disabled=true; pubBtn.textContent='מוסיף...';
     try{
       const share = q.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null };
