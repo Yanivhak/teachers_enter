@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v75 - קרדיט ליוצר המקורי (originalAuthor): שדה חדש שנקבע ביצירת חידון (newQuiz) = שם היוצר, ונישא קבוע לאורך כל שרשרת ההעתקות. בקבלת עותק (confirmAddShared) העותק יורש את originalAuthor מהמקור (לא מקבל את שם המקבל). מתפרסם ב-shared/ (לצד ownerName שהוא המשתף) וב-library entry. דיאלוג הקבלה מציג: "נוצר על ידי [יוצר]" + "שותף על ידי [משתף]". אם שניהם זהים (שיתוף ישיר מהיוצר) — רק "נוצר על ידי", בלי כפילות. אם אין יוצר (חידון שנוצר לפני הפיצ'ר) — רק "שותף על ידי", בלי מילוי-למפרע (לא מנחשים יוצר ישן — היה יוצר נתון שגוי). אותה לוגיקה גם בדיאלוג "גרסה מעודכנת". הערה: הצגת הקרדיט בלקיחה מהספרייה תלויה ב-teacher-library.html (קובץ נפרד) — הנתון זמין ב-entry, אך התצוגה שם דורשת עדכון נפרד. originalAuthor נשמר על quiz ומסונכרן דרך openExisting/playExisting/testExisting
   v74 - ליטוש נוסח ושם-משתף: (א) פאנל השיתוף — הכותרת המאוחדת שונתה ל"שתפו חידונים בקלות: באמצעות קוד קצר להזנה באתר או באמצעות קישור. המקבל יקבל עותק עצמאי של החידון." הוסרה תווית "📋 קוד לשיתוף" (מיותרת). "✓ הקישור הועתק! אפשר לשלוח" קוצר ל"✓ הועתק". (ב) הוסרה פסקת "איך זה עובד" מהעורך (מיותרת). (ג) שם המשתף הוחזר לדיאלוג הקבלה — "שותף על ידי [שם]", מוצג רק כשיש שם אמיתי (data.ownerName). הניסוח "שותף על ידי" ולא "נוצר על ידי" — כי היוצר המקורי לא נשמר לאורך שרשרת ההעתקות (copiedFrom.ownerName נושא רק את מי ששיתף את העותק הזה); "שותף על ידי" תמיד נכון. שדה originalAuthor לקרדיט-מחבר-לאורך-שרשרת — פרויקט עתידי אפשרי. (ד) תיאור חידון לשיתוף — נשקל ונדחה: תיאור שייך להקשר הפרסום (ספרייה), לא לחידון. התיאור הקיים בספרייה (openLibraryPublish, 30+ תווים) נשאר כפי שהוא; שיתוף בודד מזוהה ע"י שם+מספר שאלות+משתף, בלי תיאור
   v73 - ליטוש UI לקוד ולשיתוף: (א) הוסרה שורת "קוד החידון" מראש העורך — כפילות מיותרת (הקוד כבר מופיע בכרטיס ובפאנל השיתוף). כל הקריאות ל-edit-code הוסרו. (ב) הוסר ה-i ליד הסבר השיתוף. במקומו כותרת מאוחדת מעל שתי דרכי השיתוף: "שתי דרכים לשתף — שתיהן יוצרות עותק אצל מי שמקבל, ואי אפשר לבטל: 📋 קוד להכתבה / 🔗 קישור ללחיצה". האזהרה על אי-אפשרות הביטול נשמרה (גלויה, בלי i). תוויות הקוד והקישור קוצרו כי הכותרת מסבירה. (ג) דיאלוג הקבלה תוקן — "קיבלתם חידון! / מישהו שיתף איתכם" היה מטעה לקוד ציבורי (לא שיתוף אישי). עכשיו ניטרלי: "הוספת חידון" + שם + מספר שאלות + "הוספה לחידונים שלי". הוסרה שורת "שותף על ידי". נוסח אחיד לשני המסלולים (קוד וקישור)
   v72 - קוד-תצוגה אנושי לחידון (6 תווים) במקום 4 ספרות: כל חידון מקבל ביצירה קוד קבוע בן 6 תווים (אותיות+ספרות בלי תווים מבלבלים, genDisplayCode), ייחודי גלובלית מול נתיב חדש codes/. זהו הקוד היחיד שהמשתמש רואה — בכרטיס וברשימה ובעורך — במקום 4-הספרות, שהן מעתה מפתח-אחסון פנימי בלבד (teachers/{key}/{4ספרות} לא השתנה — כלל קשיח). שלושה קודים נפרדים במערכת: מפתח-אחסון (4 ספרות, פנימי), קוד-תצוגה (6 תווים, קבוע, מה שהמשתמש משתף), וקוד-משחק (playCode, מתחלף בכל משחק, מה שהתלמיד מקליד). שיתוף: לחיצת "שיתוף" מציגה אזהרה (העותקים אצל המקבלים בלתי-נגיעים, אין ביטול), ואז מפרסמת ל-shared/{shareId} כרגיל וגם רושמת codes/{displayCode}→shareId (אינדקס, מצביע ל-shareId; התוכן ב-shared/). פאנל השיתוף מציג קוד בולט (העתקה) כאפשרות ראשית + קישור כאפשרות שנייה. קבלה: שדה הבית מקבל קוד 6-תווים (openSharedByCode → codes/ → openSharedById), וגם קישור/shareId גולמי עדיין עובדים כ-fallback. ensureDisplayCode — רשת ביטחון עצלה לחידון בלי קוד, רק בפתיחת החידון עצמו, לא בטעינת הרשימה (לא הופך צפייה לכתיבה גורפת). syncShareCopies הוא המקום היחיד שכותב codes/ — לכל מצב שיתוף
@@ -207,7 +208,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v74</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v75</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -1126,7 +1127,7 @@ function closeShareModal(){
 async function newQuiz(){
   editCode = await genUniqueCode();
   const displayCode = await genDisplayCode();   // קוד-תצוגה אנושי קבוע, נוצר פעם אחת
-  quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], displayCode: displayCode, share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
+  quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], displayCode: displayCode, originalAuthor: (myAuthName || myEmail || ''), share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
   resetAiMeta();             // חידון חדש — בחירות AI מתאפסות (פריט 1)
   aiCardDismissed = false;   // חידון חדש — הכרטיס יוצג שוב
   quiz.questions.push({ text:'', answers:['',''], correct:0 });  // שאלה ריקה ראשונה — לפני הרינדור, כדי לרנדר פעם אחת בלבד
@@ -1161,6 +1162,7 @@ function openExisting(code, data){
     teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
     questions: data.questions || [],
     displayCode: data.displayCode || null,
+    originalAuthor: data.originalAuthor || null,
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1179,6 +1181,7 @@ function playExisting(code, data){
     teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
     questions: data.questions || [],
     displayCode: data.displayCode || null,
+    originalAuthor: data.originalAuthor || null,
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1202,6 +1205,7 @@ function testExisting(code, data){
     teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
     questions: data.questions || [],
     displayCode: data.displayCode || null,
+    originalAuthor: data.originalAuthor || null,
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1954,7 +1958,8 @@ function syncShareCopies(){
     mode: sh.mode,
     allowedEmails: sh.mode === 'specific' ? (sh.emails || []) : [],
     quiz: quizData,
-    ownerName: myAuthName || myEmail || 'מורה'
+    ownerName: myAuthName || myEmail || 'מורה',        // מי ששיתף את העותק הזה → "שותף על ידי"
+    originalAuthor: quiz.originalAuthor || null         // היוצר המקורי, נישא לאורך השרשרת → "נוצר על ידי"
   };
   fdb.ref('shared/'+sh.shareId).set(sharedRec).catch(()=>{});
   // אינדקס הקוד האנושי → shareId. נכתב כאן כדי שכל חידון משותף (לכולם או ספציפי) יהיה נגיש בקוד.
@@ -2236,6 +2241,7 @@ async function openLibraryPublish(){
   const entry = {
     libId: sh.libraryId, quizId: editCode, shareId: sh.shareId,
     ownerUid: myUid, ownerName: myAuthName || myEmail || 'מורה',
+    originalAuthor: quiz.originalAuthor || null,
     title: quiz.title, description: desc.trim(),
     questionCount: quiz.questions.length,
     publishDate: Date.now(), updated: Date.now(),
@@ -2362,8 +2368,20 @@ function showUpdatedDialog(shareId, data){
   html += '<div style="background:rgba(255,255,255,.05); border-radius:12px; padding:16px; margin-bottom:18px; text-align:right;">';
   html += '<div style="font-size:13px; color:var(--ink-dim);">שם החידון</div>';
   html += '<div style="font-size:18px; color:var(--ink); font-weight:700; margin-bottom:10px;">' + escapeHtml(title) + '</div>';
-  html += '<div style="font-size:13px; color:var(--ink-dim);">שותף על ידי</div>';
-  html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(sharerName) + '</div>';
+  const uCreator = data.originalAuthor || '';
+  const uSharer  = data.ownerName || '';
+  if (uCreator && (!uSharer || uCreator === uSharer)){
+    html += '<div style="font-size:13px; color:var(--ink-dim);">נוצר על ידי</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(uCreator) + '</div>';
+  } else if (uCreator && uSharer && uCreator !== uSharer){
+    html += '<div style="font-size:13px; color:var(--ink-dim);">נוצר על ידי</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:8px;">' + escapeHtml(uCreator) + '</div>';
+    html += '<div style="font-size:13px; color:var(--ink-dim);">שותף על ידי</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(uSharer) + '</div>';
+  } else if (uSharer){
+    html += '<div style="font-size:13px; color:var(--ink-dim);">שותף על ידי</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(uSharer) + '</div>';
+  }
   html += '<div style="font-size:13px; color:var(--ink-dim);">מספר שאלות</div>';
   html += '<div style="font-size:16px; color:var(--ink);">' + qCount + ' שאלות</div>';
   html += '</div>';
@@ -2411,9 +2429,22 @@ function showSharedDialog(shareId, data){
   html += '<div style="background:rgba(255,255,255,.05); border-radius:12px; padding:16px; margin-bottom:18px; text-align:right;">';
   html += '<div style="font-size:13px; color:var(--ink-dim);">שם החידון</div>';
   html += '<div style="font-size:18px; color:var(--ink); font-weight:700; margin-bottom:10px;">' + escapeHtml(title) + '</div>';
-  if (data.ownerName){
+  // קרדיט: "נוצר על ידי" (היוצר המקורי, קבוע לאורך השרשרת) + "שותף על ידי" (מי נתן לי את העותק).
+  // אם שניהם זהים (שיתוף ישיר מהיוצר) — מציגים רק "נוצר על ידי", בלי כפילות.
+  const creator = data.originalAuthor || '';
+  const sharer  = data.ownerName || '';
+  if (creator && (!sharer || creator === sharer)){
+    html += '<div style="font-size:13px; color:var(--ink-dim);">נוצר על ידי</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(creator) + '</div>';
+  } else if (creator && sharer && creator !== sharer){
+    html += '<div style="font-size:13px; color:var(--ink-dim);">נוצר על ידי</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:8px;">' + escapeHtml(creator) + '</div>';
     html += '<div style="font-size:13px; color:var(--ink-dim);">שותף על ידי</div>';
-    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(data.ownerName) + '</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(sharer) + '</div>';
+  } else if (sharer){
+    // אין יוצר מקורי (חידון ישן מלפני הפיצ'ר) — מציגים רק את מי ששיתף
+    html += '<div style="font-size:13px; color:var(--ink-dim);">שותף על ידי</div>';
+    html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(sharer) + '</div>';
   }
   html += '<div style="font-size:13px; color:var(--ink-dim);">מספר שאלות</div>';
   html += '<div style="font-size:16px; color:var(--ink);">' + qCount + ' שאלות</div>';
@@ -2483,6 +2514,7 @@ function confirmAddShared(shareId, data, ov, isUpdate){
         teamNames: src.teamNames || [],
         questions: src.questions || [],
         displayCode: newDisplayCode,
+        originalAuthor: data.originalAuthor || null,   // יורש את היוצר המקורי מהמקור — נישא הלאה בשרשרת
         updated: Date.now(),
         ownerEmail: myEmail,
         share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
