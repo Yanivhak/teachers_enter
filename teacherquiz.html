@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v68 - זיהוי גרסה מעודכנת בקבלת חידון: כשמקבלים קישור לחידון שכבר קיים אצלי, משווים את תוכן ה-shared הנוכחי מול snapshot שנשמר ברגע הקבלה המקורית (copiedFrom.received — שם+שאלות). זהה → "כבר אצלך" וחוסם. שונה → דיאלוג "יש גרסה מעודכנת, לשמור כעותק נוסף?" → נוצר עותק בשם "(מעודכן)". ההשוואה מול ה-snapshot-של-הקבלה (לא מול העותק הנוכחי) כדי שעריכות של המקבל לא יספרו כשינוי; רק שינוי מצד המקור מפעיל הצעה. עותקים ישנים בלי snapshot מטופלים כ"זהה" (לא מציפים עדכוני-שווא). בחירה: עותק נוסף, לא החלפה (לא דורסים תוכן שהמקבל אולי ערך). הזיהוי עבר ל-openSharedById (לפני הדיאלוג); הבדיקה הישנה ב-confirmAddShared נשארה כרשת ביטחון
   v67 - שלושה שינויים: (א) רשימת החידונים מותאמת לנייד — כרטיס מוערם (שם + תפריט ⋯ למעלה, "משחק" גדול ברוחב מלא, "עריכה/בדיקה" מתחת). תיקן קריסת פריסה ב-390px שבה 4 כפתורים מעכו את הטקסט לרצועת אות-לשורה. שיתוף ומחיקה ירדו לתפריט ⋯ (מחיקה רחוקה מ"משחק" — אין לחיצה בטעות). (ב) מודאל שיתוף מהרשימה — לחיצה על "שיתוף" בכרטיס פותחת חלון עם פאנל השיתוף הקיים בלי לקפוץ לעורך (עומק 1: העברה זמנית של id "share-panel" למודאל, renderSharePanel ללא שינוי). (ג) תיקון באג re-fire של ?share= — הפרמטר נשאר בכתובת וגרם לדיאלוג "שותף איתך" לקפוץ בכל טעינה/רענון ולשמור עותקים. עכשיו מתנקה דרך replaceState אחרי טיפול ראשון + הגנה מפני עותק כפול לפי copiedFrom.shareId. (ד) הורדת שיתוף-מייל מהממשק — יצר אשליית הגנה שקרית (המורשה הראשון מקבל עותק ויכול לשתפו לכולם). נשאר רק "יצירת קישור שיתוף". קוד מצב 'specific' נשמר כקוד מת לשחזור עתידי
   v66 - UI: בחירת הקבוצות הועלתה מתוך "אפשרויות נוספות" לאזור המבני של בניית השאלון (כותרת → זמן → קבוצות → שאלות). קבוצות זו החלטה על אופי המשחק, לא קישוט כמו רקע/מוזיקה — לכן הוסתרה בטעות בתוך האפשרויות. נוסף i-הסבר. שאר הפיצ׳ר (בחירת קבוצה אצל המשתתף, ניקוד קבוצות ב-reveal, קבוצה מנצחת בסיום) היה תקין כל הזמן
   v65 - חיזוקים: מרווח אישי (MIN_GAP=3) בין שתי קדחות של אותו תלמיד. מתקן מצב שבו תלמיד לבד ב-pool קיבל פעמיים בשאלות צמודות (3 ואז 4). עכשיו פעם שנייה רק אחרי לפחות 3 שאלות מהראשונה. חל רק על pool2 (פעם שנייה) — פעם ראשונה תמיד מותרת מיד, כך הכיסוי לא נפגע
@@ -200,7 +201,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v67</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v68</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -2110,15 +2111,91 @@ function openSharedByInput(){
   const shareId = m ? m[1] : val;
   openSharedById(shareId);
 }
+// snapshot של התוכן הרלוונטי לזיהוי "האם החידון השתנה מאז שקיבלתי".
+// משווים שם + שאלות בלבד (מה שמשנה למשתתף). זמן/קבוצות לא נספרים כ"שינוי תוכן".
+function shareSnapshot(src){
+  src = src || {};
+  return JSON.stringify({ title: src.title || '', questions: src.questions || [] });
+}
+
 function openSharedById(shareId){
   $('home-msg').textContent = 'מחפש...';
   fdb.ref('shared/'+shareId).once('value').then(snap => {
     const data = snap.val();
-    $('home-msg').textContent = '';
     if (!data){ $('home-msg').textContent = 'לא נמצא חידון משותף עם הקוד הזה (ייתכן שהשיתוף בוטל).'; return; }
-    // מציגים דיאלוג עם פרטי החידון לפני ההוספה (פריט 13)
-    showSharedDialog(shareId, data);
+    // בודקים אם כבר קיים אצלי עותק מאותו שיתוף, ואם כן — האם התוכן השתנה מאז
+    if (myStoreKey){
+      fdb.ref('teachers/'+myStoreKey).once('value').then(mineSnap => {
+        const mine = mineSnap.val() || {};
+        let matchCode = null;
+        Object.keys(mine).forEach(c => {
+          if (mine[c] && mine[c].copiedFrom && mine[c].copiedFrom.shareId === shareId) matchCode = c;
+        });
+        $('home-msg').textContent = '';
+        if (!matchCode){
+          // אין עותק — זרימה רגילה
+          showSharedDialog(shareId, data);
+          return;
+        }
+        // יש עותק — משווים את התוכן הנוכחי ב-shared מול ה-snapshot שהתקבל במקור
+        const received = (mine[matchCode].copiedFrom && mine[matchCode].copiedFrom.received) || null;
+        const current = shareSnapshot(data.quiz || {});
+        // אם אין snapshot ישן (עותק שנוצר לפני הפיצ'ר) — מתייחסים כ"זהה" כדי לא להציף עדכוני-שווא
+        if (received === null || received === current){
+          // זהה למה שכבר קיבלתי — אין טעם לעותק נוסף
+          $('share-input').value = '';
+          alert('החידון הזה כבר נמצא ברשימת החידונים שלכם.');
+          refreshMyList();
+        } else {
+          // שונה — מציעים לשמור גרסה מעודכנת כעותק נוסף
+          showUpdatedDialog(shareId, data);
+        }
+      }).catch(()=>{ $('home-msg').textContent=''; showSharedDialog(shareId, data); });
+    } else {
+      $('home-msg').textContent = '';
+      showSharedDialog(shareId, data);
+    }
   }).catch(()=>{ $('home-msg').textContent = 'תקלה, נסו שוב.'; });
+}
+
+// דיאלוג "כבר אצלך אבל יש גרסה מעודכנת" — מציע לשמור עותק נוסף בשם "(מעודכן)"
+function showUpdatedDialog(shareId, data){
+  const old = $('shared-overlay'); if (old) old.remove();
+  const src = data.quiz || {};
+  const title = src.title || data.title || 'חידון';
+  const sharerName = data.ownerName || 'מנחה';
+  const qCount = (src.questions || []).length;
+
+  const ov = document.createElement('div'); ov.id='shared-overlay';
+  ov.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:26px 24px; max-width:380px; width:100%; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.5);';
+
+  let html = '<div style="font-size:42px; margin-bottom:8px;">🔄</div>';
+  html += '<div style="font-family:\'Secular One\'; font-size:22px; color:var(--gold); margin-bottom:4px;">יש גרסה מעודכנת</div>';
+  html += '<div style="font-size:14px; color:var(--ink-dim); margin-bottom:18px; line-height:1.5;">החידון הזה כבר נמצא אצלכם, אבל מי ששיתף אותו עדכן אותו מאז. אפשר לשמור את הגרסה המעודכנת כעותק נוסף.</div>';
+  html += '<div style="background:rgba(255,255,255,.05); border-radius:12px; padding:16px; margin-bottom:18px; text-align:right;">';
+  html += '<div style="font-size:13px; color:var(--ink-dim);">שם החידון</div>';
+  html += '<div style="font-size:18px; color:var(--ink); font-weight:700; margin-bottom:10px;">' + escapeHtml(title) + '</div>';
+  html += '<div style="font-size:13px; color:var(--ink-dim);">שותף על ידי</div>';
+  html += '<div style="font-size:16px; color:var(--ink); margin-bottom:10px;">' + escapeHtml(sharerName) + '</div>';
+  html += '<div style="font-size:13px; color:var(--ink-dim);">מספר שאלות</div>';
+  html += '<div style="font-size:16px; color:var(--ink);">' + qCount + ' שאלות</div>';
+  html += '</div>';
+  box.innerHTML = html;
+
+  const btnArea = document.createElement('div');
+  const addBtn = document.createElement('button'); addBtn.className='btn teal'; addBtn.style.width='100%'; addBtn.style.marginBottom='8px'; addBtn.style.fontSize='16px';
+  addBtn.textContent='✓ שמירת הגרסה המעודכנת';
+  addBtn.onclick = ()=>{ addBtn.disabled=true; addBtn.textContent='שומר...'; confirmAddShared(shareId, data, ov, true); };
+  btnArea.appendChild(addBtn);
+  const cancelBtn = document.createElement('button'); cancelBtn.className='btn ghost sm'; cancelBtn.style.width='100%';
+  cancelBtn.textContent='לא, תודה';
+  cancelBtn.onclick = ()=>{ ov.remove(); $('share-input').value=''; };
+  btnArea.appendChild(cancelBtn);
+  box.appendChild(btnArea);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
 }
 
 // דיאלוג אישור קבלת חידון משותף — מציג פרטים ושואל לפני ההוספה
@@ -2203,9 +2280,41 @@ function showSharedDialog(shareId, data){
   document.body.appendChild(ov);
 }
 
-// ביצוע ההוספה בפועל — רק אחרי אישור בדיאלוג
-function confirmAddShared(shareId, data, ov){
+// ביצוע ההוספה בפועל — רק אחרי אישור בדיאלוג.
+// isUpdate=true: שמירת גרסה מעודכנת כעותק נוסף (מדלג על בדיקת הכפילות, שם "(מעודכן)").
+function confirmAddShared(shareId, data, ov, isUpdate){
   const src = data.quiz || {};
+  const suffix = isUpdate ? ' (מעודכן)' : ' (עותק)';
+  const errLabel = isUpdate ? '✓ שמירת הגרסה המעודכנת' : '✓ הוספה לחידונים שלי';
+
+  const createCopy = () => {
+    genUniqueCode().then(newCode => {
+      const copy = {
+        title: (src.title || data.title || 'חידון') + suffix,
+        time: src.time || 20,
+        teamCount: src.teamCount || 0,
+        teamNames: src.teamNames || [],
+        questions: src.questions || [],
+        updated: Date.now(),
+        ownerEmail: myEmail,
+        share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
+        copiedFrom: { ownerUid: data.ownerUid || null, ownerName: data.ownerName || '', shareId: shareId, originalQuizCode: data.quizCode || null, received: shareSnapshot(src) }
+      };
+      fdb.ref('teachers/'+myStoreKey+'/'+newCode).set(copy).then(()=>{
+        if (ov) ov.remove();
+        $('home-msg').textContent = '';
+        $('share-input').value = '';
+        refreshMyList();
+      }).catch(()=>{
+        if (ov){ const b = ov.querySelector('button'); if(b){ b.disabled=false; b.textContent=errLabel; } }
+        $('home-msg').textContent = 'תקלה בשמירת העותק. נסו שוב.';
+      });
+    });
+  };
+
+  // בעדכון — מדלגים על בדיקת הכפילות (המשתמש *רוצה* עותק נוסף למרות שקיים)
+  if (isUpdate){ createCopy(); return; }
+
   // הגנה: אם כבר קיים אצלי עותק מאותו שיתוף — לא יוצרים כפול, פשוט פותחים את הרשימה
   fdb.ref('teachers/'+myStoreKey).once('value').then(existingSnap => {
     const existing = existingSnap.val() || {};
@@ -2220,28 +2329,7 @@ function confirmAddShared(shareId, data, ov){
       refreshMyList();
       return;
     }
-    genUniqueCode().then(newCode => {
-      const copy = {
-        title: (src.title || data.title || 'חידון') + ' (עותק)',
-        time: src.time || 20,
-        teamCount: src.teamCount || 0,
-        teamNames: src.teamNames || [],
-        questions: src.questions || [],
-        updated: Date.now(),
-        ownerEmail: myEmail,
-        share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
-        copiedFrom: { ownerUid: data.ownerUid || null, ownerName: data.ownerName || '', shareId: shareId, originalQuizCode: data.quizCode || null }
-      };
-      fdb.ref('teachers/'+myStoreKey+'/'+newCode).set(copy).then(()=>{
-        if (ov) ov.remove();
-        $('home-msg').textContent = '';
-        $('share-input').value = '';
-        refreshMyList();
-      }).catch(()=>{
-        if (ov){ const b = ov.querySelector('button'); if(b){ b.disabled=false; b.textContent='✓ הוספה לחידונים שלי'; } }
-        $('home-msg').textContent = 'תקלה בשמירת העותק. נסו שוב.';
-      });
-    });
+    createCopy();
   }).catch(()=>{
     if (ov){ const b = ov.querySelector('button'); if(b){ b.disabled=false; b.textContent='✓ הוספה לחידונים שלי'; } }
     $('home-msg').textContent = 'תקלה, נסו שוב.';
