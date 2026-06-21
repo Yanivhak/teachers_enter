@@ -107,14 +107,6 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .danger-link{background:none; border:none; color:var(--ink-dim); font-family:'Heebo'; font-size:14px; cursor:pointer; padding:0;}
 .danger-link:hover{color:var(--coral);}
 .info-pop{position:fixed; z-index:50; max-width:280px; background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.5; color:var(--ink); box-shadow:0 10px 30px rgba(0,0,0,.5);}
-
-/* ===== מובייל בלבד (≤640px): עריכת כפתורים אנכית. מעל זה — מחשב — ללא שינוי ===== */
-@media (max-width: 640px){
-  .btn{ font-size:16px; padding:12px 18px; }
-  .row{ flex-direction:column; align-items:stretch; }
-  .row > .btn{ width:100%; }
-  .row > .info-i{ align-self:center; margin-top:2px; }
-}
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -150,12 +142,12 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
       <span>מחובר: <b id="auth-name" style="color:var(--ink);"></b></span>
       <button class="btn ghost" style="font-size:13px; padding:6px 12px;" onclick="signOutGoogle()">התנתקות</button>
     </div>
-    <button class="btn ghost" id="load-link" onclick="$('load-input').click()" title="טעינת מצגת ששמרתם בעבר להמשך עבודה" style="font-size:13px; padding:6px 12px;">📂 טען מצגת</button>
-    <span class="info-i" onclick="showInfo(event, 'אם שמרתם מצגת בעבר — בחרו את אותו קובץ HTML, וכל לוח העבודה יחזור: תמונות, מוזיקה, כיתובים, אפקטים ושקופית סיום. ככה אפשר להמשיך לערוך בכל פעם, גם ממכשיר אחר.')">i</span>
+    <button class="btn ghost" id="load-link" onclick="$('load-input').click()" title="טעינת מצגת שהורדתם בעבר להמשך עבודה" style="font-size:13px; padding:6px 12px;">📂 טען מצגת</button>
+    <span class="info-i" onclick="showInfo(event, 'אם הורדתם מצגת בעבר — בחרו את אותו קובץ HTML, וכל לוח העבודה יחזור: תמונות, מוזיקה, כיתובים, אפקטים ושקופית סיום. ככה אפשר להמשיך לערוך בכל פעם, גם ממחשב אחר.')">i</span>
   </div>
   <input type="file" id="load-input" accept=".html,text/html" style="display:none" onchange="loadChosen(this.files)">
   <div id="auth-msg" style="text-align:center; font-size:13px; color:var(--gold); min-height:18px; margin-bottom:6px;"></div>
-  <p class="sub">הרכיבו את המצגת בשלבים (רק תמונות הן חובה), צפו בה, ובסיום שמרו אותה — כקובץ או כסרטון. הכול נשאר אצלכם, שום דבר לא נשלח לאינטרנט.</p>
+  <p class="sub">הרכיבו את המצגת בשלבים (רק תמונות הן חובה), צפו בתצוגה מקדימה, ובסיום שמרו אותה למחשב — כקובץ או כסרטון. הכול נשאר אצלכם, שום דבר לא נשלח לאינטרנט.</p>
 
   <div class="row">
     <button class="btn ghost stage" data-step="1" id="pics-btn" onclick="openPicsPanel()">📷 תמונות</button>
@@ -163,7 +155,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
     <button class="btn ghost stage" data-step="3" id="cap-btn" onclick="openCapPanel()">✏️ כיתוב</button>
     <button class="btn ghost stage" data-step="4" id="fx-btn" onclick="openFxPanel()">✨ עיצוב ואפקטים</button>
     <button class="btn ghost stage" data-step="5" id="end-btn" onclick="openEndPanel()">🏁 שקופית סיום</button>
-    <span class="info-i" onclick="showInfo(event, 'אלה שלבי בניית המצגת. רק תמונות הן חובה — השאר לבחירתכם. כשמשלימים שלב, המספר שלו מתחלף ב-✓. התמונות והמוזיקה נשמרות כל עוד הדף פתוח ואינן נשלחות לרשת — בסיום שומרים את המצגת.')">i</span>
+    <span class="info-i" onclick="showInfo(event, 'אלה שלבי בניית המצגת. רק תמונות הן חובה — השאר לבחירתכם. כשמשלימים שלב, המספר שלו מתחלף ב-✓. התמונות והמוזיקה נשמרות כל עוד הדף פתוח ואינן נשלחות לרשת — בסיום שומרים את המצגת למחשב.')">i</span>
   </div>
 
   <div class="row" style="margin-top:10px; justify-content:center; align-items:center;">
@@ -186,14 +178,14 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
     <div class="list" id="cap-summary"></div>
   </div>
 
-  <!-- אזור פעולות: צפייה ושמירה -->
+  <!-- אזור פעולות: תצוגה ושמירה -->
   <div style="margin-top:22px;">
-    <div class="zone-label">צפייה ושמירה</div>
+    <div class="zone-label">תצוגה ושמירה</div>
     <div class="row" style="margin:0; gap:8px; align-items:center; justify-content:center;">
-      <button class="btn ghost act" id="start-btn" onclick="startShow()" disabled>▶️ צפייה במצגת</button>
-      <button class="btn ghost act" id="export-btn" onclick="exportMontage()">💾 שמירה</button>
-      <a class="btn ghost act" href="montage-video.html" target="_blank" rel="noopener" title="העלאה ליוטיוב או לאינסטגרם. קודם שומרים את המצגת, ואז מעלים אותה שם. בגרסת ניסיון — בלי אפקטים." style="text-decoration:none;">🎬 וידאו (בטא)</a>
-      <span class="info-i" onclick="showInfo(event, 'הקובץ שנשמר הוא גם המצגת וגם קובץ העבודה: פותחים אותו בכל מכשיר להצגה, הופכים אותו לסרטון, או טוענים אותו בחזרה לכאן דרך \'טען מצגת\' שלמעלה כדי להמשיך לערוך. שמרו אותו אצלכם או ב-Google Drive. מומלץ 1–3 שירים ולא יותר מדי תמונות.')">i</span>
+      <button class="btn ghost act" id="start-btn" onclick="startShow()" disabled>▶️ תצוגה מקדימה</button>
+      <button class="btn ghost act" id="export-btn" onclick="exportMontage()">💾 הורדה למחשב</button>
+      <a class="btn ghost act" href="montage-video.html" target="_blank" rel="noopener" title="העלאה ליוטיוב או לאינסטגרם. קודם מורידים את המצגת, ואז מעלים אותה שם. בגרסת ניסיון — בלי אפקטים." style="text-decoration:none;">🎬 וידאו (בטא)</a>
+      <span class="info-i" onclick="showInfo(event, 'הקובץ שמורידים הוא גם המצגת וגם קובץ העבודה: פותחים אותו בכל מחשב להצגה, הופכים אותו לסרטון, או טוענים אותו בחזרה לכאן דרך \'טען מצגת\' שלמעלה כדי להמשיך לערוך. שמרו אותו אצלכם או ב-Google Drive. מומלץ 1–3 שירים ולא יותר מדי תמונות.')">i</span>
     </div>
     <p class="note" id="start-hint" style="color:var(--gold); margin-top:10px;">כדי להתחיל, בחרו קודם תמונות (חובה). מוזיקה היא רשות.</p>
   </div>
@@ -216,7 +208,6 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
     <div id="mon-controls">
       <button onclick="toggleMontageMusic()" id="mon-music">🔊 מוזיקה</button>
       <button onclick="togglePause()" id="mon-pause">⏸️ עצירה</button>
-      <button onclick="prevSlide()" id="mon-prev" title="חזרה לתמונה הקודמת">⏪ תמונה קודמת</button>
       <button onclick="skipOneSlide()" id="mon-skip" title="דילוג לתמונה הבאה">⏩ תמונה הבאה</button>
       <button onclick="cycleSpeed()" id="mon-speed" title="מהירות ריצה: רגיל ← פי 2 ← פי 5 ← רגיל">⚡ מהירות: רגיל</button>
       <button onclick="openFxPanel()" id="mon-fx">✨ אפקטים</button>
@@ -257,9 +248,24 @@ function toggleMonMenu(){
 
 /* ===== התחברות Google ===== */
 let myUid = null, myName = '', myEmail = '';
+// זיהוי iOS (כולל אייפד מודרני שמתחזה ל-Mac). באייפון כל הדפדפנים הם WebKit,
+// ושם signInWithPopup לא אמין — לכן עוברים ישירות ל-redirect.
+function isIOS(){
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+  return false;
+}
+
 function signInGoogle(){
   if (!fauth){ $('auth-msg').textContent = 'שירות ההתחברות אינו זמין כרגע.'; return; }
   const provider = new firebase.auth.GoogleAuthProvider();
+  // באייפון: redirect ישירות (popup לא אמין ב-WebKit). אחרת: popup עם נפילה ל-redirect.
+  if (isIOS()){
+    $('auth-msg').textContent = 'מעביר אתכם להתחברות...';
+    fauth.signInWithRedirect(provider).catch(()=>{ $('auth-msg').textContent = 'ההתחברות נכשלה. נסו שוב.'; });
+    return;
+  }
   $('auth-msg').textContent = 'פותח חלון התחברות...';
   fauth.signInWithPopup(provider).then(() => {
     $('auth-msg').textContent = '';
@@ -354,7 +360,14 @@ function deleteFromBank(kind, key, cb){
 }
 
 if (fauth){
-  fauth.getRedirectResult().catch(()=>{});
+  // אם חזרנו מהתחברות בהפניה — מטפלים בתוצאה (שגיאה מוצגת למשתמש במקום לשונית עירומה).
+  // ההתחברות עצמה נתפסת ב-onAuthStateChanged; כאן בעיקר טיפול שגיאות.
+  fauth.getRedirectResult().then(result => {
+    // אם יש result.user — ההתחברות הצליחה (onAuthStateChanged יטפל בשאר)
+  }).catch(err => {
+    if ($('auth-msg')) $('auth-msg').textContent = 'ההתחברות לא הושלמה. נסו שוב.';
+    console.error('redirect sign-in error:', err && err.code, err && err.message);
+  });
   fauth.onAuthStateChanged(user => {
     if (user){
       myUid = user.uid;
@@ -957,13 +970,13 @@ function openMusicPanel(){
   const box = openModal('מוזיקה');
   const sub = document.createElement('div');
   sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
-  sub.textContent = 'אפשר לבחור מוזיקה מהמכשיר או מהגלריה. אפשר להוסיף כמה שירים — הם יתנגנו ברצף.';
+  sub.textContent = 'אפשר לבחור מוזיקה מהמחשב או מהגלריה. אפשר להוסיף כמה שירים — הם יתנגנו ברצף.';
   box.appendChild(sub);
 
   const btns = document.createElement('div');
   btns.style.cssText = 'display:flex; gap:8px; flex-wrap:wrap;';
   const fromPc = document.createElement('button');
-  fromPc.className = 'btn ghost sm'; fromPc.textContent = '📁 מהמכשיר';
+  fromPc.className = 'btn ghost sm'; fromPc.textContent = '📁 מהמחשב';
   fromPc.onclick = () => $('music-input').click();
   const fromGal = document.createElement('button');
   fromGal.className = 'btn ghost sm'; fromGal.textContent = '🎼 מהגלריה';
@@ -1261,7 +1274,7 @@ function openEndPanel(){
   const box = openModal('שקופית סיום');
   const sub = document.createElement('div');
   sub.style.cssText = 'font-size:13px; color:var(--ink-dim); margin-bottom:16px;';
-  sub.textContent = 'הוסיפו מסך סיום שיופיע בסוף המצגת (ובסרטון). אפשר למלא כותרת, טקסט, או שניהם. אם הכול ריק — לא תופיע שקופית סיום. אפשר להוסיף אימוג\'י 🎉❤️ (בטלפון — ממקלדת האימוג\'י; ב-Mac: Ctrl+Cmd+רווח, ב-Windows: ⊞+נקודה).';
+  sub.textContent = 'הוסיפו מסך סיום שיופיע בסוף המצגת (ובסרטון). אפשר למלא כותרת, טקסט, או שניהם. אם הכול ריק — לא תופיע שקופית סיום. אפשר להוסיף אימוג\'י 🎉❤️ (במחשב: Ctrl+Cmd+רווח ב-Mac, או ⊞+נקודה ב-Windows).';
   box.appendChild(sub);
 
   const lbl1 = document.createElement('div');
@@ -1421,7 +1434,7 @@ function refreshStart(){
   const hint = $('start-hint');
   if (hint){
     if (pics.length === 0){ hint.textContent = 'כדי להתחיל, בחרו קודם תמונות (חובה). מוזיקה היא רשות.'; hint.style.color = 'var(--gold)'; }
-    else { hint.textContent = 'מצוין! נבחרו ' + pics.length + ' תמונות. אפשר לצפות במצגת (או להוסיף מוזיקה).'; hint.style.color = 'var(--ink-dim)'; }
+    else { hint.textContent = 'מצוין! נבחרו ' + pics.length + ' תמונות. אפשר לראות תצוגה מקדימה (או להוסיף מוזיקה).'; hint.style.color = 'var(--ink-dim)'; }
   }
 }
 
@@ -1678,26 +1691,6 @@ function togglePause(){
     if (audio && !monMusicMuted){ audio.play().catch(()=>{}); }
     $('mon-pause').textContent = '⏸️ עצירה';
     showSlide(); // ממשיך מהמקום שבו עצר
-  }
-}
-
-/* חזרה ידנית: מעבר מיידי לתמונה הקודמת */
-function prevSlide(){
-  // אם באמצע שקופית סיום — לא עושים כלום
-  if ($('mon-end') && $('mon-end').classList.contains('vis')) return;
-  if (monTimer){ clearTimeout(monTimer); monTimer = null; }
-  const order = monOrder;
-  if (!order.length) return;
-  // showSlide מציג את order[monIdx] ואז מקדם monIdx++. לכן ה'נוכחי' הוא monIdx-1.
-  // כדי לחזור תמונה אחת אחורה, מציבים את monIdx שתי תמונות אחורה.
-  monIdx -= 2;
-  while (monIdx < 0) monIdx += order.length;   // גלישה מעגלית לסוף
-  const wasPaused = paused;
-  paused = false;
-  showSlide();
-  if (wasPaused){
-    if (monTimer){ clearTimeout(monTimer); monTimer = null; }
-    paused = true;
   }
 }
 
@@ -2030,17 +2023,9 @@ html,body{height:100%; background:#000; overflow:hidden; font-family:'Heebo',san
 #endslide .etitle{font-family:'Secular One'; font-size:clamp(60px,11vw,150px); color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.25),0 6px 24px rgba(0,0,0,.6),0 2px 4px rgba(0,0,0,.8); margin-bottom:52px; line-height:1.1;}
 #endslide .etext{font-family:'Heebo'; font-weight:900; font-size:clamp(28px,5vw,58px); color:#fff; text-shadow:0 2px 0 rgba(0,0,0,.25),0 5px 18px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.8); line-height:1.45; max-width:1100px; white-space:pre-wrap;}
 @keyframes endGrad{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-/* תפריט בקרה מתקפל — כפתור "תפריט" שפותח/סוגר רשימה אנכית (כמו בעורך) */
-#menu{position:fixed; top:16px; right:16px; z-index:8; display:flex; flex-direction:column; align-items:flex-end; gap:8px;}
-#menuToggle{display:flex; align-items:center; gap:8px; font-family:'Heebo'; font-size:16px; font-weight:800; color:#1a2342; background:#ffd166; border:none; border-radius:12px; padding:11px 18px; cursor:pointer; box-shadow:0 3px 12px rgba(0,0,0,.5);}
-#menuToggle:active{transform:translateY(1px);}
-#menuToggle .chev{font-size:12px; transition:transform .2s ease;}
-#menu.open #menuToggle .chev{transform:rotate(180deg);}
-#ctrls{display:none; flex-direction:column; align-items:stretch; gap:8px; background:rgba(0,0,0,.5); padding:8px; border-radius:14px; box-shadow:0 6px 22px rgba(0,0,0,.55); min-width:190px;}
-#menu.open #ctrls{display:flex;}
-#ctrls button{font-family:'Heebo'; font-size:15px; font-weight:700; color:#f7f4ec; background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.3); border-radius:10px; padding:10px 16px; cursor:pointer; text-align:right;}
-#ctrls button:active{transform:translateY(1px);}
-#info{position:fixed; top:16px; left:16px; z-index:8; display:flex; gap:8px; align-items:center; font-family:'Heebo'; font-weight:700; font-size:15px;}
+#ctrls{position:fixed; top:14px; left:14px; z-index:8; display:flex; gap:8px;}
+#ctrls button{font-family:'Heebo'; font-weight:700; font-size:14px; border:none; border-radius:10px; padding:8px 14px; cursor:pointer; background:rgba(20,30,60,.8); color:#f7f4ec;}
+#info{position:fixed; top:14px; right:14px; z-index:8; display:flex; gap:8px; align-items:center; font-family:'Heebo'; font-weight:700; font-size:15px;}
 #info span{background:rgba(20,30,60,.8); color:#f7f4ec; border-radius:10px; padding:6px 12px; text-shadow:0 1px 2px rgba(0,0,0,.6);}
 #start{position:fixed; inset:0; z-index:10; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, #0a1020 45%, #05080f 100%); color:#f7f4ec; text-align:center; padding:30px;}
 #start h1{font-family:'Secular One'; font-size:clamp(30px,5vw,52px); color:#ffd166; margin-bottom:10px;}
@@ -2060,20 +2045,12 @@ html,body{height:100%; background:#000; overflow:hidden; font-family:'Heebo',san
 <div id="endslide"><div class="ephoto" id="ephoto"></div><div class="eshade"></div><div class="etitle" id="etitle"></div><div class="etext" id="etext"></div></div>
 <div id="bar" style="display:none;"><div id="barfill"></div></div>
 <div id="info" style="display:flex;"><span id="sCount" style="display:none;"></span><span id="sTime" style="display:none;"></span></div>
-<div id="menu" style="display:none;">
-  <button id="menuToggle" onclick="toggleMenu()" title="פתיחה/סגירה של תפריט הבקרה">☰ תפריט <span class="chev">▾</span></button>
-  <div id="ctrls">
-    <button onclick="toggleMute()" id="muteBtn">🔊 מוזיקה</button>
-    <button onclick="togglePause()" id="pauseBtn">⏸️ עצירה</button>
-    <button onclick="prevSlide()" id="prevBtn" title="חזרה לתמונה הקודמת">⏪ תמונה קודמת</button>
-    <button onclick="nextSlide()" id="nextBtn" title="דילוג לתמונה הבאה">⏩ תמונה הבאה</button>
-    <button onclick="cycleSpeed()" id="speedBtn">⚡ מהירות: רגיל</button>
-    <button onclick="openFxPanel()" id="fxBtn">✨ אפקטים</button>
-    <button onclick="finishToLast()" id="finishBtn">⏭️ סיום</button>
-    <button onclick="toggleCount()" id="countBtn">🔢 מונה</button>
-    <button onclick="toggleClock()" id="clockBtn">⏱️ שעון</button>
-    <button onclick="goToVideo()" id="videoBtn" title="המרת המצגת לקובץ וידאו">🎬 הפיכה לסרטון</button>
-  </div>
+<div id="ctrls" style="display:none;">
+  <button onclick="togglePause()" id="pauseBtn">⏸️ עצירה</button>
+  <button onclick="toggleMute()" id="muteBtn">🔊 מוזיקה</button>
+  <button onclick="cycleSpeed()" id="speedBtn">⏩ ×1</button>
+  <button onclick="toggleCount()" id="countBtn">🔢 מונה</button>
+  <button onclick="toggleClock()" id="clockBtn">⏱️ שעון</button>
 </div>
 <script>
 const DATA = __DATA__;
@@ -2088,7 +2065,7 @@ let endShowing=false;
 function hasEnd(){ return !!((DATA.endTitle&&DATA.endTitle.length)||(DATA.endText&&DATA.endText.length)); }
 
 function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} }
-function selTrans(){ return (transSet&&transSet.length)?transSet:['fade']; }
+function selTrans(){ return (DATA.transitions&&DATA.transitions.length)?DATA.transitions:['fade']; }
 function setTrans(t){ const w=document.getElementById('monwrap'); w.className='monwrap'; if(t!=='fade') w.classList.add('t-'+t); }
 
 function showEnd(){
@@ -2112,36 +2089,13 @@ function startShow(){
   document.getElementById('start').style.display='none';
   const w=document.getElementById('monwrap'); w.style.display='block';
   document.getElementById('bar').style.display='block';
-  document.getElementById('menu').style.display='flex';
+  document.getElementById('ctrls').style.display='flex';
   w.innerHTML='';
   imgA=document.createElement('img'); imgB=document.createElement('img');
   w.appendChild(imgA); w.appendChild(imgB); flip=false;
   order=DATA.images.slice(); if(DATA.picsOrder!=='fixed') shuffle(order);
   startMusic(); startCaptions(); startFx();
   step(); clearInterval(iv); iv=setInterval(step, curMs());
-}
-/* פתיחה/סגירה של תפריט הבקרה (החץ מסתובב לפי המצב) */
-function toggleMenu(){ const m=document.getElementById('menu'); if(m) m.classList.toggle('open'); }
-/* מעבר מיידי לתמונה הבאה */
-function nextSlide(){
-  if(endShowing) return;
-  clearInterval(iv);
-  const wasPaused=paused; paused=false;
-  step();
-  // אם step נכנס לשקופית סיום, הוא קבע טיימר משלו — לא נוגעים בו
-  if(wasPaused) paused=true; else if(!endShowing){ clearInterval(iv); iv=setInterval(step, curMs()); }
-}
-/* חזרה מיידית לתמונה הקודמת */
-function prevSlide(){
-  if(endShowing) return;
-  if(!order.length) return;
-  clearInterval(iv);
-  // step מציג את order[idx] ואז מקדם idx++. לכן ה'נוכחי' הוא idx-1.
-  // כדי לחזור תמונה אחת אחורה, מציבים את idx שתי תמונות אחורה (עם גלישה מעגלית).
-  idx-=2; while(idx<0) idx+=order.length;
-  const wasPaused=paused; paused=false;
-  step();
-  if(wasPaused) paused=true; else if(!endShowing){ clearInterval(iv); iv=setInterval(step, curMs()); }
 }
 function step(){
   if(paused) return;
@@ -2192,8 +2146,7 @@ function toggleMute(){
 }
 function cycleSpeed(){
   playSpeed = playSpeed===1?2:(playSpeed===2?5:1);
-  const label = playSpeed===1?'רגיל':'פי '+playSpeed;
-  document.getElementById('speedBtn').textContent='⚡ מהירות: '+label;
+  document.getElementById('speedBtn').textContent='⏩ ×'+playSpeed;
   if(iv && !paused && !endShowing){ clearInterval(iv); iv=setInterval(step, curMs()); }
   updateInfo();
 }
@@ -2244,14 +2197,10 @@ function updateCap(slideNum){
 
 /* ---- אפקטים (fx) ---- */
 let fxc, fxx, fxRAF, parts=[], fxSwitch=0, fxShown=0, fwTimer=0;
-/* מצב חי שאפשר לשנות מהפאנל בזמן ההצגה (מתחיל מהערכים שנצרבו במצגת) */
-let FX=(DATA.effects||[]).slice();
-let FXI=DATA.intensity||0.7;
-let transSet=(DATA.transitions&&DATA.transitions.length?DATA.transitions:['fade']).slice();
-let fxStarted=false;
+const FX=DATA.effects||[];
+const FXI=DATA.intensity||0.7;
 function startFx(){
-  if(fxStarted) return;
-  fxStarted=true;
+  if(!FX.length) return;
   fxc=document.getElementById('fxc'); fxx=fxc.getContext('2d');
   resizeFx(); window.addEventListener('resize', resizeFx);
   fxLoop();
@@ -2294,100 +2243,8 @@ function spawnFw(W,H){
   const n=26+Math.floor(Math.random()*14);
   for(let i=0;i<n;i++){ const ang=(Math.PI*2*i)/n, sp=2+Math.random()*3.2; parts.push({type:'spark',x:cx,y:cy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:50+Math.random()*25,max:75,color:col}); }
 }
-
-/* ---- פאנל עיצוב ואפקטים (כמו בעורך, פועל חי תוך כדי ההצגה) ---- */
-function openFxPanel(){
-  let ov=document.getElementById('fx-overlay');
-  if(ov){ ov.remove(); return; } // לחיצה שנייה סוגרת
-  startFx(); // מוודאים שמנוע האפקטים פעיל גם אם המצגת נשמרה בלי אפקטים
-  ov=document.createElement('div'); ov.id='fx-overlay';
-  ov.style.cssText='position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:18px;';
-  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
-  const box=document.createElement('div');
-  box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:440px; width:100%; max-height:86vh; overflow:auto; text-align:right; font-family:Heebo,sans-serif;';
-  box.innerHTML='<div style="font-size:24px; font-weight:800; color:#ffd166; margin-bottom:4px;">עיצוב ואפקטים</div>'+
-    '<div style="font-size:13px; color:#9fb0d0; margin-bottom:16px;">בחרו מה שתרצו. אם בוחרים כמה — הם מתחלפים. אפשר לשנות גם תוך כדי ההצגה.</div>';
-  function group(title){ var d=document.createElement('div'); d.style.margin='14px 0'; d.innerHTML='<div style="font-size:14px; color:#9fb0d0; margin-bottom:8px; font-weight:700;">'+title+'</div>'; var r=document.createElement('div'); r.style.cssText='display:flex; flex-wrap:wrap; gap:8px;'; d.appendChild(r); box.appendChild(d); return r; }
-  function mkBtn(label){ var b=document.createElement('button'); b.textContent=label; b.style.cssText='font-family:Heebo,sans-serif; font-size:14px; font-weight:700; color:#f7f4ec; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.25); border-radius:10px; padding:8px 14px; cursor:pointer;'; return b; }
-  function setOn(b,on){ if(on){ b.style.background='#ffd166'; b.style.color='#1a2342'; } else { b.style.background='rgba(255,255,255,.08)'; b.style.color='#f7f4ec'; } }
-
-  // מעבר בין תמונות (אפשר כמה — מתחלפים)
-  var tRow=group('מעבר בין תמונות (אפשר כמה — יתחלפו)');
-  [['fade','🌫️ דהייה'],['slide','➡️ החלקה'],['zoom','🔍 התקרבות'],['zoomout','🔭 התרחקות'],['slideup','⬆️ מלמעלה'],['slidedown','⬇️ מלמטה']].forEach(function(pair){
-    var t=pair[0], b=mkBtn(pair[1]); setOn(b, transSet.indexOf(t)>=0);
-    b.onclick=function(){
-      var i=transSet.indexOf(t);
-      if(i>=0){ if(transSet.length>1){ transSet.splice(i,1); setOn(b,false); } } // חייב להישאר לפחות אחד
-      else { transSet.push(t); setOn(b,true); }
-    };
-    tRow.appendChild(b);
-  });
-  // אפקטים על המסך (אפשר כמה)
-  var fRow=group('אפקטים על המסך (אפשר כמה)');
-  [['snow','❄️ שלג'],['rain','🌧️ גשם'],['fireworks','🎆 זיקוקים'],['hearts','💛 לבבות'],['bubbles','🫧 בועות'],['leaves','🍂 עלים'],['stars','⭐ כוכבים'],['sparkles','✨ נצנוצים'],['confetti','🎉 קונפטי']].forEach(function(pair){
-    var fx=pair[0], b=mkBtn(pair[1]); setOn(b, FX.indexOf(fx)>=0);
-    b.onclick=function(){
-      var i=FX.indexOf(fx);
-      if(i>=0){ FX.splice(i,1); setOn(b,false); } else { FX.push(fx); setOn(b,true); }
-      fxShown=0; fxSwitch=0;
-    };
-    fRow.appendChild(b);
-  });
-  // עוצמת האפקטים
-  var iRow=group('עוצמת האפקטים');
-  [[0.4,'נמוכה'],[0.7,'בינונית'],[1.0,'גבוהה']].forEach(function(pair){
-    var val=pair[0], b=mkBtn(pair[1]); setOn(b, Math.abs(FXI-val)<0.01);
-    b.onclick=function(){ FXI=val; [].slice.call(iRow.children).forEach(function(c){ setOn(c,false); }); setOn(b,true); };
-    iRow.appendChild(b);
-  });
-  var close=mkBtn('✓ אישור'); close.style.marginTop='14px'; close.style.width='100%'; setOn(close,true);
-  close.onclick=function(){ ov.remove(); };
-  box.appendChild(close);
-  ov.appendChild(box); document.body.appendChild(ov);
-}
-
-/* דילוג ישיר לשקופית הסיום (אם אין שקופית סיום — קופץ לתמונה האחרונה) */
-function finishToLast(){
-  if(endShowing) return;
-  if(!order.length) return;
-  clearInterval(iv);
-  if(hasEnd()){
-    idx=order.length; // יגרום ל-step להציג את שקופית הסיום
-    paused=false; step();
-  } else {
-    idx=order.length-1;
-    paused=false; step();
-    clearInterval(iv); paused=true;
-    var pb=document.getElementById('pauseBtn'); if(pb) pb.textContent='▶️ המשך';
-  }
-}
-
-/* מעבר לבונה הווידאו (ייחודי לקובץ הנשמר) */
-function goToVideo(){
-  var ov=document.getElementById('vid-overlay');
-  if(ov){ ov.remove(); return; }
-  ov=document.createElement('div'); ov.id='vid-overlay';
-  ov.style.cssText='position:fixed; inset:0; z-index:30; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; padding:18px;';
-  ov.onclick=function(e){ if(e.target===ov) ov.remove(); };
-  var box=document.createElement('div');
-  box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:24px; max-width:440px; width:100%; text-align:right; font-family:Heebo,sans-serif;';
-  box.innerHTML='<div style="font-size:24px; font-weight:800; color:#ffd166; margin-bottom:10px;">🎬 הפיכת המצגת לסרטון</div>'+
-    '<div style="font-size:15px; color:#f7f4ec; line-height:1.6; margin-bottom:8px;">אפשר להפוך את המצגת הזו לקובץ וידאו (MP4) — נוח לשיתוף בוואטסאפ, באינסטגרם או ביוטיוב.</div>'+
-    '<div style="font-size:15px; color:#f7f4ec; line-height:1.6; margin-bottom:8px;">ייפתח כלי יצירת הווידאו. שם <b>טוענים את קובץ המצגת הזה</b>, והוא יהפוך אותו לסרטון.</div>'+
-    '<div style="font-size:13px; color:#ffd166; line-height:1.6; margin-bottom:18px;">⚠️ שימו לב: בסרטון יופיעו התמונות, המעברים והמוזיקה — אך לא האפקטים שעל המסך (שלג, זיקוקים וכד׳). זו מגבלה של כלי הווידאו בגרסת הניסיון.</div>';
-  var go=document.createElement('a');
-  go.href='https://yanivhak.github.io/teachers_enter/montage-video.html';
-  go.target='_blank'; go.rel='noopener';
-  go.textContent='פתיחת כלי יצירת הווידאו ←';
-  go.style.cssText='display:block; text-align:center; text-decoration:none; font-family:Heebo,sans-serif; font-size:16px; font-weight:800; color:#1a2342; background:#ffd166; border-radius:12px; padding:12px 18px; margin-bottom:10px;';
-  box.appendChild(go);
-  var cancel=document.createElement('button'); cancel.textContent='ביטול';
-  cancel.style.cssText='display:block; width:100%; font-family:Heebo,sans-serif; font-size:14px; font-weight:700; color:#f7f4ec; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.25); border-radius:10px; padding:10px; cursor:pointer;';
-  cancel.onclick=function(){ ov.remove(); };
-  box.appendChild(cancel);
-  ov.appendChild(box); document.body.appendChild(ov);
-}
-<\/script></body>
+<\/script>
+</body>
 </html>`;
 
 /* ============================================================
@@ -2551,7 +2408,7 @@ async function exportMontage(){
     } else if (totalBytes >= BIG){
       warnMsg += '\n\nהקובץ גדול יחסית. ייתכן שלא ניתן לשלוח אותו בוואטסאפ או במייל.';
     }
-    warnMsg += '\n\nלשמור את הקובץ?';
+    warnMsg += '\n\nלהוריד את הקובץ?';
 
     if (!confirm(warnMsg)){
       if (btn){ btn.disabled = false; btn.textContent = origText; }
@@ -2565,7 +2422,7 @@ async function exportMontage(){
     const fname = (title.replace(/[\\/:*?"<>|]/g, '') || 'מצגת') + '.html';
     downloadHTMLFile(html, fname);
 
-    if (btn){ btn.disabled = false; btn.textContent = '✓ נשמר!'; setTimeout(()=>{ btn.textContent = origText; }, 2500); }
+    if (btn){ btn.disabled = false; btn.textContent = '✓ הקובץ ירד!'; setTimeout(()=>{ btn.textContent = origText; }, 2500); }
   } catch(e){
     console.error(e);
     const detail = (e && e.message) ? e.message : String(e);
@@ -2588,7 +2445,7 @@ function loadChosen(files){
     } catch(e){
       console.error('load failed:', e);
       const d = (e && e.message) ? e.message : String(e);
-      alert('לא הצלחתי לטעון את הקובץ.\n\nודאו שזה קובץ מצגת שנשמר מהכלי הזה (קובץ HTML), ולא קובץ אחר.\n\nפרטים: ' + d);
+      alert('לא הצלחתי לטעון את הקובץ.\n\nודאו שזה קובץ מצגת שהורד מהכלי הזה (קובץ HTML), ולא קובץ אחר.\n\nפרטים: ' + d);
     }
   };
   reader.onerror = () => alert('קריאת הקובץ נכשלה. נסו שוב.');
@@ -2665,7 +2522,7 @@ function clearAll(){
   const hasContent = pics.length || playlist.length || captions.length ||
                      ((typeof anyFx === 'function') && anyFx()) || endTitle || endText;
   if (!hasContent){ alert('אין מה לנקות — לוח העבודה כבר ריק.'); return; }
-  if (!confirm('לנקות את כל לוח העבודה?\n\nכל התמונות, המוזיקה, הכיתובים, האפקטים ושקופית הסיום יוסרו, והכול יחזור להתחלה.\n\n(שום קובץ שכבר שמרתם לא יימחק — אפשר לטעון אותו בחזרה בכל רגע.)')) return;
+  if (!confirm('לנקות את כל לוח העבודה?\n\nכל התמונות, המוזיקה, הכיתובים, האפקטים ושקופית הסיום יוסרו, והכול יחזור להתחלה.\n\n(שום קובץ שכבר הורדתם לא יימחק — אפשר לטעון אותו בחזרה בכל רגע.)')) return;
 
   // תמונות
   pics.forEach(u => { try { URL.revokeObjectURL(u); } catch(e){} });
