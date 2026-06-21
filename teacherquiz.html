@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v63 - פריט 10 (חיזוקים אישיים): מערכת חיזוקים בצד התלמיד. מודל-מכסה: כל שאלה מחזקת עד (נוכחים/5) תלמידים. שני pools — מי שלא קיבל קודם, ורק כשהם נגמרים מי שקיבל פעם; מי שקיבל פעמיים יורד. מובטח כיסוי ~100% בלי שהחזקים יקטפו הכל. טריגרים אמיתיים (רצף/שאלה קשה/שיפור) קובעים את המסר אם התלמיד נבחר; חלש שצדק מקבל מסר "נכון", חלש שטעה מקבל התמדה. ברוך-שובך פעם אחת למי שחזר (לא נספר באיזון). toast צף בטלפון 2.6 שניות. מתג אחד "🌟 חיזוקים" בסרגל המנחה (דלוק כברירת מחדל) מכבה הכל. כל הפרמטרים בבלוק REINFORCE אחד לכיוונון. הניקוד האישי לא שונה
   v62 - תיקון מקרה כיבוי-מסך (פריט 6): נוכחות עמידה דרך מאזין .info/connected שכותב presence + onDisconnect מחדש בכל חיבור חוזר. מתקן מצב שבו השחקן הדליק מסך (בלי לסרוק קוד) ונשאר מנותק כי onDisconnect כבר ירה
   v61 - פריט 10: כפתור "📲 קוד חזרה" בסרגל המנחה — פותח QR גדול + קוד כדי שמשתתף שעף יחזור למשחק. בזכות המזהה היציב (v60) החזרה משחזרת את הניקוד אוטומטית (players[id] לא נמחק, לא מאופס). הצגת הניקוד לשחקן עצמו בחזרה — לא נבנתה (החלטה פתוחה)
   v60 - תיקון באג ספירה כפולה + תשתית לפריט 10: מזהה שחקן יציב לכל משחק (localStorage לפי קוד משחק). חזרה לאותו משחק = אותו מזהה (לא נספר פעמיים, וניקוד יוכל לחזור); משחק/מכשיר אחר = מזהה נפרד (אין ירושת זהות)
@@ -61,6 +62,11 @@ input:focus{border-color:var(--gold); outline:none;}
 .conn{position:fixed; top:12px; left:14px; font-size:12px; color:var(--ink-dim); display:flex; align-items:center; gap:6px; z-index:50;}
 .savetoast{position:fixed; top:18px; left:50%; transform:translateX(-50%) translateY(-20px); background:#1a7a4a; color:#fff; padding:10px 22px; border-radius:30px; font-family:'Heebo'; font-weight:700; font-size:15px; box-shadow:0 8px 26px rgba(0,0,0,.45); z-index:200; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;}
 .savetoast.on{opacity:1; transform:translateX(-50%) translateY(0);}
+.rtoast{position:fixed; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; z-index:240; opacity:0; pointer-events:none; transition:opacity .3s;}
+.rtoast.on{opacity:1;}
+.rtoast .rcard{background:linear-gradient(135deg,#f7b733,#fc8b3a); color:#1a2342; font-family:'Heebo'; font-weight:800; font-size:clamp(20px,6vw,30px); text-align:center; padding:26px 34px; border-radius:24px; box-shadow:0 16px 48px rgba(0,0,0,.4); transform:scale(.85); transition:transform .3s; max-width:88%;}
+.rtoast.on .rcard{transform:scale(1);}
+.rtoast .remoji{font-size:clamp(34px,10vw,52px); display:block; margin-bottom:8px;}
 .adv-box summary::-webkit-details-marker{display:none;}
 .adv-box summary::after{content:'▾'; margin-inline-start:auto; transition:transform .2s; color:var(--ink-dim);}
 .adv-box[open] summary::after{transform:rotate(180deg);}
@@ -162,7 +168,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v62</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v63</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -534,6 +540,14 @@ input:focus{border-color:var(--gold); outline:none;}
   </div>
 </div>
 
+<!-- חיזוק אישי צף — מופיע על מסך התלמיד ונעלם תוך כמה שניות -->
+<div class="rtoast" id="rtoast">
+  <div class="rcard">
+    <span class="remoji" id="rtoast-emoji">🌟</span>
+    <span id="rtoast-text"></span>
+  </div>
+</div>
+
 <!-- ============ שחקן: סיום ============ -->
 <div class="screen" id="pfin">
   <div class="pwrap">
@@ -548,6 +562,7 @@ input:focus{border-color:var(--gold); outline:none;}
   <button onclick="hostToggleMusic()" id="music-toggle">🔊 מוזיקה</button>
   <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🖼️ רקע</button>
   <button onclick="showReturnQR()">📲 קוד חזרה</button>
+  <button onclick="toggleReinforce()" id="reinforce-toggle">🌟 חיזוקים: פעיל</button>
   <button onclick="hostJumpFinish()">🏁 סיום</button>
   <span id="presence-counter" style="display:none; font-size:13px; color:var(--ink-dim); align-self:center; margin-inline-start:auto; white-space:nowrap;"></span>
 </div>
@@ -2258,10 +2273,19 @@ function send(o){ o.from = myId; o.ts = Date.now(); if (gameRef) gameRef.push(o)
 function hostMsg(m){
   if (m.t === 'join'){
     if (!players[m.id]){
-      players[m.id] = { name:m.name, team:(m.team!=null?m.team:-1), score:0, streak:0, correct:0 };
+      players[m.id] = { name:m.name, team:(m.team!=null?m.team:-1), score:0, streak:0, correct:0, totalReinforcements:0, lastReinforcementAt:-1, gotWelcome:false, wasWrong:false };
       renderJoined();
       // רענון מונה הנוכחות — כי המכנה (סך שהצטרפו) השתנה
       fdb.ref('games/'+(playCode||topic)+'/presence').once('value').then(s=>updatePresenceCounter(Object.keys(s.val()||{}).length)).catch(()=>{});
+    } else {
+      // שחקן קיים ששלח join שוב = חזר אחרי ניתוק. ברוך-שובך פעם אחת,
+      // רק אם המשחק כבר התחיל ורק אם מתג החיזוקים דלוק. לא נספר באיזון.
+      const p = players[m.id];
+      ensureReinforceFields(p);
+      if (reinforceOn && qIndex >= 0 && !p.gotWelcome){
+        p.gotWelcome = true;
+        send({ t:'welcomeback', id:m.id, msg: pickReinforce('welcome') });
+      }
     }
     send({ t:'welcome', id:m.id });
   }
@@ -2587,6 +2611,161 @@ function showIntermission(){
   send({ t:'look' });
 }
 
+/* ============================================================
+   מערכת חיזוקים אישיים (פריט 10 — נבנה מאפס)
+   כל הפרמטרים לכיוונון מרוכזים כאן, בבלוק אחד.
+   אחרי הכיתה הראשונה — כוונן כאן בלבד, בלי לחפש בקובץ.
+   ============================================================ */
+const REINFORCE = {
+  ON_BY_DEFAULT: true,   // המתג מתחיל דלוק
+  DIVISOR: 5,            // מכסה לשאלה = מספר הנוכחים חלקי המספר הזה (5 או 6). תקרה, לא רצפה
+  HARD_Q_THRESHOLD: 0.25,// "שאלה קשה": מתחת לאחוז הזה ממי שענה צדק
+  STREAK_MIN: 3,         // רצף קצר שמזכה בחיזוק אמיתי
+  // מודל-מכסה: כל שאלה ממלאת עד quota מקומות. קודם טריגרים אמיתיים (רצף/קשה/שיפור),
+  // ואז משלימים ממי-שלא-קיבל-בסבב, בקרב הנוכחים. סבב נמדד בטריגרים, לא בשאלות.
+  // כך מובטח כיסוי גבוה בלי שהחזקים יקטפו הכל. כוונן DIVISOR אחרי הכיתה הראשונה.
+};
+
+// מאגרי הודעות — אקראיות שומרת על גיוון לאורך הרבה חידונים.
+// ניסוח אישי, חיובי, בלי אחוזים ובלי השוואה לאחרים.
+const REINFORCE_POOLS = {
+  streak: [
+    'רצף יפה! ממשיכים ככה','אש! כמה תשובות נכונות ברצף','אתם בכושר','רצף מרשים','ברצף מנצח',
+    'יופי של רצף','אחת אחרי השנייה — מדויק','בלתי ניתנים לעצירה','הריכוז משתלם','רצף שאי אפשר להתעלם ממנו',
+    'ממשיכים לדייק','על גל של הצלחות','שרשרת תשובות נכונות','בדיוק בול, שוב','הקצב שלכם מעולה',
+    'נכון, נכון, ונכון','רצף שמדבר בעד עצמו','אלופים של הרצף','עוד אחת ברצף — כל הכבוד','מכונה משומנת',
+    'הולכים על בטוח','דייקנות מרשימה','אתם זורמים','רצף חם','מי יעצור אתכם?',
+    'עוד הצלחה, ברצף','הריכוז ניכר','בול פגיעה, שוב ושוב','מצוין — ממשיכים','רצף של אלופים'
+  ],
+  hard: [
+    'שאלה מאתגרת — והצלחת!','אחת הקשות — וענית נכון','כל הכבוד על השאלה הקשה','שאלה לא פשוטה — וצדקת',
+    'התמודדת עם שאלה קשה והצלחת','מרשים! שאלה מאתגרת','ניצחת שאלה קשה','השאלה הזו הפילה רבים — לא אותך',
+    'אומץ ודיוק בשאלה קשה','כל הכבוד — שאלה מורכבת','התעלית על שאלה מאתגרת','שאלה קשה? לא בשבילך',
+    'הצלחה אמיתית בשאלה לא קלה','דייקת בשאלה הקשה','שאלה מאתגרת — וענית בול','כיוונת נכון בשאלה קשה',
+    'בראבו — שאלה לא טריוויאלית','שאלה קשה הובסה','חשיבה מצוינת בשאלה מאתגרת','עברת שאלה קשה בהצלחה',
+    'מרשים — לא כולם ענו נכון','שאלה קשה, תשובה מדויקת','התמדה ודיוק בשאלה קשה','כיווצת שאלה קשה לתשובה נכונה',
+    'מצוין — אחת המאתגרות','ענית נכון על אחת הקשות','שאלה קשה לא הפחידה אותך','דיוק בשאלה מורכבת','כל הכבוד — שאלה מאתגרת!','הצלחה בשאלה לא קלה'
+  ],
+  improve: [
+    'חזרת לעניינים!','יופי — תיקנת את עצמך','שיפור מצוין','חזרת חזק','בדיוק כך — ממשיכים קדימה',
+    'יפה! חזרת למסלול','התעקשת והצלחת','לא ויתרת — וזה משתלם','שיפור ניכר','חזרת לדייק',
+    'אחרי כמה ניסיונות — בול','ההתמדה השתלמה','חזרה מרשימה','שיפרת — כל הכבוד','בדיוק! ממשיכים',
+    'יפה מאוד — תיקון מושלם','חזרת לעניין','לא הרמת ידיים','שיפור אמיתי','חזרת בגדול',
+    'התמדה שמשתלמת','חזרת למסלול הנכון','עוד ניסיון — והצלחת','כל הכבוד על ההתמדה','חזרת לדייק — יפה',
+    'נפלת וקמת — מצוין','השיפור ניכר','חזרת חזק יותר','התעקשות שמשתלמת','חזרת לעניינים בגדול'
+  ],
+  correct: [
+    'יפה, נכון!','תשובה מדויקת','בול! תשובה נכונה','כל הכבוד — נכון','יפה מאוד',
+    'נכון! ממשיכים','תשובה טובה','דייקת','יפה, צדקת','נכון בול',
+    'מצוין — נכון','תשובה נכונה, כל הכבוד','יפה! בדיוק','נכון, יופי','קלעת לנכון',
+    'תשובה מדויקת, כל הכבוד','נכון! ממשיכים ככה','יפה, תשובה נכונה','בדיוק נכון','כיוונת נכון',
+    'נכון מאוד','יפה — צדקת','תשובה נכונה ויפה','בול, נכון','כל הכבוד על התשובה',
+    'נכון! יופי','דייקת יפה','תשובה נכונה, מצוין','יפה, בדיוק נכון','נכון — ממשיכים'
+  ],
+  persist: [
+    'ממשיכים להשתתף!','יופי שאתם איתנו','נשארתם בעניין','משתתפים לכל אורך הדרך','ממשיכים קדימה',
+    'נחמד שאתם משחקים','חלק מהחבורה','ממשיכים לשחק','איתנו עד הסוף','משתתפים פעילים',
+    'יופי — ממשיכים','חלק מהמשחק','נשארתם איתנו','ממשיכים בכיף','משחקים יפה',
+    'נחמד שאתם כאן','ממשיכים להשתתף בכיף','חלק חשוב מהמשחק','איתנו לכל אורך החידון','ממשיכים בהתמדה',
+    'יופי של השתתפות','נשארתם פעילים','ממשיכים לשחק יחד','חלק מהקבוצה','משתתפים לאורך כל הדרך',
+    'נחמד שאתם משתתפים','ממשיכים בכיף יחד','איתנו עד הסוף — יופי','השתתפות יפה','ממשיכים, כל הכבוד'
+  ],
+  welcome: [
+    'טוב שחזרת! ממשיכים','ברוך שובך למשחק','חזרת — אנחנו ממשיכים יחד','טוב לראות אתכם שוב','חזרתם! ממשיכים',
+    'ברוך שובך, נמשיך מכאן','טוב שאתם שוב איתנו','חזרת בדיוק בזמן','שמחים שחזרת','ממשיכים יחד מכאן'
+  ]
+};
+
+// מצב המתג — נשלט מסרגל המנחה
+let reinforceOn = REINFORCE.ON_BY_DEFAULT;
+
+// מתג המנחה: מדליק/מכבה את כל מערכת החיזוקים
+function toggleReinforce(){
+  reinforceOn = !reinforceOn;
+  const b = $('reinforce-toggle');
+  if (b) b.textContent = reinforceOn ? '🌟 חיזוקים: פעיל' : '🌟 חיזוקים: כבוי';
+}
+
+// בוחר הודעה אקראית מקטגוריה
+function pickReinforce(cat){
+  const pool = REINFORCE_POOLS[cat] || [];
+  return pool.length ? pool[Math.floor(Math.random()*pool.length)] : '';
+}
+
+// מוודא שלשחקן יש שדות החיזוק — נקרא לפני כל גישה.
+// השדות יושבים על players[id] שכבר שורד ניתוק-וחזרה (v60/v62),
+// כך שהם יורשים את אותה עמידות אוטומטית.
+function ensureReinforceFields(p){
+  if (p.totalReinforcements == null) p.totalReinforcements = 0;
+  if (p.lastReinforcementAt == null) p.lastReinforcementAt = -1;   // אינדקס השאלה שבה קיבל לאחרונה (-1 = אף פעם)
+  if (p.gotWelcome == null) p.gotWelcome = false;                  // ברוך-שובך — פעם אחת בלבד
+}
+
+/* הלב: מודל-מכסה. מחזיר מפה { id: message } של מי שמקבל חיזוק בשאלה זו.
+   קלט: eligibles — טריגרים אמיתיים שזוהו ב-revealQ ({ id, cat }).
+   המודל:
+   1. מכסה לשאלה = מספר הנוכחים שענו, חלקי DIVISOR (בערך). תקרה, לא רצפה.
+   2. סבב נמדד בטריגרים, לא בשאלות: roundReceived = כמה חיזוקים קיבל בסבב הנוכחי.
+      כשכל הנוכחים שקיבלו אי-פעם הגיעו לאותה רמה — הסבב מתקדם מעצמו דרך המיון.
+   3. סדר מילוי: קודם הטריגרים האמיתיים (חיזוק כן), ואז משלימים את המכסה
+      ממי-שלא-קיבל-בסבב, בקרב הנוכחים בלבד, עם חיזוק התמדה.
+   4. מיון: מי שקיבל פחות בסבב הנוכחי קודם → אז מי שמזמן יותר → אז אקראי.
+   5. אם הטריגרים האמיתיים לבדם עולים על המכסה — חותכים אקראית למכסה.
+   6. ברוך-שובך מטופל בנפרד (welcomeback), לא עובר כאן. */
+function selectReinforcements(eligibles, qIdx, total){
+  if (!reinforceOn) return {};
+  const result = {};
+
+  // נוכחים = מי שענה בשאלה הנוכחית בלבד (לא מבזבזים חיזוק על מסך מנותק)
+  const present = Object.keys(answers).filter(id => id!=='_me' && players[id]);
+  if (!present.length) return {};
+  present.forEach(id => ensureReinforceFields(players[id]));
+
+  // המכסה: מספר הנוכחים חלקי המחלק, תקרה מינימום 1
+  const quota = Math.max(1, Math.round(present.length / REINFORCE.DIVISOR));
+
+  // מפה: מי הפעיל טריגר אמיתי השאלה, ומאיזה סוג (קובע מסר, לא בחירה)
+  const trigMsg = {};
+  eligibles.forEach(e=>{ if (answers[e.id] && players[e.id] && !trigMsg[e.id]) trigMsg[e.id]=e.cat; });
+
+  // שני pools לפי כמה חיזוקים קיבל עד כה:
+  // pool1 = עוד לא קיבל אף פעם (0). pool2 = קיבל פעם אחת (1).
+  // מי שקיבל פעמיים (2+) — יורד לגמרי, לא נכנס לשום שיקול (הגיע לתקרה).
+  const pool1 = present.filter(id => players[id].totalReinforcements === 0);
+  const pool2 = present.filter(id => players[id].totalReinforcements === 1);
+
+  // מיון בתוך כל pool: מי שקיבל לאחרונה מזמן יותר קודם, ואז אקראי.
+  // (בתוך pool1 כולם על 0, אז המיון הוא לפי lastReinforcementAt ואז אקראי.)
+  const byRecency = (a,b)=>{
+    const pa=players[a], pb=players[b];
+    if (pa.lastReinforcementAt !== pb.lastReinforcementAt) return pa.lastReinforcementAt - pb.lastReinforcementAt;
+    return Math.random()-0.5;
+  };
+  pool1.sort(byRecency);
+  pool2.sort(byRecency);
+
+  // ממלאים את המכסה: קודם כל pool1, ורק כשהוא נגמר — pool2.
+  // זה מבטיח שאיש לא יקבל פעם שנייה לפני שכולם קיבלו פעם ראשונה.
+  const queue = pool1.concat(pool2);
+  const chosen = queue.slice(0, quota);
+
+  chosen.forEach(id=>{
+    const p = players[id];
+    // המסר: אם היה טריגר אמיתי — מסר כן לפי סוגו. אחרת, אם צדק — מסר "נכון" קל.
+    // אם טעה — מסר התמדה ניטרלי.
+    let cat;
+    if (trigMsg[id]) cat = trigMsg[id];
+    else if (answers[id] && answers[id].pick === curQ.correct) cat = 'correct';
+    else cat = 'persist';
+    const msg = pickReinforce(cat);
+    if (!msg) return;
+    result[id] = msg;
+    p.totalReinforcements++;
+    p.lastReinforcementAt = qIdx;
+  });
+  return result;
+}
+
 function revealQ(){
   if (revealed) return;
   revealed = true; clearInterval(hostTimer);
@@ -2600,6 +2779,9 @@ function revealQ(){
   let teamCorrect = {};
   if (quiz.teamCount>0) for (let i=0;i<quiz.teamCount;i++) teamCorrect[i]=0;
   let fastestMs = Infinity, fastestName = '', newStreakRecord = false;
+  const reinforceEligibles = [];
+  let correctCount = 0;
+  const answeredCount = Object.keys(answers).length;
   Object.entries(answers).forEach(([id,a]) => {
     if (a.pick in dist) dist[a.pick]++;
     const p = players[id];
@@ -2611,11 +2793,24 @@ function revealQ(){
       const streakBonus = Math.min(p.streak-1,5)*50;
       p.score += pts + streakBonus;
       p.correct++;
+      correctCount++;
       if (p.team>=0) teamCorrect[p.team]++;
       if (a.dt < fastestMs){ fastestMs = a.dt; fastestName = p.name; }
       if (p.streak >= 3 && p.streak > maxStreak){ maxStreak = p.streak; streakKing = p.name; newStreakRecord = true; }
-    } else if (p){ p.streak = 0; }
+      ensureReinforceFields(p);
+      if (p.wasWrong){ reinforceEligibles.push({ id, cat:'improve' }); }
+      else if (p.streak >= REINFORCE.STREAK_MIN){ reinforceEligibles.push({ id, cat:'streak' }); }
+      p.wasWrong = false;
+    } else if (p){ p.streak = 0; ensureReinforceFields(p); p.wasWrong = true; }
   });
+  if (answeredCount > 0 && (correctCount/answeredCount) < REINFORCE.HARD_Q_THRESHOLD){
+    Object.entries(answers).forEach(([id,a]) => {
+      if (players[id] && a.pick === curQ.correct){
+        const ex = reinforceEligibles.find(e=>e.id===id);
+        if (ex) ex.cat = 'hard'; else reinforceEligibles.push({ id, cat:'hard' });
+      }
+    });
+  }
 
   // באנרים: שיא מהירות, שיא רצף
   const banners = $('hr-banners'); banners.innerHTML = '';
@@ -2643,8 +2838,11 @@ function revealQ(){
     requestAnimationFrame(()=>{ row.querySelector('.fill').style.width = (dist[o.i]/denom*100)+'%'; });
   });
 
-  // עדכון רצף/תוצאות לשחקנים
-  send({ t:'rev', i:seq, correctIdx: curQ.correct, correctText, scores: scoreboard() });
+  // חיזוקים אישיים: בוחרים מי מקבל, ומצרפים מפה אישית להודעת ה-reveal
+  const reinforceMap = selectReinforcements(reinforceEligibles, qIndex, quiz.questions.length);
+  if (Object.keys(reinforceMap).length) sfxStreak();   // צליל קצר כשיש חיזוק
+  // עדכון רצף/תוצאות לשחקנים + חיזוק אישי לכל נמען
+  send({ t:'rev', i:seq, correctIdx: curQ.correct, correctText, scores: scoreboard(), reinforce: reinforceMap });
 
   // מצב הקבוצות על הלוח
   if (quiz.teamCount>0){
@@ -3122,6 +3320,7 @@ function playerMsg(m){
   if (m.t==='look'){ show('plook'); }
   if (m.t==='rev'){ showFeedback(m); }
   if (m.t==='end'){ showPFin(m); }
+  if (m.t==='welcomeback' && m.id===myId && m.msg){ showReinforceToast(m.msg, '👋'); }
 }
 
 function showPQ(m){
@@ -3151,15 +3350,26 @@ function showPQ(m){
   show('pq');
 }
 
+let rtoastTimer = null;
+function showReinforceToast(text, emoji){
+  const t = $('rtoast'); if (!t) return;
+  $('rtoast-text').textContent = text;
+  $('rtoast-emoji').textContent = emoji || '🌟';
+  t.classList.add('on');
+  clearTimeout(rtoastTimer);
+  rtoastTimer = setTimeout(()=>{ t.classList.remove('on'); }, 2600);
+}
+
 function showFeedback(m){
   const me = (m.scores||[]).find(s=>s.id===myId);
-  // האם עניתי נכון? נשווה לפי מה ששלחתי
-  // פשטות: נשתמש בניקוד — אם עליתי, צדקתי. נשתמש בדגל מקומי
   const correct = lastPick === m.correctIdx;
   $('pfeed-emoji').textContent = correct ? '✅' : '❌';
   $('pfeed-title').textContent = correct ? 'נכון!' : 'לא נכון';
   $('pfeed-sub').textContent = 'התשובה: ' + m.correctText + (me ? ' · ' + me.score + ' נקודות' : '');
   show('pfeed');
+  // חיזוק אישי: אם המנחה צירף לי הודעה, היא מופיעה צף מעל המשוב ונעלמת
+  const myReinforce = m.reinforce && m.reinforce[myId];
+  if (myReinforce) showReinforceToast(myReinforce, '🌟');
 }
 function showPFin(m){
   const me=(m.scores||[]).find(s=>s.id===myId);
