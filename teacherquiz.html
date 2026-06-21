@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v86 - הוספה לספרייה גלויה בעורך (נקודת-כניסה אחת): עד כה ההוספה-לספרייה בעורך הייתה חבויה — הופיעה רק בתוך פאנל השיתוף ורק אחרי שיתוף-לכולם (sh.mode==='public'). מורה שלא שיתף לא ראה אותה. עכשיו: (א) נוסף בלוק "📚 ספריית החידונים הציבורית" גלוי וקבוע בעורך, מתחת לבלוק השיתוף, עם renderLibraryPanel — כפתור "הוספה לספרייה הציבורית" כשלא בספרייה, או "✓ מופיע בספרייה" + "הסרה" כשכן. (ב) ההוספה המותנית הישנה הוסרה מפאנל השיתוף — כדי שלא תהיה כפילות (שתי הוספות-לספרייה בעורך). נקודת-כניסה אחת גלויה. (ג) ה-prompt הישן והמכוער (openLibraryPublish) הוסר; גם העורך וגם הרשימה משתמשים עכשיו באותו חלון מעוצב (openLibraryPublishFromCard) — קיבל פרמטר onDone כדי שהעורך ירענן את הפאנל שלו במקום לנווט לרשימה. תצוגת הקרדיט בספרייה עדיין תלויה ב-teacher-library.html (קובץ נפרד)
+  v85 - הוספה לספרייה מהרשימה + הגדלת AI בעורך: (א) כפתור "עריכת החידון באמצעות AI" בעורך הוגדל מ-sm זעיר לכפתור מלא בצבע סגול בולט (פונקציה חשובה שאסור לפספס; עדיין מותנה-תוכן לפי הכלל מ-v84 — מופיע רק כשיש תוכן, אף פעם יחד עם הכרטיס העליון). (ב) בתפריט ⋯ של כרטיס ברשימה נוסף "📚 הוספה לספרייה" (אחרי "🔗 שיתוף" — שיתוף תכוף קודם, ספרייה נדירה אחריו). פותח חלון מעוצב (openLibraryPublishFromCard) עם תיבת-טקסט לתיאור, ספירת-תווים חיה ומינימום 30 תווים (כפתור ההוספה מושבת עד שמגיעים), כפתורי ביטול/הוספה. בונה entry זהה למבנה של openLibraryPublish הקיים, יוצר shareId אם חסר, וכותב את אובייקט share בחזרה ל-teachers/{key}/{code}/share בלי לגעת בשאר השדות. חידון שכבר בספרייה מציג "📚 נמצא בספרייה" מושבת. המטרה: לאפשר צמיחת הספרייה השיתופית בקלות מהרשימה
   v84 - תיקון רגרסיה מ-v82: גישה ל-AI לעריכה הוחזרה. ב-v82 הוסר בטעות כפתור ה-AI מאזור השאלות בהנחה שהוא כפילות של הכרטיס העליון — אבל הכרטיס נעלם כשיש תוכן, ולכן חידון עם תוכן נשאר בלי שום גישה ל-AI. למעשה אלה שני מצבים של אותו מסע: כרטיס "יצירה" (חידון ריק) וכפתור "עריכה" (יש תוכן). הכלל החדש ב-updateAiCard: quizHasRealContent()===false → כרטיס AI בלבד (אלא אם נסגר ב-X); ===true → כפתור AI בלבד. בכל רגע נקודת-כניסה אחת בדיוק ל-AI, והשניים לעולם לא מופיעים יחד (זו הייתה הבעיה המקורית). הכפתור (ai-edit-btn) ממוקם צמוד לכותרת "השאלות", קטן יותר מהמקור (כלי-עזר לעריכה, לא פעולה ראשית), טקסט "🤖 עריכת החידון באמצעות AI". updateAiCard נקרא גם מ-renderQuestions לסנכרון אחרי הוספת/מחיקת שאלה
   v83 - שני תיקונים קטנים במסך הבית (אזור "אודות"): (א) "נבנה על ידי" ושם היוצר אוחדו לשורה אחת באותו גודל/צבע/סגנון ("נבנה על ידי ד״ר יניב חכים") במקום שתי שורות נפרדות (תווית קטנה אפורה + שם גדול זהוב). (ב) הוסרה ההערה המיותרת "(גם קישור שיתוף יעבוד כאן.)" משורת ההסבר מתחת לשדה הקוד
   v82 - ארגון מחדש של מסך העריכה (היררכיה וזרימה): (א) הוסר כפתור ה-AI הכפול מאזור השאלות — נשאר רק הכרטיס העליון, שממילא נעלם כשיש תוכן (כפילות שיצרה רעש). גם הקוד המת שעדכן את תוויתו הוסר. (ב) אזור השאלות עולה גבוה יותר: הסרת כפתור ה-AI + צמצום הרווח מעל כותרת "השאלות" (24→14px). (ג) כפתורי הפעולה אורגנו לשלושה בלוקים מופרדים בקווים: הפעלה (משחק/בדיקה) · ניהול (שמירה/חזרה) · שיתוף. השמירה נשארת כפתור פעיל (היא מאשרת חידון — isConfirmed) ולא הפכה לתווית-סטטוס. השיתוף קורב מתחת לבלוק הניהול אך נשאר בלוק עצמאי (לא מעורבב עם משחק/בדיקה — הזרימה היא עריכה→אישור→שיתוף/משחק). (ד) "מספר הקבוצות המשתתפות בחידון" שונה ל"מבנה המשחק", והאפשרות "בלי קבוצות (כל אחד לעצמו)" ל"כל משתתף לעצמו" — המשתמש בוחר מבנה, לא רק מספר. (ה) כותרת "אפשרויות נוספות" הוחלשה (פונט/משקל/רקע קטנים יותר). (ו) חצי ▲▼ בכרטיס השאלה הובהרו: תווית "סדר:" לידם, חצים גדולים יותר ואזור-לחיצה גדול יותר (כבר היו להם טולטיפים)
@@ -219,7 +221,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v84</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v86</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -374,7 +376,7 @@ input:focus{border-color:var(--gold); outline:none;}
     </div>
 
     <h2 style="margin-top:14px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
-    <button id="ai-edit-btn" class="btn ghost sm" onclick="openImport()" style="display:none; margin-bottom:12px; background:rgba(141,141,242,.18); font-size:14px;">🤖 עריכת החידון באמצעות AI</button>
+    <button id="ai-edit-btn" class="btn" onclick="openImport()" style="display:none; margin-bottom:14px; background:var(--violet); color:#0b0b2a; font-size:16px;">🤖 עריכת החידון באמצעות AI</button>
     <div id="q-list"></div>
     <button class="btn ghost" onclick="addQuestion()" style="margin-top:6px;">➕ הוספת שאלה</button>
 
@@ -422,6 +424,12 @@ input:focus{border-color:var(--gold); outline:none;}
       <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">🔗 שיתוף החידון <span class="info-i" onclick="showInfo(event, 'יצירת קישור שיתוף נותנת לכם קישור שאפשר לשלוח למי שתרצו. כל מי שמקבל את הקישור פותח אותו ומקבל עותק עצמאי משלו לעריכה ולמשחק. החידון המקורי שלכם לא משתנה ולא נמחק.')">i</span></div>
       <div style="font-size:13px; color:var(--ink-dim); margin-bottom:12px; text-align:center;">שלחו את החידון למישהו אחר — הוא יקבל עותק עצמאי משלו לעריכה ולמשחק.</div>
       <div id="share-panel" style="max-width:460px; margin:0 auto;"></div>
+    </div>
+
+    <div id="library-card" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
+      <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">📚 ספריית החידונים הציבורית <span class="info-i" onclick="showInfo(event, 'הוספה לספרייה הציבורית הופכת את החידון לזמין לכל המורים במערכת. הם יוכלו למצוא אותו, להעתיק לעצמם ולשחק. כך הספרייה גדלה ומורים נעזרים זה בזה. אפשר להסיר את החידון מהספרייה בכל עת.')">i</span></div>
+      <div style="font-size:13px; color:var(--ink-dim); margin-bottom:12px; text-align:center;">שתפו את החידון עם כל המורים — הוא יתווסף לספרייה הציבורית שכולם נעזרים בה.</div>
+      <div id="library-panel" style="max-width:460px; margin:0 auto;"></div>
     </div>
 
     <div id="clear-all-wrap" style="text-align:center; margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); display:none;">
@@ -1186,9 +1194,13 @@ function buildQuizCard(code, q){
   pinItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); togglePin(code, !q.pinned); };
   const shareItem = document.createElement('button'); shareItem.className='qlcard-menu-item'; shareItem.textContent='🔗 שיתוף';
   shareItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); openShareModal(code, q); };
+  const libItem = document.createElement('button'); libItem.className='qlcard-menu-item';
+  libItem.textContent = (q.share && q.share.inLibrary) ? '📚 נמצא בספרייה' : '📚 הוספה לספרייה';
+  if (q.share && q.share.inLibrary){ libItem.disabled = true; libItem.style.opacity='.5'; }
+  else libItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); openLibraryPublishFromCard(code, q); };
   const delItem = document.createElement('button'); delItem.className='qlcard-menu-item danger'; delItem.textContent='🗑 מחיקה';
   delItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myStoreKey+'/'+code).remove().then(()=>refreshMyList()); } };
-  menu.appendChild(pinItem); menu.appendChild(shareItem); menu.appendChild(delItem);
+  menu.appendChild(pinItem); menu.appendChild(shareItem); menu.appendChild(libItem); menu.appendChild(delItem);
   dots.onclick=(e)=>{ e.stopPropagation(); const wasOpen = menu.classList.contains('on'); closeAllCardMenus(); if(!wasOpen) menu.classList.add('on'); };
   menuWrap.appendChild(dots); menuWrap.appendChild(menu);
 
@@ -1393,6 +1405,7 @@ function renderEditor(){
   updateAiCard();
   // פאנל השיתוף
   renderSharePanel();
+  if ($('library-panel')) renderLibraryPanel();
 }
 
 function teamCountChanged(){
@@ -2230,6 +2243,29 @@ function renderSharePanel(){
   }
 }
 
+// פאנל הספרייה בעורך — גלוי תמיד (לא מותנה בשיתוף). משתמש באותו חלון מעוצב כמו ברשימה.
+function renderLibraryPanel(){
+  const panel = $('library-panel');
+  if (!panel) return;
+  if (!myUid){
+    panel.innerHTML = '<div style="font-size:13px; color:var(--ink-dim); text-align:center;">התחברו עם Google כדי להוסיף לספרייה.</div>';
+    return;
+  }
+  const sh = ensureShareObj();
+  panel.innerHTML = '';
+  if (sh.inLibrary){
+    const r = document.createElement('div'); r.style.cssText='display:flex; justify-content:space-between; align-items:center; gap:8px;';
+    const s = document.createElement('span'); s.style.cssText='font-size:14px; color:var(--teal); font-weight:600;'; s.textContent='✓ מופיע בספרייה הציבורית';
+    const x = document.createElement('button'); x.textContent='✕ הסרה מהספרייה'; x.style.cssText='background:none; border:1px solid rgba(255,255,255,.3); color:var(--coral); border-radius:8px; padding:5px 12px; cursor:pointer; font-family:Heebo; font-size:13px; white-space:nowrap;';
+    x.onclick=removeFromLibrary;
+    r.appendChild(s); r.appendChild(x); panel.appendChild(r);
+  } else {
+    const addBtn = document.createElement('button'); addBtn.className='btn teal sm'; addBtn.style.width='100%'; addBtn.textContent='📚 הוספה לספרייה הציבורית';
+    addBtn.onclick=()=>openLibraryPublishFromCard(editCode, quiz, ()=>{ renderLibraryPanel(); });
+    panel.appendChild(addBtn);
+  }
+}
+
 function shareStatusBox(titleText, sh){
   const box = document.createElement('div');
   box.style.cssText='background:rgba(255,255,255,.05); border-radius:10px; padding:12px;';
@@ -2284,22 +2320,6 @@ function shareStatusBox(titleText, sh){
     box.appendChild(linkRow);
   }
 
-  // תת-אפשרות ספרייה (רק ב"לכולם")
-  if (sh.mode === 'public'){
-    const libBox = document.createElement('div'); libBox.style.cssText='margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,.1);';
-    if (sh.inLibrary){
-      const r = document.createElement('div'); r.style.cssText='display:flex; justify-content:space-between; align-items:center;';
-      const s = document.createElement('span'); s.style.cssText='font-size:13px; color:var(--teal);'; s.textContent='📚 מופיע בספרייה הציבורית';
-      const x = document.createElement('button'); x.textContent='✕ הסרה מהספרייה'; x.style.cssText='background:none; border:1px solid rgba(255,255,255,.3); color:var(--coral); border-radius:8px; padding:4px 10px; cursor:pointer; font-family:Heebo; font-size:12px;';
-      x.onclick=removeFromLibrary;
-      r.appendChild(s); r.appendChild(x); libBox.appendChild(r);
-    } else {
-      const addLibBtn = document.createElement('button'); addLibBtn.className='btn ghost sm'; addLibBtn.textContent='📚 הוספה לספרייה הציבורית'; addLibBtn.style.width='100%';
-      addLibBtn.onclick=openLibraryPublish;
-      libBox.appendChild(addLibBtn);
-    }
-    box.appendChild(libBox);
-  }
   return box;
 }
 
@@ -2398,39 +2418,95 @@ function unshareEveryone(){
 }
 
 // --- ספרייה ---
-async function openLibraryPublish(){
-  if (!quiz.title || !quiz.title.trim()){ alert('תנו שם לחידון לפני ההוספה לספרייה.'); return; }
-  if (!quiz.questions || !quiz.questions.length){ alert('אי אפשר להוסיף לספרייה חידון בלי שאלות.'); return; }
-  const desc = prompt('כתבו תיאור קצר לחידון (לפחות 30 תווים) — על מה הוא, לאיזה גיל, ולמה הוא טוב:');
-  if (desc === null) return;
-  if (desc.trim().length < 30){ alert('התיאור חייב להכיל לפחות 30 תווים.'); return; }
-  const sh = ensureShareObj();
-  sh.libraryId = await genLibId();
-  sh.inLibrary = true;
-  const entry = {
-    libId: sh.libraryId, quizId: editCode, shareId: sh.shareId,
-    ownerUid: myUid, ownerName: myAuthName || myEmail || 'מורה',
-    originalAuthor: quiz.originalAuthor || null,
-    title: quiz.title, description: desc.trim(),
-    questionCount: quiz.questions.length,
-    publishDate: Date.now(), updated: Date.now(),
-    downloads: 0, likes: 0, dislikes: 0, reports: 0,
-    quiz: {
-      title: quiz.title || '', time: quiz.time || 20,
-      teamCount: quiz.teamCount || 0, teamNames: quiz.teamNames || [],
-      questions: quiz.questions || []
+// הוספה לספרייה ישירות מכרטיס ברשימה — חלון מעוצב עם תיאור (לפחות 30 תווים).
+// פועל על רשומת החידון מהרשימה (q) וכותב בחזרה ל-teachers/{key}/{code}, בלי לגעת בעורך.
+function openLibraryPublishFromCard(code, q, onDone){
+  if (!myUid){ alert('צריך להתחבר עם Google כדי להוסיף לספרייה.'); return; }
+  if (!q.title || !q.title.trim()){ alert('לחידון אין שם — פתחו אותו, תנו לו שם, ואז אפשר להוסיף לספרייה.'); return; }
+  if (!q.questions || !q.questions.length){ alert('אי אפשר להוסיף לספרייה חידון בלי שאלות.'); return; }
+
+  const old = $('lib-publish-overlay'); if (old) old.remove();
+  const ov = document.createElement('div'); ov.id='lib-publish-overlay';
+  ov.style.cssText='position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;';
+  const box = document.createElement('div');
+  box.style.cssText='background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:22px 20px; max-width:440px; width:100%; box-shadow:0 12px 40px rgba(0,0,0,.5);';
+
+  const head = document.createElement('div');
+  head.style.cssText="font-family:'Secular One'; font-size:20px; color:var(--gold); margin-bottom:6px; text-align:center;";
+  head.textContent='📚 הוספה לספרייה הציבורית';
+  box.appendChild(head);
+  const sub = document.createElement('div');
+  sub.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:8px; text-align:center; line-height:1.5;';
+  sub.textContent='החידון "' + (q.title||'') + '" יתפרסם לכל המורים בספרייה. כתבו תיאור קצר — על מה החידון, לאיזה גיל, ולמה הוא טוב.';
+  box.appendChild(sub);
+
+  const ta = document.createElement('textarea');
+  ta.placeholder='לדוגמה: חידון על מלחמת העצמאות לכיתות ז׳-ח׳, עם דגש על דמויות מפתח ותאריכים חשובים.';
+  ta.style.cssText="width:100%; min-height:90px; box-sizing:border-box; font-family:'Heebo'; font-size:15px; padding:12px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); resize:vertical; text-align:right;";
+  box.appendChild(ta);
+
+  const counter = document.createElement('div');
+  counter.style.cssText='font-size:12px; color:var(--ink-dim); margin:6px 2px 14px; text-align:left;';
+  const MINLEN = 30;
+  const updateCounter = ()=>{
+    const n = ta.value.trim().length;
+    if (n < MINLEN){ counter.textContent = 'עוד ' + (MINLEN-n) + ' תווים לפחות'; counter.style.color='#d9a441'; pubBtn.disabled=true; pubBtn.style.opacity='.5'; }
+    else { counter.textContent = n + ' תווים ✓'; counter.style.color='var(--teal)'; pubBtn.disabled=false; pubBtn.style.opacity='1'; }
+  };
+  ta.oninput = updateCounter;
+
+  const btnRow = document.createElement('div'); btnRow.style.cssText='display:flex; gap:8px;';
+  const cancelBtn = document.createElement('button'); cancelBtn.className='btn ghost sm'; cancelBtn.style.flex='1'; cancelBtn.textContent='ביטול';
+  cancelBtn.onclick=()=>ov.remove();
+  const pubBtn = document.createElement('button'); pubBtn.className='btn teal'; pubBtn.style.flex='1'; pubBtn.textContent='📚 הוספה';
+  pubBtn.onclick=async ()=>{
+    const desc = ta.value.trim();
+    if (desc.length < MINLEN) return;
+    pubBtn.disabled=true; pubBtn.textContent='מוסיף...';
+    try{
+      const share = q.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null };
+      if (!share.shareId) share.shareId = await genShareId();
+      share.libraryId = await genLibId();
+      share.inLibrary = true;
+      const entry = {
+        libId: share.libraryId, quizId: code, shareId: share.shareId,
+        ownerUid: myUid, ownerName: myAuthName || myEmail || 'מורה',
+        originalAuthor: q.originalAuthor || null,
+        title: q.title, description: desc,
+        questionCount: q.questions.length,
+        publishDate: Date.now(), updated: Date.now(),
+        downloads: 0, likes: 0, dislikes: 0, reports: 0,
+        quiz: {
+          title: q.title || '', time: q.time || 20,
+          teamCount: q.teamCount || 0, teamNames: q.teamNames || [],
+          questions: q.questions || []
+        }
+      };
+      await fdb.ref('library/'+share.libraryId).set(entry);
+      // כתיבת אובייקט השיתוף בחזרה לרשומת החידון (בלי לגעת בשאר השדות)
+      q.share = share;
+      await fdb.ref('teachers/'+myStoreKey+'/'+code+'/share').set(share);
+      ov.remove();
+      alert('החידון נוסף לספרייה! תודה ששיתפתם 📚');
+      if (typeof onDone === 'function') onDone(); else refreshMyList();
+    }catch(e){
+      pubBtn.disabled=false; pubBtn.textContent='📚 הוספה';
+      alert('תקלה בהוספה לספרייה. נסו שוב.');
     }
   };
-  fdb.ref('library/'+sh.libraryId).set(entry).then(()=>{
-    saveQuiz(); renderSharePanel();
-  }).catch(()=>{ alert('תקלה בהוספה לספרייה. נסו שוב.'); });
+  btnRow.appendChild(cancelBtn); btnRow.appendChild(pubBtn);
+  box.appendChild(counter); box.appendChild(btnRow);
+
+  ov.appendChild(box); document.body.appendChild(ov);
+  updateCounter(); ta.focus();
 }
+
 function removeFromLibrary(){
   if (!confirm('להסיר את החידון מהספרייה הציבורית? (השיתוף לכולם יישאר פעיל)')) return;
   const sh = ensureShareObj();
   if (sh.libraryId) fdb.ref('library/'+sh.libraryId).remove().catch(()=>{});
   sh.inLibrary = false; sh.libraryId = null;
-  saveQuiz(); renderSharePanel();
+  saveQuiz(); renderSharePanel(); if ($('library-panel')) renderLibraryPanel();
 }
 
 // --- העתקת קישור ---
