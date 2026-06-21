@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v76 - תווית "לא נשמר ידנית" + ניקוי טיוטות: שדה חדש isConfirmed על רשומת החידון מבדיל בין חידון שבוצעה עליו פעולה משמעותית לבין חידון שנשמר רק אוטומטית תוך כדי עבודה (ואולי נזנח). חידון חדש נוצר ללא הדגל (isConfirmed=false). מסירים את הדגל (מציבים true ושומרים): saveNow (שמירה ידנית), shareToEveryone + startSpecificShare (שיתוף), goPlay (התחלת משחק). לא נוגעים: previewQuiz (בדיקה), שמירה אוטומטית (touch/saveQuiz), צפייה. הנימוק: שיתוף/משחק = אישור מפורש שהחידון אמיתי, גם בלי לחיצת "שמור". כרטיס לא-מאושר מציג תווית "● לא נשמר ידנית" (ענבר). כפתור "🗑 ניקוי חידונים שלא נשמרו ידנית" בראש הרשימה (cleanupDrafts) — מופיע רק כשיש כאלה, מוחק רק לא-מאושרים (כולל ניקוי הצמדה), עם דיאלוג אישור שמציין כמה יימחקו. אפס מיגרציה לאחור — חידון ישן בלי השדה מוצג כלא-מאושר (לא מנחשים). isConfirmed מסונכרן דרך openExisting/playExisting/testExisting; עותק שהתקבל (confirmAddShared) מתחיל false. שם השדה isConfirmed (ולא keepInList) כי הוא מתאר "אושר ע"י פעולה" ולא "המשתמש ביקש להשאיר ברשימה"
   v75 - קרדיט ליוצר המקורי (originalAuthor): שדה חדש שנקבע ביצירת חידון (newQuiz) = שם היוצר, ונישא קבוע לאורך כל שרשרת ההעתקות. בקבלת עותק (confirmAddShared) העותק יורש את originalAuthor מהמקור (לא מקבל את שם המקבל). מתפרסם ב-shared/ (לצד ownerName שהוא המשתף) וב-library entry. דיאלוג הקבלה מציג: "נוצר על ידי [יוצר]" + "שותף על ידי [משתף]". אם שניהם זהים (שיתוף ישיר מהיוצר) — רק "נוצר על ידי", בלי כפילות. אם אין יוצר (חידון שנוצר לפני הפיצ'ר) — רק "שותף על ידי", בלי מילוי-למפרע (לא מנחשים יוצר ישן — היה יוצר נתון שגוי). אותה לוגיקה גם בדיאלוג "גרסה מעודכנת". הערה: הצגת הקרדיט בלקיחה מהספרייה תלויה ב-teacher-library.html (קובץ נפרד) — הנתון זמין ב-entry, אך התצוגה שם דורשת עדכון נפרד. originalAuthor נשמר על quiz ומסונכרן דרך openExisting/playExisting/testExisting
   v74 - ליטוש נוסח ושם-משתף: (א) פאנל השיתוף — הכותרת המאוחדת שונתה ל"שתפו חידונים בקלות: באמצעות קוד קצר להזנה באתר או באמצעות קישור. המקבל יקבל עותק עצמאי של החידון." הוסרה תווית "📋 קוד לשיתוף" (מיותרת). "✓ הקישור הועתק! אפשר לשלוח" קוצר ל"✓ הועתק". (ב) הוסרה פסקת "איך זה עובד" מהעורך (מיותרת). (ג) שם המשתף הוחזר לדיאלוג הקבלה — "שותף על ידי [שם]", מוצג רק כשיש שם אמיתי (data.ownerName). הניסוח "שותף על ידי" ולא "נוצר על ידי" — כי היוצר המקורי לא נשמר לאורך שרשרת ההעתקות (copiedFrom.ownerName נושא רק את מי ששיתף את העותק הזה); "שותף על ידי" תמיד נכון. שדה originalAuthor לקרדיט-מחבר-לאורך-שרשרת — פרויקט עתידי אפשרי. (ד) תיאור חידון לשיתוף — נשקל ונדחה: תיאור שייך להקשר הפרסום (ספרייה), לא לחידון. התיאור הקיים בספרייה (openLibraryPublish, 30+ תווים) נשאר כפי שהוא; שיתוף בודד מזוהה ע"י שם+מספר שאלות+משתף, בלי תיאור
   v73 - ליטוש UI לקוד ולשיתוף: (א) הוסרה שורת "קוד החידון" מראש העורך — כפילות מיותרת (הקוד כבר מופיע בכרטיס ובפאנל השיתוף). כל הקריאות ל-edit-code הוסרו. (ב) הוסר ה-i ליד הסבר השיתוף. במקומו כותרת מאוחדת מעל שתי דרכי השיתוף: "שתי דרכים לשתף — שתיהן יוצרות עותק אצל מי שמקבל, ואי אפשר לבטל: 📋 קוד להכתבה / 🔗 קישור ללחיצה". האזהרה על אי-אפשרות הביטול נשמרה (גלויה, בלי i). תוויות הקוד והקישור קוצרו כי הכותרת מסבירה. (ג) דיאלוג הקבלה תוקן — "קיבלתם חידון! / מישהו שיתף איתכם" היה מטעה לקוד ציבורי (לא שיתוף אישי). עכשיו ניטרלי: "הוספת חידון" + שם + מספר שאלות + "הוספה לחידונים שלי". הוסרה שורת "שותף על ידי". נוסח אחיד לשני המסלולים (קוד וקישור)
@@ -96,6 +97,7 @@ input:focus{border-color:var(--gold); outline:none;}
 .qlcard-title{font-weight:800; font-size:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .qlcard-meta{font-size:13px; color:var(--ink-dim); margin-top:2px;}
 .qlcard-shared{font-size:12px; color:var(--teal); margin-top:2px;}
+.qlcard-draft{font-size:12px; color:#d9a441; margin-top:3px; font-weight:600;}
 .qlcard-menuwrap{position:relative; flex:0 0 auto;}
 .qlcard-dots{background:none; border:none; color:var(--ink-dim); font-size:26px; line-height:1; cursor:pointer; padding:0 6px; border-radius:8px;}
 .qlcard-dots:hover{background:rgba(255,255,255,.08); color:var(--ink);}
@@ -208,7 +210,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v75</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v76</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -291,6 +293,9 @@ input:focus{border-color:var(--gold); outline:none;}
     </div>
     <div id="quiz-search-wrap" style="display:none; margin-bottom:14px;">
       <input type="text" id="quiz-search" placeholder="🔍 חיפוש לפי שם החידון" oninput="filterQuizList()" style="width:100%; padding:11px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); font-family:'Heebo'; font-size:16px;">
+    </div>
+    <div id="cleanup-drafts-wrap" style="display:none; margin-bottom:14px; text-align:center;">
+      <button class="btn ghost sm" onclick="cleanupDrafts()" style="color:#d9a441;">🗑 ניקוי חידונים שלא נשמרו ידנית</button>
     </div>
     <div id="quiz-list" style="display:flex; flex-direction:column; gap:10px;"></div>
     <p id="mylist-msg" style="color:var(--ink-dim); margin-top:14px;"></p>
@@ -989,12 +994,31 @@ function _renderQuizListMerged(all, pinnedMap){
   if (!codes.length){
     $('quiz-list').innerHTML = '';
     $('quiz-search-wrap').style.display = 'none';
+    $('cleanup-drafts-wrap').style.display = 'none';
     $('mylist-msg').textContent = 'עוד אין חידונים. לחצו "בניית חידון חדש" כדי להתחיל.';
     return;
   }
   $('mylist-msg').textContent = '';
   $('quiz-search-wrap').style.display = (codes.length >= QUIZ_SEARCH_MIN) ? 'block' : 'none';
+  // כפתור הניקוי מופיע רק אם יש חידונים שלא אושרו (isConfirmed כבוי)
+  const hasDrafts = codes.some(c => !_quizListData[c].isConfirmed);
+  $('cleanup-drafts-wrap').style.display = hasDrafts ? 'block' : 'none';
   drawQuizCards();
+}
+
+// מוחק את כל החידונים שלא אושרו (isConfirmed כבוי) — אלה שנשמרו רק אוטומטית ולא בוצעה עליהם פעולה.
+// מציג כמה יימחקו ומבקש אישור לפני מחיקה המונית. לא נוגע במאושרים.
+function cleanupDrafts(){
+  if (!myStoreKey) return;
+  const all = _quizListData || {};
+  const drafts = Object.keys(all).filter(c => !all[c].isConfirmed);
+  if (!drafts.length){ alert('אין חידונים שלא נשמרו ידנית.'); return; }
+  if (!confirm('פעולה זו תמחק ' + drafts.length + ' חידונים שלא נשמרו ידנית (נשמרו רק אוטומטית).\nהמחיקה לצמיתות ואי אפשר לבטל אותה.\n\nלמחוק?')) return;
+  const ops = drafts.map(c => {
+    fdb.ref('teachers_meta/'+myStoreKey+'/pinned/'+c).remove().catch(()=>{});  // ניקוי הצמדה אם הייתה
+    return fdb.ref('teachers/'+myStoreKey+'/'+c).remove().catch(()=>{});
+  });
+  Promise.all(ops).then(()=>refreshMyList());
 }
 
 // ממיין ומצייר את הכרטיסים, עם סינון אופציונלי לפי טקסט חיפוש
@@ -1035,8 +1059,12 @@ function buildQuizCard(code, q){
   const sharedLine = (q.copiedFrom && q.copiedFrom.ownerName)
     ? '<div class="qlcard-shared">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
     : '';
+  const draftBadge = !q.isConfirmed
+    ? '<div class="qlcard-draft">● לא נשמר ידנית</div>'
+    : '';
   titleWrap.innerHTML = '<div class="qlcard-title">' + pinMark + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
                         '<div class="qlcard-meta">קוד ' + escapeHtml(q.displayCode || '——') + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
+                        draftBadge +
                         sharedLine;
 
   // כפתור ⋯ + תפריט נפתח
@@ -1163,6 +1191,7 @@ function openExisting(code, data){
     questions: data.questions || [],
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
+    isConfirmed: data.isConfirmed || false,
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1182,6 +1211,7 @@ function playExisting(code, data){
     questions: data.questions || [],
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
+    isConfirmed: data.isConfirmed || false,
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1206,6 +1236,7 @@ function testExisting(code, data){
     questions: data.questions || [],
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
+    isConfirmed: data.isConfirmed || false,
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1942,6 +1973,14 @@ function saveQuiz(){
   syncShareCopies();
 }
 
+// מסמן את החידון כ"אושר ע"י המשתמש" — כלומר בוצעה עליו פעולה משמעותית (שמירה ידנית/שיתוף/משחק),
+// להבדיל מחידון שנשמר רק אוטומטית תוך כדי עבודה ואולי נזנח. מוריד את תווית "לא נשמר ידנית".
+function confirmQuiz(){
+  if (!quiz || quiz.isConfirmed) return;
+  quiz.isConfirmed = true;
+  saveQuiz();   // נשמר באותה כתיבה כמו שאר אובייקט החידון
+}
+
 // מסנכרן את shared/ ו-library/ עם המקור, רק אם החידון משותף.
 // לא נוגע בהם בכלל אם אין שיתוף.
 function syncShareCopies(){
@@ -2150,6 +2189,7 @@ async function startSpecificShare(){
   const sh = ensureShareObj();
   sh.mode = 'specific'; sh.emails = []; sh.inLibrary = false;
   if (!sh.shareId) sh.shareId = await genShareId();
+  quiz.isConfirmed = true;   // שיתוף = אישור מפורש
   saveQuiz(); renderSharePanel();
 }
 function addShareEmail(){
@@ -2183,6 +2223,7 @@ async function shareToEveryone(){
   const sh = ensureShareObj();
   sh.mode = 'public'; sh.emails = []; sh.inLibrary = false;
   if (!sh.shareId) sh.shareId = await genShareId();
+  quiz.isConfirmed = true;   // שיתוף = אישור מפורש
   saveQuiz();   // saveQuiz → syncShareCopies רושם גם את codes/{displayCode} → shareId
   doCopyLink(sh.shareId);   // לחיצה אחת — הקישור נוצר ומועתק מיד
   justCopiedLink = true;    // כדי שהפאנל יציג "הקישור הועתק"
@@ -2515,6 +2556,7 @@ function confirmAddShared(shareId, data, ov, isUpdate){
         questions: src.questions || [],
         displayCode: newDisplayCode,
         originalAuthor: data.originalAuthor || null,   // יורש את היוצר המקורי מהמקור — נישא הלאה בשרשרת
+        isConfirmed: false,                            // עותק חדש שהתקבל — טרם אושר ע"י המקבל
         updated: Date.now(),
         ownerEmail: myEmail,
         share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
@@ -2634,6 +2676,7 @@ async function goPlay(){
     return;
   }
   guestPlayProceedOnce = false;   // איפוס המעבר החד-פעמי
+  quiz.isConfirmed = true;   // התחלת משחק = אישור מפורש (החידון שימש בפועל)
   saveQuiz();
   flashSaved();   // הודעת ביטחון קצרה שהחידון נשמר
   role = 'host';
@@ -3530,6 +3573,7 @@ function saveNow(){
   if (!myStoreKey){ alert('יש להתחבר עם Google כדי לשמור.'); return; }
   const err = quizReady();
   if (err){ alert(err); return; }
+  quiz.isConfirmed = true;   // שמירה ידנית = אישור מפורש
   saveQuiz();
   $('save-state').textContent = 'נשמר ✓';
   setTimeout(()=>{ $('save-state').textContent = 'נשמר אוטומטית ✓'; }, 1500);
