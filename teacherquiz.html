@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v77 - תיקוני זבל ושיפור הניקוי: (א) חידון ריק לגמרי (בלי כותרת ובלי תוכן בשאלות) לא נשמר עוד — newQuiz לא שומר ביצירה, ו-saveQuiz חוסם כתיבה של חידון ריק שאינו מאושר. מונע הצטברות חידוני-זבל. (ב) חסימת שיתוף של חידון לא-מוכן — shareToEveryone ו-startSpecificShare בודקים quizReady לפני, כמו שמירה/משחק. (ג) "בדיקה" (previewQuiz) נוספה לפעולות שמאשרות חידון (isConfirmed=true) — פעולה אקטיבית שמעידה על רצינות, ודורשת ממילא quizReady. כעת מאשרים: שמירה ידנית, שיתוף, משחק, בדיקה. (ד) תווית הכרטיס שונתה מ"לא נשמר ידנית" ל"● שמירה אוטומטית בלבד" — מדויק יותר (החידון כן נשמר, רק לא במכוון) ומסביר למה הוא ברשימה. (ה) כפתור הניקוי הפך לדיאלוג "הצלה": מציג את כל החידונים-בשמירה-אוטומטית-בלבד ממוינים לפי עדכון אחרון (חדש למעלה, עם "עודכן לפני..."), כולם מסומנים למחיקה כברירת מחדל, והמשתמש מסיר סימון כדי להשאיר חידון. מונה חי (יימחקו/יישארו), כפתור מחיקה מושבת אם לא נשאר מה למחוק, ואישור סופי. מטפל בתרחיש "מלא זבל ואחד טוב" בלי בחירה-מרובה כבדה. relativeTime — עזר ל"עודכן לפני..."
   v76 - תווית "לא נשמר ידנית" + ניקוי טיוטות: שדה חדש isConfirmed על רשומת החידון מבדיל בין חידון שבוצעה עליו פעולה משמעותית לבין חידון שנשמר רק אוטומטית תוך כדי עבודה (ואולי נזנח). חידון חדש נוצר ללא הדגל (isConfirmed=false). מסירים את הדגל (מציבים true ושומרים): saveNow (שמירה ידנית), shareToEveryone + startSpecificShare (שיתוף), goPlay (התחלת משחק). לא נוגעים: previewQuiz (בדיקה), שמירה אוטומטית (touch/saveQuiz), צפייה. הנימוק: שיתוף/משחק = אישור מפורש שהחידון אמיתי, גם בלי לחיצת "שמור". כרטיס לא-מאושר מציג תווית "● לא נשמר ידנית" (ענבר). כפתור "🗑 ניקוי חידונים שלא נשמרו ידנית" בראש הרשימה (cleanupDrafts) — מופיע רק כשיש כאלה, מוחק רק לא-מאושרים (כולל ניקוי הצמדה), עם דיאלוג אישור שמציין כמה יימחקו. אפס מיגרציה לאחור — חידון ישן בלי השדה מוצג כלא-מאושר (לא מנחשים). isConfirmed מסונכרן דרך openExisting/playExisting/testExisting; עותק שהתקבל (confirmAddShared) מתחיל false. שם השדה isConfirmed (ולא keepInList) כי הוא מתאר "אושר ע"י פעולה" ולא "המשתמש ביקש להשאיר ברשימה"
   v75 - קרדיט ליוצר המקורי (originalAuthor): שדה חדש שנקבע ביצירת חידון (newQuiz) = שם היוצר, ונישא קבוע לאורך כל שרשרת ההעתקות. בקבלת עותק (confirmAddShared) העותק יורש את originalAuthor מהמקור (לא מקבל את שם המקבל). מתפרסם ב-shared/ (לצד ownerName שהוא המשתף) וב-library entry. דיאלוג הקבלה מציג: "נוצר על ידי [יוצר]" + "שותף על ידי [משתף]". אם שניהם זהים (שיתוף ישיר מהיוצר) — רק "נוצר על ידי", בלי כפילות. אם אין יוצר (חידון שנוצר לפני הפיצ'ר) — רק "שותף על ידי", בלי מילוי-למפרע (לא מנחשים יוצר ישן — היה יוצר נתון שגוי). אותה לוגיקה גם בדיאלוג "גרסה מעודכנת". הערה: הצגת הקרדיט בלקיחה מהספרייה תלויה ב-teacher-library.html (קובץ נפרד) — הנתון זמין ב-entry, אך התצוגה שם דורשת עדכון נפרד. originalAuthor נשמר על quiz ומסונכרן דרך openExisting/playExisting/testExisting
   v74 - ליטוש נוסח ושם-משתף: (א) פאנל השיתוף — הכותרת המאוחדת שונתה ל"שתפו חידונים בקלות: באמצעות קוד קצר להזנה באתר או באמצעות קישור. המקבל יקבל עותק עצמאי של החידון." הוסרה תווית "📋 קוד לשיתוף" (מיותרת). "✓ הקישור הועתק! אפשר לשלוח" קוצר ל"✓ הועתק". (ב) הוסרה פסקת "איך זה עובד" מהעורך (מיותרת). (ג) שם המשתף הוחזר לדיאלוג הקבלה — "שותף על ידי [שם]", מוצג רק כשיש שם אמיתי (data.ownerName). הניסוח "שותף על ידי" ולא "נוצר על ידי" — כי היוצר המקורי לא נשמר לאורך שרשרת ההעתקות (copiedFrom.ownerName נושא רק את מי ששיתף את העותק הזה); "שותף על ידי" תמיד נכון. שדה originalAuthor לקרדיט-מחבר-לאורך-שרשרת — פרויקט עתידי אפשרי. (ד) תיאור חידון לשיתוף — נשקל ונדחה: תיאור שייך להקשר הפרסום (ספרייה), לא לחידון. התיאור הקיים בספרייה (openLibraryPublish, 30+ תווים) נשאר כפי שהוא; שיתוף בודד מזוהה ע"י שם+מספר שאלות+משתף, בלי תיאור
@@ -210,7 +211,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v76</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v77</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -295,7 +296,7 @@ input:focus{border-color:var(--gold); outline:none;}
       <input type="text" id="quiz-search" placeholder="🔍 חיפוש לפי שם החידון" oninput="filterQuizList()" style="width:100%; padding:11px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); font-family:'Heebo'; font-size:16px;">
     </div>
     <div id="cleanup-drafts-wrap" style="display:none; margin-bottom:14px; text-align:center;">
-      <button class="btn ghost sm" onclick="cleanupDrafts()" style="color:#d9a441;">🗑 ניקוי חידונים שלא נשמרו ידנית</button>
+      <button class="btn ghost sm" onclick="cleanupDrafts()" style="color:#d9a441;">🗑 ניקוי חידונים בשמירה אוטומטית בלבד</button>
     </div>
     <div id="quiz-list" style="display:flex; flex-direction:column; gap:10px;"></div>
     <p id="mylist-msg" style="color:var(--ink-dim); margin-top:14px;"></p>
@@ -1006,20 +1007,104 @@ function _renderQuizListMerged(all, pinnedMap){
   drawQuizCards();
 }
 
-// מוחק את כל החידונים שלא אושרו (isConfirmed כבוי) — אלה שנשמרו רק אוטומטית ולא בוצעה עליהם פעולה.
-// מציג כמה יימחקו ומבקש אישור לפני מחיקה המונית. לא נוגע במאושרים.
+// "ניקוי" עם הצלה: פותח רשימת החידונים שבשמירה-אוטומטית-בלבד (isConfirmed כבוי),
+// ממוינת לפי עדכון אחרון (חדש למעלה). כולם מסומנים למחיקה כברירת מחדל; המשתמש מוריד סימן
+// כדי "להציל" חידון. מונה חי, ומחיקה רק של מה שנשאר מסומן. לא נוגע במאושרים.
 function cleanupDrafts(){
   if (!myStoreKey) return;
   const all = _quizListData || {};
-  const drafts = Object.keys(all).filter(c => !all[c].isConfirmed);
-  if (!drafts.length){ alert('אין חידונים שלא נשמרו ידנית.'); return; }
-  if (!confirm('פעולה זו תמחק ' + drafts.length + ' חידונים שלא נשמרו ידנית (נשמרו רק אוטומטית).\nהמחיקה לצמיתות ואי אפשר לבטל אותה.\n\nלמחוק?')) return;
-  const ops = drafts.map(c => {
-    fdb.ref('teachers_meta/'+myStoreKey+'/pinned/'+c).remove().catch(()=>{});  // ניקוי הצמדה אם הייתה
-    return fdb.ref('teachers/'+myStoreKey+'/'+c).remove().catch(()=>{});
+  let drafts = Object.keys(all).filter(c => !all[c].isConfirmed);
+  if (!drafts.length){ alert('אין חידונים בשמירה אוטומטית בלבד.'); return; }
+  // מיון לפי עדכון אחרון — החדש קודם (לרוב זה שרוצים להציל)
+  drafts.sort((a,b)=>(all[b].updated||0)-(all[a].updated||0));
+
+  const old = $('cleanup-overlay'); if (old) old.remove();
+  const ov = document.createElement('div'); ov.id='cleanup-overlay';
+  ov.style.cssText='position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;';
+  const box = document.createElement('div');
+  box.style.cssText='background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:22px 20px; max-width:420px; width:100%; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,.5);';
+
+  const head = document.createElement('div');
+  head.style.cssText="font-family:'Secular One'; font-size:20px; color:var(--gold); margin-bottom:6px; text-align:center;";
+  head.textContent='ניקוי חידונים';
+  box.appendChild(head);
+  const sub = document.createElement('div');
+  sub.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:14px; text-align:center; line-height:1.5;';
+  sub.textContent='אלה חידונים שנשמרו אוטומטית בלבד. כולם מסומנים למחיקה — הסירו סימון מחידון כדי להשאיר אותו.';
+  box.appendChild(sub);
+
+  // מצב המחיקה לכל חידון (ברירת מחדל: למחוק)
+  const markDelete = {};
+  drafts.forEach(c => markDelete[c] = true);
+
+  const list = document.createElement('div');
+  list.style.cssText='overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px; margin-bottom:14px;';
+
+  const counter = document.createElement('div');
+  counter.style.cssText='font-size:14px; text-align:center; margin-bottom:12px; color:var(--ink);';
+  const updateCounter = ()=>{
+    const del = drafts.filter(c=>markDelete[c]).length;
+    const keep = drafts.length - del;
+    counter.innerHTML = 'יימחקו: <b style="color:#d9a441;">'+del+'</b> · יישארו: <b style="color:var(--teal);">'+keep+'</b>';
+    delBtn.disabled = (del === 0);
+    delBtn.style.opacity = (del === 0) ? '.5' : '1';
+    delBtn.textContent = del === 0 ? 'אין מה למחוק' : ('🗑 מחיקת ' + del);
+  };
+
+  drafts.forEach(c => {
+    const q = all[c];
+    const row = document.createElement('label');
+    row.style.cssText='display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.05); border-radius:10px; padding:10px 12px; cursor:pointer;';
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.checked=true;
+    cb.style.cssText='width:18px; height:18px; flex-shrink:0; accent-color:#d9a441;';
+    cb.onchange=()=>{ markDelete[c]=cb.checked; updateCounter(); };
+    const info = document.createElement('div'); info.style.cssText='flex:1; min-width:0;';
+    const nm = document.createElement('div'); nm.style.cssText='font-size:15px; color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
+    nm.textContent = q.title && q.title.trim() ? q.title : 'חידון ללא שם';
+    const tm = document.createElement('div'); tm.style.cssText='font-size:12px; color:var(--ink-dim);';
+    tm.textContent = 'עודכן ' + relativeTime(q.updated);
+    info.appendChild(nm); info.appendChild(tm);
+    row.appendChild(cb); row.appendChild(info);
+    list.appendChild(row);
   });
-  Promise.all(ops).then(()=>refreshMyList());
+  box.appendChild(list);
+  box.appendChild(counter);
+
+  const btnRow = document.createElement('div'); btnRow.style.cssText='display:flex; gap:8px;';
+  const cancelBtn = document.createElement('button'); cancelBtn.className='btn ghost sm'; cancelBtn.style.flex='1'; cancelBtn.textContent='ביטול';
+  cancelBtn.onclick=()=>ov.remove();
+  const delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.style.cssText='flex:1; background:#d9a441; color:#0b0b2a;';
+  delBtn.onclick=()=>{
+    const toDelete = drafts.filter(c=>markDelete[c]);
+    if (!toDelete.length) return;
+    if (!confirm('למחוק ' + toDelete.length + ' חידונים? אי אפשר לבטל.')) return;
+    delBtn.disabled=true; delBtn.textContent='מוחק...';
+    const ops = toDelete.map(c => {
+      fdb.ref('teachers_meta/'+myStoreKey+'/pinned/'+c).remove().catch(()=>{});
+      return fdb.ref('teachers/'+myStoreKey+'/'+c).remove().catch(()=>{});
+    });
+    Promise.all(ops).then(()=>{ ov.remove(); refreshMyList(); });
+  };
+  btnRow.appendChild(cancelBtn); btnRow.appendChild(delBtn);
+  box.appendChild(btnRow);
+
+  ov.appendChild(box); document.body.appendChild(ov);
+  updateCounter();
 }
+
+// "עודכן לפני..." בעברית פשוטה
+function relativeTime(ts){
+  if (!ts) return 'לא ידוע';
+  const diff = Date.now() - ts;
+  const min = Math.floor(diff/60000), hr = Math.floor(diff/3600000), day = Math.floor(diff/86400000);
+  if (min < 1) return 'הרגע';
+  if (min < 60) return 'לפני ' + min + ' דקות';
+  if (hr < 24) return hr === 1 ? 'לפני שעה' : ('לפני ' + hr + ' שעות');
+  if (day < 30) return day === 1 ? 'אתמול' : ('לפני ' + day + ' ימים');
+  const mon = Math.floor(day/30);
+  return mon === 1 ? 'לפני חודש' : ('לפני ' + mon + ' חודשים');
+}
+
 
 // ממיין ומצייר את הכרטיסים, עם סינון אופציונלי לפי טקסט חיפוש
 function drawQuizCards(){
@@ -1060,7 +1145,7 @@ function buildQuizCard(code, q){
     ? '<div class="qlcard-shared">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
     : '';
   const draftBadge = !q.isConfirmed
-    ? '<div class="qlcard-draft">● לא נשמר ידנית</div>'
+    ? '<div class="qlcard-draft">● שמירה אוטומטית בלבד</div>'
     : '';
   titleWrap.innerHTML = '<div class="qlcard-title">' + pinMark + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
                         '<div class="qlcard-meta">קוד ' + escapeHtml(q.displayCode || '——') + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
@@ -1161,7 +1246,8 @@ async function newQuiz(){
   quiz.questions.push({ text:'', answers:['',''], correct:0 });  // שאלה ריקה ראשונה — לפני הרינדור, כדי לרנדר פעם אחת בלבד
   renderEditor();   // רינדור יחיד עם המצב הסופי (בלי רינדור כפול ובלי הבהוב)
   show('editor');
-  saveQuiz();
+  // לא שומרים חידון ריק — השמירה האוטומטית תתפוס ברגע שייכתב תוכן אמיתי (touch).
+  // כך חידון שנוצר ונזנח בלי כלום לא מזהם את הרשימה.
 }
 
 // ניקוי החידון הנוכחי — מרוקן כותרת/שאלות/קבוצות, אך שומר את הקוד ואת השיתוף (פריט: נקה הכל)
@@ -1962,6 +2048,10 @@ function touch(){
 }
 function saveQuiz(){
   if (!editCode || !quiz || !myStoreKey) return;
+  // לא שומרים חידון ריק לגמרי — בלי כותרת ובלי שום תוכן בשאלות.
+  // חידון מאושר/משותף תמיד עבר quizReady (יש בו תוכן), אז זה לא נוגע בו.
+  const hasTitle = !!(quiz.title && quiz.title.trim());
+  if (!hasTitle && !quizHasRealContent() && !quiz.isConfirmed) return;
   // teachers/ הוא מקור האמת היחיד
   const payload = Object.assign({}, quiz, { updated: Date.now(), ownerEmail: myEmail });
   fdb.ref('teachers/'+myStoreKey+'/'+editCode).set(payload).then(() => {
@@ -2186,6 +2276,8 @@ function shareStatusBox(titleText, sh){
 // --- פעולות שיתוף ספציפי ---
 async function startSpecificShare(){
   if (!myUid){ alert('צריך להתחבר עם Google כדי לשתף.'); return; }
+  const notReady = quizReady();
+  if (notReady){ alert('אי אפשר לשתף חידון לא מוכן: ' + notReady); return; }
   const sh = ensureShareObj();
   sh.mode = 'specific'; sh.emails = []; sh.inLibrary = false;
   if (!sh.shareId) sh.shareId = await genShareId();
@@ -2217,6 +2309,8 @@ function unshareSpecificAll(){
 // --- פעולות שיתוף לכולם ---
 async function shareToEveryone(){
   if (!myUid){ alert('צריך להתחבר עם Google כדי לשתף.'); return; }
+  const notReady = quizReady();
+  if (notReady){ alert('אי אפשר לשתף חידון לא מוכן: ' + notReady); return; }
   // אזהרה לפני שיתוף ראשון — השיתוף יוצר עותקים בלתי-נגיעים ואי אפשר לבטל אותו
   if (!confirm('שימו לב: ברגע שתשתפו, כל מי שיקבל את הקוד או הקישור יקבל עותק עצמאי משלו. אי אפשר למחוק את העותקים האלה או לבטל את השיתוף.\n\nהמקור שלכם לא ייפגע — המקבלים עורכים עותק נפרד.\n\nלשתף?')) return;
   await ensureDisplayCode();   // ודאות שיש קוד-תצוגה לפני שמפרסמים אותו
@@ -3586,6 +3680,7 @@ let solo = false;
 function previewQuiz(){
   const err = quizReady();
   if (err){ alert(err); return; }
+  quiz.isConfirmed = true;   // בדיקה = פעולה אקטיבית שמעידה על רצינות
   saveQuiz();
   flashSaved();   // הודעת ביטחון שהחידון נשמר
   solo = true;
