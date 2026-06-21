@@ -148,7 +148,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 <body>
 
 <!-- תג גרסה (גלובלי לכל המסכים) -->
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v75</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v76</div>
 
 <!-- מסך 1: שער כניסה -->
 <div class="screen on" id="welcome">
@@ -193,7 +193,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
   <div id="auth-msg" style="text-align:center; font-size:13px; color:var(--gold); min-height:18px; margin-top:14px;"></div>
 
   <div style="margin-top:20px;">
-    <a href="index.html" target="_top" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a>
+    <a href="index.html" target="_top" id="main-menu-link" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a>
   </div>
 </div>
 
@@ -249,7 +249,6 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
   </div>
 
   <div style="margin-top:16px; display:flex; gap:18px; justify-content:center; align-items:center; flex-wrap:wrap;">
-    <a href="index.html" target="_top" id="main-menu-link" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a>
     <button class="danger-link" id="clear-all-link" onclick="clearAll()" title="איפוס לוח העבודה — מסיר הכל ומתחיל מחדש">🗑️ נקה הכל</button>
   </div>
 </div>
