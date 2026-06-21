@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v83 - שני תיקונים קטנים במסך הבית (אזור "אודות"): (א) "נבנה על ידי" ושם היוצר אוחדו לשורה אחת באותו גודל/צבע/סגנון ("נבנה על ידי ד״ר יניב חכים") במקום שתי שורות נפרדות (תווית קטנה אפורה + שם גדול זהוב). (ב) הוסרה ההערה המיותרת "(גם קישור שיתוף יעבוד כאן.)" משורת ההסבר מתחת לשדה הקוד
+  v82 - ארגון מחדש של מסך העריכה (היררכיה וזרימה): (א) הוסר כפתור ה-AI הכפול מאזור השאלות — נשאר רק הכרטיס העליון, שממילא נעלם כשיש תוכן (כפילות שיצרה רעש). גם הקוד המת שעדכן את תוויתו הוסר. (ב) אזור השאלות עולה גבוה יותר: הסרת כפתור ה-AI + צמצום הרווח מעל כותרת "השאלות" (24→14px). (ג) כפתורי הפעולה אורגנו לשלושה בלוקים מופרדים בקווים: הפעלה (משחק/בדיקה) · ניהול (שמירה/חזרה) · שיתוף. השמירה נשארת כפתור פעיל (היא מאשרת חידון — isConfirmed) ולא הפכה לתווית-סטטוס. השיתוף קורב מתחת לבלוק הניהול אך נשאר בלוק עצמאי (לא מעורבב עם משחק/בדיקה — הזרימה היא עריכה→אישור→שיתוף/משחק). (ד) "מספר הקבוצות המשתתפות בחידון" שונה ל"מבנה המשחק", והאפשרות "בלי קבוצות (כל אחד לעצמו)" ל"כל משתתף לעצמו" — המשתמש בוחר מבנה, לא רק מספר. (ה) כותרת "אפשרויות נוספות" הוחלשה (פונט/משקל/רקע קטנים יותר). (ו) חצי ▲▼ בכרטיס השאלה הובהרו: תווית "סדר:" לידם, חצים גדולים יותר ואזור-לחיצה גדול יותר (כבר היו להם טולטיפים)
   v81 - כפתורי הקשר ב"אודות" בשורה אחת בנייד: כפתור המייל קוצר מ"✉️ yanivhpro@gmail.com" ל"✉️ מייל" (הלחיצה עדיין פותחת מייל לאותה כתובת), וה-flex שונה ל-nowrap + white-space:nowrap לכל כפתור — כך שלושת הכפתורים (מייל/וואטסאפ/חיוג) נשארים בשורה אחת גם בטלפון צר במקום להישבר לשתי שורות
   v80 - מירכוז שורת ההסבר מתחת לשדה הקוד במסך הבית ("תקבלו עותק...") — הייתה מיושרת לימין, עכשיו ממורכזת בהתאם לשדה ולכפתור הממורכזים
   v79 - עיצוב מחדש של מסך הבית (היררכיה ברורה): סדר חדש המשקף שימוש בפועל (מסך עבודה, לא שיווק). (א) אזור המשתמש כווץ מכרטיס גדול לשורה דקה: "🟢 מחוברים כ־[שם] | התנתקות" + שורת-משנה "החידונים נשמרים בחשבון זה". (ב) שלוש פעולות ראשיות באותו גודל, היררכיה לפי צבע בלבד: ➕ בניית חידון חדש (טורקיז) → 🗂️ החידונים שלי (צהוב) → 📚 ספריית חידונים מוכנים (כחול/navy חדש). "החידונים שלי" מעל הספרייה — הפעולה היומיומית של מורה קיים קודמת לגילוי-ספרייה החד-פעמי. (ג) פתיחה-לפי-קוד כווצה לכרטיס משני מתחת לקו מפריד. (ד) אזור היוצר הועבר ל-details "אודות ▾" מתקפל בתחתית, סגור כברירת מחדל (במקום credit-box גלוי גדול). כל מזהי ההתחברות (auth-out/auth-in/guest-badge/auth-name/auth-email/email-block) נשמרו — שונה רק ה-layout, לא לוגיקת ה-sign-in. נוסף .btn.navy ל-CSS
@@ -216,7 +218,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v81</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v83</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -279,7 +281,7 @@ input:focus{border-color:var(--gold); outline:none;}
       <label>קיבלתם קוד ממורה אחר?</label>
       <input type="text" id="share-input" placeholder="לדוגמה: K7M4P2" style="text-align:center; letter-spacing:.1em; text-transform:uppercase;">
       <button class="btn ghost sm" onclick="openSharedByInput()" style="margin-top:10px; width:100%;">📥 פתיחת חידון</button>
-      <div style="font-size:13px; color:var(--ink-dim); margin-top:6px; text-align:center;">תקבלו עותק משלכם לרשימה. (גם קישור שיתוף יעבוד כאן.)</div>
+      <div style="font-size:13px; color:var(--ink-dim); margin-top:6px; text-align:center;">תקבלו עותק משלכם לרשימה.</div>
     </div>
 
     <div style="margin-top:12px;">
@@ -290,8 +292,7 @@ input:focus{border-color:var(--gold); outline:none;}
     <details id="about-box" style="max-width:420px; margin:24px auto 0; padding-top:18px; border-top:1px solid rgba(255,255,255,.12);">
       <summary style="cursor:pointer; color:var(--ink-dim); font-size:15px; text-align:center; list-style:none;">אודות ▾</summary>
       <div style="text-align:center; margin-top:14px;">
-        <div style="font-size:14px; color:var(--ink-dim);">נבנה על ידי</div>
-        <div style="font-family:'Secular One'; font-size:22px; color:var(--gold); margin:4px 0 12px;">ד״ר יניב חכים</div>
+        <div style="font-size:16px; color:var(--ink); margin-bottom:12px;">נבנה על ידי ד״ר יניב חכים</div>
         <div style="display:flex; gap:12px; justify-content:center; flex-wrap:nowrap; align-items:center;">
           <a href="mailto:yanivhpro@gmail.com" style="color:var(--ink); text-decoration:none; background:var(--card); border-radius:10px; padding:9px 16px; font-size:14px; white-space:nowrap;">✉️ מייל</a>
           <a href="https://wa.me/972544617463" target="_blank" rel="noopener" style="color:var(--ink); text-decoration:none; background:var(--card); border-radius:10px; padding:9px 16px; font-size:14px; white-space:nowrap;">💬 וואטסאפ</a>
@@ -361,9 +362,9 @@ input:focus{border-color:var(--gold); outline:none;}
     </div>
 
     <div class="field">
-      <label>מספר הקבוצות המשתתפות בחידון <span class="info-i" onclick="showInfo(event, 'בחירת קבוצות הופכת את המשחק לתחרות קבוצתית: כל משתתף בוחר קבוצה כשהוא מצטרף, ובסוף מוצגת הקבוצה המנצחת וניקוד הקבוצות. בלי קבוצות — כל אחד משחק לעצמו.')">i</span></label>
+      <label>מבנה המשחק <span class="info-i" onclick="showInfo(event, 'בחירת קבוצות הופכת את המשחק לתחרות קבוצתית: כל משתתף בוחר קבוצה כשהוא מצטרף, ובסוף מוצגת הקבוצה המנצחת וניקוד הקבוצות. בלי קבוצות — כל אחד משחק לעצמו.')">i</span></label>
       <select id="team-count" onchange="teamCountChanged()" style="font-family:'Heebo'; font-size:17px; padding:12px 16px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); width:100%;">
-        <option value="0">בלי קבוצות (כל אחד לעצמו)</option>
+        <option value="0">כל משתתף לעצמו</option>
         <option value="2">2 קבוצות</option>
         <option value="3">3 קבוצות</option>
         <option value="4">4 קבוצות</option>
@@ -371,13 +372,12 @@ input:focus{border-color:var(--gold); outline:none;}
       <div id="team-names" style="margin-top:10px;"></div>
     </div>
 
-    <h2 style="margin-top:24px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
-    <button id="ai-build-btn" class="btn ghost" onclick="openImport()" style="margin-bottom:12px; background:rgba(141,141,242,.18);">🤖 יצירת חידון באמצעות בינה מלאכותית</button>
+    <h2 style="margin-top:14px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
     <div id="q-list"></div>
     <button class="btn ghost" onclick="addQuestion()" style="margin-top:6px;">➕ הוספת שאלה</button>
 
     <details class="adv-box" style="margin-top:20px;">
-      <summary style="cursor:pointer; font-size:16px; font-weight:700; color:var(--ink); padding:12px 14px; background:var(--card-hi); border-radius:12px; list-style:none; display:flex; align-items:center; gap:8px;">⚙️ אפשרויות נוספות <span style="font-size:13px; font-weight:400; color:var(--ink-dim);">(רקע, מוזיקה)</span></summary>
+      <summary style="cursor:pointer; font-size:14px; font-weight:500; color:var(--ink-dim); padding:10px 14px; background:rgba(255,255,255,.04); border-radius:12px; list-style:none; display:flex; align-items:center; gap:8px;">⚙️ אפשרויות נוספות <span style="font-size:12px; font-weight:400; color:var(--ink-dim); opacity:.7;">(רקע, מוזיקה)</span></summary>
       <div style="padding-top:16px;">
 
 
@@ -403,17 +403,21 @@ input:focus{border-color:var(--gold); outline:none;}
 
     <p class="save-state" id="save-state">נשמר אוטומטית ✓</p>
 
-    <div class="row" style="margin-top:18px;">
+    <!-- בלוק הפעלה -->
+    <div class="row" style="margin-top:14px;">
       <button class="btn teal" onclick="goPlay()">▶️ התחלת משחק עם הקהל</button>
       <button class="btn" onclick="previewQuiz()" style="background:var(--violet); color:#0b0b2a;">👁️ בדיקה (ללא משתתפים)</button>
     </div>
-    <div class="row" style="margin-top:10px;">
+
+    <!-- בלוק ניהול -->
+    <div class="row" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
       <button class="btn ghost sm" onclick="saveNow()">💾 שמירה</button>
       <button class="btn ghost sm" onclick="backHome()">→ חזרה לרשימה</button>
     </div>
 
-    <div id="share-card" style="margin-top:20px; padding-top:18px; border-top:1px solid rgba(255,255,255,.12);">
-      <div style="font-size:16px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">🔗 שיתוף החידון <span class="info-i" onclick="showInfo(event, 'יצירת קישור שיתוף נותנת לכם קישור שאפשר לשלוח למי שתרצו. כל מי שמקבל את הקישור פותח אותו ומקבל עותק עצמאי משלו לעריכה ולמשחק. החידון המקורי שלכם לא משתנה ולא נמחק.')">i</span></div>
+    <!-- בלוק שיתוף -->
+    <div id="share-card" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
+      <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">🔗 שיתוף החידון <span class="info-i" onclick="showInfo(event, 'יצירת קישור שיתוף נותנת לכם קישור שאפשר לשלוח למי שתרצו. כל מי שמקבל את הקישור פותח אותו ומקבל עותק עצמאי משלו לעריכה ולמשחק. החידון המקורי שלכם לא משתנה ולא נמחק.')">i</span></div>
       <div style="font-size:13px; color:var(--ink-dim); margin-bottom:12px; text-align:center;">שלחו את החידון למישהו אחר — הוא יקבל עותק עצמאי משלו לעריכה ולמשחק.</div>
       <div id="share-panel" style="max-width:460px; margin:0 auto;"></div>
     </div>
@@ -1994,8 +1998,10 @@ function renderQuestions(){
     const lbl = document.createElement('span'); lbl.className='qlabel'; lbl.textContent = 'שאלה ' + (qi+1);
 
     // ===== פריט 12: חצים להזזת שאלה בעורך הראשי =====
-    const moveWrap = document.createElement('span'); moveWrap.style.cssText='display:inline-flex; gap:4px; margin-inline-start:10px;';
-    const mvStyle = 'background:rgba(243,200,90,.18); border:1px solid rgba(243,200,90,.4); color:var(--gold); border-radius:6px; width:30px; height:26px; cursor:pointer; font-size:12px; font-weight:700; padding:0;';
+    const moveWrap = document.createElement('span'); moveWrap.style.cssText='display:inline-flex; gap:5px; align-items:center; margin-inline-start:10px;';
+    const moveLbl = document.createElement('span'); moveLbl.textContent='סדר:'; moveLbl.style.cssText='font-size:12px; color:var(--ink-dim); margin-inline-end:2px;';
+    moveWrap.appendChild(moveLbl);
+    const mvStyle = 'background:rgba(243,200,90,.18); border:1px solid rgba(243,200,90,.4); color:var(--gold); border-radius:7px; min-width:36px; height:32px; cursor:pointer; font-size:15px; font-weight:700; padding:0;';
     const mvUp = document.createElement('button'); mvUp.textContent='▲'; mvUp.title='העבר שאלה למעלה'; mvUp.style.cssText=mvStyle;
     mvUp.disabled = (qi===0); if(qi===0){ mvUp.style.opacity='.25'; mvUp.style.cursor='default'; }
     mvUp.onclick = ()=>moveQuestion(qi, -1);
@@ -2050,8 +2056,6 @@ function renderQuestions(){
     }
     list.appendChild(card);
   });
-  // עדכון תווית כפתור ה-AI לפי הקשר: חידון מלא → "עריכה", ריק → "יצירה" (באג 1)
-  if ($('ai-build-btn')) $('ai-build-btn').textContent = quizHasRealContent() ? '🤖 עריכת חידון באמצעות בינה מלאכותית' : '🤖 יצירת חידון באמצעות בינה מלאכותית';
   // כפתור "נקה הכל" מוצג רק כשיש תוכן אמיתי לנקות
   if ($('clear-all-wrap')) $('clear-all-wrap').style.display = quizHasRealContent() ? 'block' : 'none';
 }
