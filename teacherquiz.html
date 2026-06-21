@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v66 - UI: בחירת הקבוצות הועלתה מתוך "אפשרויות נוספות" לאזור המבני של בניית השאלון (כותרת → זמן → קבוצות → שאלות). קבוצות זו החלטה על אופי המשחק, לא קישוט כמו רקע/מוזיקה — לכן הוסתרה בטעות בתוך האפשרויות. נוסף i-הסבר. שאר הפיצ׳ר (בחירת קבוצה אצל המשתתף, ניקוד קבוצות ב-reveal, קבוצה מנצחת בסיום) היה תקין כל הזמן
   v65 - חיזוקים: מרווח אישי (MIN_GAP=3) בין שתי קדחות של אותו תלמיד. מתקן מצב שבו תלמיד לבד ב-pool קיבל פעמיים בשאלות צמודות (3 ואז 4). עכשיו פעם שנייה רק אחרי לפחות 3 שאלות מהראשונה. חל רק על pool2 (פעם שנייה) — פעם ראשונה תמיד מותרת מיד, כך הכיסוי לא נפגע
   v64 - חיזוקים: דחיית התחלה — לא מחזקים בשאלות הראשונות (התלמידים עוד נכנסים), מתחיל אחרי ~15% מהשאלות אך לכל המאוחר בשאלה 3 (START_FRACTION/START_CAP). מאגר ההתמדה נוסח מחדש ללשון הווה ("ממשיכים יפה!" במקום "איתנו לכל אורך החידון" — שהיה שקרי באמצע משחק)
   v63 - פריט 10 (חיזוקים אישיים): מערכת חיזוקים בצד התלמיד. מודל-מכסה: כל שאלה מחזקת עד (נוכחים/5) תלמידים. שני pools — מי שלא קיבל קודם, ורק כשהם נגמרים מי שקיבל פעם; מי שקיבל פעמיים יורד. מובטח כיסוי ~100% בלי שהחזקים יקטפו הכל. טריגרים אמיתיים (רצף/שאלה קשה/שיפור) קובעים את המסר אם התלמיד נבחר; חלש שצדק מקבל מסר "נכון", חלש שטעה מקבל התמדה. ברוך-שובך פעם אחת למי שחזר (לא נספר באיזון). toast צף בטלפון 2.6 שניות. מתג אחד "🌟 חיזוקים" בסרגל המנחה (דלוק כברירת מחדל) מכבה הכל. כל הפרמטרים בבלוק REINFORCE אחד לכיוונון. הניקוד האישי לא שונה
@@ -170,7 +171,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v65</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v66</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -284,25 +285,26 @@ input:focus{border-color:var(--gold); outline:none;}
       <input type="number" id="quiz-time" min="5" max="60" value="20" oninput="touch()">
     </div>
 
+    <div class="field">
+      <label>מספר הקבוצות המשתתפות בחידון <span class="info-i" onclick="showInfo(event, 'בחירת קבוצות הופכת את המשחק לתחרות קבוצתית: כל משתתף בוחר קבוצה כשהוא מצטרף, ובסוף מוצגת הקבוצה המנצחת וניקוד הקבוצות. בלי קבוצות — כל אחד משחק לעצמו.')">i</span></label>
+      <select id="team-count" onchange="teamCountChanged()" style="font-family:'Heebo'; font-size:17px; padding:12px 16px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); width:100%;">
+        <option value="0">בלי קבוצות (כל אחד לעצמו)</option>
+        <option value="2">2 קבוצות</option>
+        <option value="3">3 קבוצות</option>
+        <option value="4">4 קבוצות</option>
+      </select>
+      <div id="team-names" style="margin-top:10px;"></div>
+    </div>
+
     <h2 style="margin-top:24px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
     <button id="ai-build-btn" class="btn ghost" onclick="openImport()" style="margin-bottom:12px; background:rgba(141,141,242,.18);">🤖 יצירת חידון באמצעות בינה מלאכותית</button>
     <div id="q-list"></div>
     <button class="btn ghost" onclick="addQuestion()" style="margin-top:6px;">➕ הוספת שאלה</button>
 
     <details class="adv-box" style="margin-top:20px;">
-      <summary style="cursor:pointer; font-size:16px; font-weight:700; color:var(--ink); padding:12px 14px; background:var(--card-hi); border-radius:12px; list-style:none; display:flex; align-items:center; gap:8px;">⚙️ אפשרויות נוספות <span style="font-size:13px; font-weight:400; color:var(--ink-dim);">(קבוצות, רקע, מוזיקה)</span></summary>
+      <summary style="cursor:pointer; font-size:16px; font-weight:700; color:var(--ink); padding:12px 14px; background:var(--card-hi); border-radius:12px; list-style:none; display:flex; align-items:center; gap:8px;">⚙️ אפשרויות נוספות <span style="font-size:13px; font-weight:400; color:var(--ink-dim);">(רקע, מוזיקה)</span></summary>
       <div style="padding-top:16px;">
 
-        <div class="field">
-          <label>מספר הקבוצות המשתתפות בחידון</label>
-          <select id="team-count" onchange="teamCountChanged()" style="font-family:'Heebo'; font-size:17px; padding:12px 16px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); width:100%;">
-            <option value="0">בלי קבוצות (כל אחד לעצמו)</option>
-            <option value="2">2 קבוצות</option>
-            <option value="3">3 קבוצות</option>
-            <option value="4">4 קבוצות</option>
-          </select>
-          <div id="team-names" style="margin-top:10px;"></div>
-        </div>
 
         <div class="field">
           <label>רקע למסך החידון <span class="info-i" onclick="showInfo(event, 'אפשר לבחור רקע מוכן מהגלריה (נטען מיד), או להעלות תמונה מהמחשב (לא נשמרת, צריך לבחור מחדש בכל פעם). בזמן המשחק יש כפתור רקע שמאפשר להוריד את הרקע אם הוא מפריע לקריאה.')">i</span></label>
