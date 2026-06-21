@@ -80,6 +80,34 @@ input:focus{border-color:var(--gold); outline:none;}
 .info-i:hover{background:var(--teal); color:#06231f;}
 .info-pop{position:fixed; z-index:50; max-width:280px; background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.5; color:var(--ink); box-shadow:0 10px 30px rgba(0,0,0,.5);}
 
+/* כרטיס חידון ברשימה (מוערם — מותאם לנייד) */
+.qlcard{background:var(--card); border-radius:14px; padding:16px; text-align:right;}
+.qlcard-top{display:flex; align-items:flex-start; gap:10px;}
+.qlcard-titlewrap{flex:1; min-width:0;}
+.qlcard-title{font-weight:800; font-size:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.qlcard-meta{font-size:13px; color:var(--ink-dim); margin-top:2px;}
+.qlcard-shared{font-size:12px; color:var(--teal); margin-top:2px;}
+.qlcard-menuwrap{position:relative; flex:0 0 auto;}
+.qlcard-dots{background:none; border:none; color:var(--ink-dim); font-size:26px; line-height:1; cursor:pointer; padding:0 6px; border-radius:8px;}
+.qlcard-dots:hover{background:rgba(255,255,255,.08); color:var(--ink);}
+.qlcard-menu{display:none; position:absolute; top:34px; left:0; z-index:30; background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:6px; min-width:150px; box-shadow:0 10px 30px rgba(0,0,0,.5);}
+.qlcard-menu.on{display:block;}
+.qlcard-menu-item{display:block; width:100%; text-align:right; background:none; border:none; color:var(--ink); font-family:'Heebo'; font-size:15px; padding:10px 12px; border-radius:8px; cursor:pointer;}
+.qlcard-menu-item:hover{background:rgba(255,255,255,.08);}
+.qlcard-menu-item.danger{color:var(--coral);}
+.qlcard-subrow{display:flex; gap:8px; margin-top:8px;}
+.qlcard-subrow .btn{flex:1;}
+
+/* מודאל שיתוף מהרשימה */
+.share-modal-ov{display:none; position:fixed; inset:0; z-index:80; background:rgba(5,8,20,.72); align-items:flex-start; justify-content:center; padding:20px; overflow-y:auto;}
+.share-modal-ov.on{display:flex;}
+.share-modal{background:var(--card); border-radius:18px; padding:22px; max-width:480px; width:100%; margin:auto; box-shadow:0 20px 60px rgba(0,0,0,.6);}
+.share-modal-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:6px;}
+.share-modal-head h3{margin:0; font-size:19px; color:var(--ink);}
+.share-modal-x{background:none; border:none; color:var(--ink-dim); font-size:24px; line-height:1; cursor:pointer; padding:2px 8px; border-radius:8px;}
+.share-modal-x:hover{background:rgba(255,255,255,.08); color:var(--ink);}
+.share-modal-quizname{font-size:14px; color:var(--gold); margin-bottom:16px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
 /* עורך השאלות */
 .qcard{background:var(--card); border-radius:16px; padding:18px; margin-bottom:16px; text-align:right;}
 .qcard .qtop{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
@@ -254,6 +282,18 @@ input:focus{border-color:var(--gold); outline:none;}
     </div>
     <div id="quiz-list" style="display:flex; flex-direction:column; gap:10px;"></div>
     <p id="mylist-msg" style="color:var(--ink-dim); margin-top:14px;"></p>
+  </div>
+</div>
+
+<!-- ============ מודאל שיתוף מהרשימה ============ -->
+<div class="share-modal-ov" id="share-modal-ov">
+  <div class="share-modal">
+    <div class="share-modal-head">
+      <h3>🔗 שיתוף החידון</h3>
+      <button class="share-modal-x" onclick="closeShareModal()" title="סגירה">✕</button>
+    </div>
+    <div class="share-modal-quizname" id="share-modal-quizname"></div>
+    <div id="share-panel-modal" style="max-width:none;"></div>
   </div>
 </div>
 
@@ -881,26 +921,92 @@ function renderQuizList(all){
   codes.sort((a,b)=>(all[b].updated||0)-(all[a].updated||0));
   codes.forEach(code => {
     const q = all[code];
-    const row = document.createElement('div');
-    row.style.cssText = 'background:var(--card); border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:12px;';
-    const info = document.createElement('div'); info.style.cssText='text-align:right; flex:1; min-width:0;';
+    const card = document.createElement('div');
+    card.className = 'qlcard';
+
+    // --- שורה עליונה: כותרת + תפריט ⋯ ---
+    const top = document.createElement('div'); top.className='qlcard-top';
+    const titleWrap = document.createElement('div'); titleWrap.className='qlcard-titlewrap';
     // שורת "שותף על ידי" — רק אם החידון הגיע משיתוף ויש שם
     const sharedLine = (q.copiedFrom && q.copiedFrom.ownerName)
-      ? '<div style="font-size:12px; color:var(--teal); margin-top:2px;">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
+      ? '<div class="qlcard-shared">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
       : '';
-    info.innerHTML = '<div style="font-weight:800; font-size:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
-                     '<div style="font-size:13px; color:var(--ink-dim);">מספר ' + code + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
-                     sharedLine;
-    const btns = document.createElement('div'); btns.style.cssText='display:flex; gap:8px; flex-shrink:0;';
-    const play = document.createElement('button'); play.className='btn teal sm'; play.textContent='▶️ משחק'; play.onclick=()=>playExisting(code, q);
-    const test = document.createElement('button'); test.className='btn ghost sm'; test.textContent='👁️ בדיקה'; test.onclick=()=>testExisting(code, q);
+    titleWrap.innerHTML = '<div class="qlcard-title">' + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
+                          '<div class="qlcard-meta">מספר ' + code + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
+                          sharedLine;
+
+    // כפתור ⋯ + תפריט נפתח
+    const menuWrap = document.createElement('div'); menuWrap.className='qlcard-menuwrap';
+    const dots = document.createElement('button'); dots.className='qlcard-dots'; dots.textContent='⋯'; dots.title='עוד פעולות';
+    const menu = document.createElement('div'); menu.className='qlcard-menu';
+    const shareItem = document.createElement('button'); shareItem.className='qlcard-menu-item'; shareItem.textContent='🔗 שיתוף';
+    shareItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); openShareModal(code, q); };
+    const delItem = document.createElement('button'); delItem.className='qlcard-menu-item danger'; delItem.textContent='🗑 מחיקה';
+    delItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myStoreKey+'/'+code).remove().then(()=>refreshMyList()); } };
+    menu.appendChild(shareItem); menu.appendChild(delItem);
+    dots.onclick=(e)=>{ e.stopPropagation(); const wasOpen = menu.classList.contains('on'); closeAllCardMenus(); if(!wasOpen) menu.classList.add('on'); };
+    menuWrap.appendChild(dots); menuWrap.appendChild(menu);
+
+    top.appendChild(titleWrap); top.appendChild(menuWrap);
+    card.appendChild(top);
+
+    // --- כפתור ראשי: משחק (רוחב מלא) ---
+    const play = document.createElement('button'); play.className='btn teal'; play.style.cssText='width:100%; margin-top:12px;'; play.textContent='▶️ משחק'; play.onclick=()=>playExisting(code, q);
+    card.appendChild(play);
+
+    // --- שורת משנה: עריכה · בדיקה ---
+    const subRow = document.createElement('div'); subRow.className='qlcard-subrow';
     const edit = document.createElement('button'); edit.className='btn ghost sm'; edit.textContent='✏️ עריכה'; edit.onclick=()=>openExisting(code, q);
-    const del = document.createElement('button'); del.className='btn ghost sm'; del.textContent='🗑'; del.title='מחיקת החידון';
-    del.onclick=()=>{ if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myStoreKey+'/'+code).remove().then(()=>refreshMyList()); } };
-    btns.appendChild(play); btns.appendChild(test); btns.appendChild(edit); btns.appendChild(del);
-    row.appendChild(info); row.appendChild(btns);
-    box.appendChild(row);
+    const test = document.createElement('button'); test.className='btn ghost sm'; test.textContent='👁️ בדיקה'; test.onclick=()=>testExisting(code, q);
+    subRow.appendChild(edit); subRow.appendChild(test);
+    card.appendChild(subRow);
+
+    box.appendChild(card);
   });
+}
+
+// סגירת כל תפריטי ה-⋯ הפתוחים בכרטיסים
+function closeAllCardMenus(){
+  document.querySelectorAll('.qlcard-menu.on').forEach(m=>m.classList.remove('on'));
+}
+// קליק מחוץ לתפריט סוגר אותו
+document.addEventListener('click', closeAllCardMenus);
+
+/* ===== מודאל שיתוף מהרשימה (עומק 1: עוטף את renderSharePanel הקיים, לא משנה אותו) =====
+   renderSharePanel כותב תמיד ל-id "share-panel". כדי למחזר אותו בלי שינוי, אנחנו
+   מעבירים זמנית את ה-id "share-panel" לאלמנט שבתוך המודאל, ומחזירים אותו בסגירה. */
+function openShareModal(code, data){
+  if (!myUid){ alert('צריך להתחבר עם Google כדי לשתף.'); return; }
+  // טעינת החידון ל-quiz הגלובלי — בדיוק כמו openExisting, אבל בלי renderEditor/show
+  editCode = code;
+  quiz = {
+    title: data.title || '', time: data.time || 20,
+    teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
+    questions: data.questions || [],
+    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
+  };
+  if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
+  if (data.aiMeta) quiz.aiMeta = data.aiMeta;
+  $('share-modal-quizname').textContent = quiz.title || 'חידון ללא שם';
+  // הגנה: אם נשאר מצב id ישן (מודאל שלא נסגר תקין) — מאפסים קודם
+  const leftover = document.getElementById('share-panel-editor-stash');
+  if (leftover) leftover.id = 'share-panel';
+  // מעבירים את ה-id "share-panel" לאלמנט שבמודאל
+  const editorPanel = document.getElementById('share-panel');
+  if (editorPanel) editorPanel.id = 'share-panel-editor-stash';
+  const modalEl = document.getElementById('share-panel-modal');
+  if (modalEl) modalEl.id = 'share-panel';
+  renderSharePanel();   // הפונקציה הקיימת, ללא שינוי — כותבת עכשיו למודאל
+  $('share-modal-ov').classList.add('on');
+}
+function closeShareModal(){
+  $('share-modal-ov').classList.remove('on');
+  // מחזירים את ה-id "share-panel" לאלמנט שבעורך
+  const modalPanel = document.getElementById('share-panel');
+  if (modalPanel) modalPanel.id = 'share-panel-modal';
+  const stash = document.getElementById('share-panel-editor-stash');
+  if (stash) stash.id = 'share-panel';
+  refreshMyList();   // רענון הרשימה (אם השם/מצב השיתוף השתנה)
 }
 
 async function newQuiz(){
