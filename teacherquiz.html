@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v104 - שלב א' משיפוץ אזור הפעולות בעורך (עיצוב אסתטי, צבע אחד): המשתמש קבע שאזור הפעולות נראה כמו "ארבעה כרטיסים אחד מתחת לשני" — עמוס, ארוך, ועם בליטות-צבע (טורקיז/זהב) ש"נראות כמו קרקס". המבנה הישן (v103) היה: zone-title "🎮 בדיקה והפעלה" + launch-card טורקיז בולט, zone-title "🔗 שיתוף" + share-panel inline, אקורדיון "⚙️ ניהול" (שמירה·ספרייה·ניקוי). המבנה החדש — שתי שורות של מלבנים אפורים *זהים* (action-grid/action-box, צבע אחד rgba(255,255,255,.06), אפס בליטות): שורה 1 = התחלת משחק · תצוגה מקדימה; שורה 2 = שיתוף עם מורים · הוספה לספרייה; ומתחת קישור-ניקוי אדום-עדין נפרד (action-clear). כפתור "שמירה ידנית" הוסר מהמסך (החלטה: ברגע שעוברים למודל-טיוטות עם תגית אקטיבית, isConfirmed-via-שמירה מאבד את תפקידו; saveNow נשאר מוגדר אך בלי טריגר-UI). שיתוף וספרייה נפתחים עכשיו כחלון צף (overlay) במקום פאנל inline: openShareOverlayFromEditor מחזר את share-modal הקיים של הרשימה (אותו מנגנון העברת-id של share-panel, אבל בלי לטעון מחדש את quiz — בעורך quiz הוא כבר האובייקט החי); openLibraryOverlayFromEditor — אם כבר בספרייה מציג חלון-סטטוס קטן עם הסרה, אחרת קורא ל-openLibraryPublishFromCard הקיים. closeShareModal תוקן לקרוא refreshMyList רק כש-currentNavScreen()==='mylist' (אחרת פתיחה מהעורך הייתה מנווטת לרשימה). הפאנלים share-panel/library-panel נשארו ב-DOM אך display:none — renderSharePanel/renderLibraryPanel עדיין נקראים מ-renderEditor וכותבים אליהם (לא נגענו בלוגיקה). הערה: זהו שלב א' בלבד — מודל הטיוטות (היפוך isConfirmed, תגית-טיוטה כפולה מסונכרנת בעורך, לשוניות חידונים/טיוטות עם מונה ומחיקה-קבוצתית ברשימה) הוא שלב ב' שטרם נבנה
   v103 - ארגון-מחדש של אזור הפעולות בעורך: היררכיה ברורה בארבעה אזורים, שיתוף קומפקטי: בעקבות משוב מפורט — היו 8+ פעולות באותו אזור בלי היררכיה, השיתוף תפס יותר מקום מההפעלה (הפוך מהחשיבות), ולא הייתה הפרדה ויזואלית בין "עריכה" ל"הפעלה". המבנה החדש: (1) ✏️ עריכת החידון — כל התוכן (שם/זמן/מבנה/שאלות/הוספת שאלה/⚙️ אפשרויות נוספות נשארות כאן). "נשמר אוטומטית ✓" הועבר מאמצע-הזרימה לשורה שקטה ליד כותרת העורך (מידע-מערכת, לא בזרימה). (2) קו מפריד חזק (zone-div) — הפרדה ויזואלית בין עריכה להפעלה, השינוי החשוב ביותר. (3) 🎮 בדיקה והפעלה — כרטיס אחד בולט (launch-card, רקע טורקיז עדין): "▶️ התחלת משחק" גדול+טורקיז, ומתחתיו "👁️ תצוגה מקדימה" כקישור משני-אך-גלוי (לא נקבר — בדיקה היא חלק מזרימת-העבודה, לא תחזוקה). (4) 🔗 שיתוף — גלוי כאזור שלישי (מנוע צמיחה, לא נקבר באקורדיון), אבל הוקטן דרמטית: renderSharePanel נכתב מחדש משורה-אחת קומפקטית — קוד + "העתקת קוד" + "העתקת קישור" בשורה אחת (במקום כרטיס ענק עם כפתור-קישור-ירוק-מלא-רוחב). אין "ביטול שיתוף" (v58 — עותקים שנלקחו בלתי-נגישים). (5) ⚙️ ניהול — אקורדיון סגור (שמירה ידנית · ספרייה · ניקוי). פלטת צבעים: ראשי=טורקיז, משני=אפור, מסוכן(ניקוי)=אדום-עדין. shareStatusBox הישן (הכרטיס הגדול) כבר לא בשימוש מהעורך
   v102 - "בניית חידון חדש" מהספרייה + תיקון: מורה מחובר נחת על מסך-כניסה במקום על הרשימה: (א) הבאג — קישור "החידונים שלי" (מהספרייה) הוביל ל-teacherquiz.html שנוחת על מסך-הבית (home), ש*נראה* כמו מסך-התחברות (כפתור Google, כניסה כאורח) למרות שהמורה כבר מחובר — כי onAuthStateChanged עדכן את תצוגת-ההתחברות אבל לא ניווט לרשימה. התיקון: onAuthStateChanged, כשהמשתמש מחובר והמסך הפעיל הוא home (ואין משחק/שיתוף/חידון-חדש ממתינים), קורא goShowList() ומעביר ישר לרשימת החידונים. מוגן: רק כש-home פעיל (לא יוצר/לובי) ורק בלי פעולה ממתינה — כך re-fire של onAuthStateChanged לא יזרוק מורה שכבר עובד בחזרה לרשימה. (ב) פיצ'ר חדש — "➕ בניית חידון חדש" בתפריט הספרייה: הספרייה מקשרת ל-teacherquiz.html?new=1; הקובץ קורא את הפרמטר, מנקה אותו מהכתובת (replaceState, כדי שרענון לא יפתח שוב), ופותח חידון חדש אחרי שההתחברות נפתרה (pendingNewQuiz + maybeStartPendingNewQuiz, נקרא מ-onAuthStateChanged). pendingNewQuiz מוצהר לפני ה-IIFE של initJoinFromURL כדי למנוע TDZ בטעינה עם ?new=1. (נדרש גם library v5)
   v101 - תפריט ניווט דינמי לכל מסך (במקום תפריט גלובלי עם הסתרה-מותנית): המשתמש זיהה שהתפריט "בנוי לא טוב" — אותו תפריט קבוע בכל הדפים, כש"החידונים שלי" מופיע גם במסך "החידונים שלי", ו"עריכה" מופיע בעורך. הבעיה: עד כה היה תפריט סטטי אחד עם תנאי-הסתרה (display:none) לכל פריט — שביר, וכל שינוי דרש עוד if. עכשיו: updateNavMenu בונה את הרשימה *מחדש* בכל מסך (nav-list מתרוקן ומתמלא דינמית), ומציג רק את היעדים שאינם המסך הנוכחי. הכללים: (א) "עריכת החידון" — רק כשיש חידון פתוח (hasQuiz) ולא כשכבר בעורך. (ב) "החידונים שלי" — בכל מסך חוץ מ-mylist. (ג) "ספרייה" — תמיד (קובץ נפרד, אין מסך-ספרייה פנימי להחריג). (ד) "יציאה למצגת" — תמיד אחרונה ומובחנת, אלא אם embed=1 (קומבו). התוצאה: בעורך התפריט מציג רק חידונים-שלי+ספרייה+יציאה (לא עריכה); ב-pregame/lobby עם חידון פתוח מציג גם עריכה; ב-mylist ו-home אין תפריט כלל. בחרתי בנייה-דינמית של תפריט-אחד ולא שכפול תפריט בכל מסך — כדי שלא יהיה צורך לעדכן 4 מקומות בכל שינוי עתידי (מקור-אמת אחד). ניקוי: קוד ה-embed הישן שהסתיר nav-exit ב-querySelector הוסר (updateNavMenu בודק embed בעצמו); הוסרו השאריות nav-edit הסטטי ו-editor-main-menu-link
@@ -192,6 +193,15 @@ input:focus{border-color:var(--gold); outline:none;}
 .launch-preview{margin-top:12px;}
 .launch-preview button{background:none; border:none; color:var(--ink-dim); font-family:'Heebo'; font-size:14px; font-weight:700; cursor:pointer; text-decoration:underline; padding:6px 12px;}
 .launch-preview button:hover{color:var(--ink);}
+/* ===== אזור הפעולות החדש (v104): מלבנים אפורים זהים, צבע אחד, בלי בליטות ===== */
+.action-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;}
+.action-box{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:16px 10px; cursor:pointer; font-family:'Heebo'; font-size:15px; font-weight:700; color:var(--ink); text-align:center; transition:background .12s ease;}
+.action-box:hover{background:rgba(255,255,255,.1);}
+.action-box:active{transform:translateY(1px);}
+.action-box .ab-ico{font-size:22px; line-height:1;}
+.action-clear{text-align:center; margin-top:14px;}
+.action-clear button{background:none; border:none; color:var(--coral); font-family:'Heebo'; font-size:13px; cursor:pointer; opacity:.7; padding:6px 12px;}
+.action-clear button:hover{opacity:1;}
 /* שיתוף קומפקטי — שורה אחת */
 .share-compact{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;}
 .share-compact .codeval{font-family:'Secular One'; font-size:22px; letter-spacing:.1em; color:var(--gold);}
@@ -289,7 +299,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v103</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v104</span></div>
 
 <!-- תפריט ניווט — נבנה דינמית לכל מסך (updateNavMenu): מציג רק את היעדים שאינם המסך הנוכחי -->
 <div id="nav-menu">
@@ -484,31 +494,26 @@ input:focus{border-color:var(--gold); outline:none;}
     <!-- ═══ קו מפריד חזק: סוף עריכה, תחילת הפעלה ═══ -->
     <div class="zone-div"></div>
 
-    <!-- ───── אזור 1: בדיקה והפעלה (האזור הראשי) ───── -->
-    <div class="zone-title">🎮 בדיקה והפעלה</div>
-    <div class="launch-card">
-      <div class="ready">החידון מוכן. המשתתפים יצטרפו בעזרת קוד או קישור.</div>
-      <button class="btn teal" onclick="prePlay()">▶️ התחלת משחק עם הקהל</button>
-      <div class="launch-preview">
-        <button onclick="previewQuiz()">👁️ תצוגה מקדימה (בדיקה ללא משתתפים)</button>
-      </div>
+    <!-- ───── שורה 1: הפעלה ובדיקה ───── -->
+    <div class="action-grid">
+      <div class="action-box" onclick="prePlay()"><span class="ab-ico">▶️</span><span>התחלת משחק</span></div>
+      <div class="action-box" onclick="previewQuiz()"><span class="ab-ico">👁️</span><span>תצוגה מקדימה</span></div>
     </div>
 
-    <!-- ───── אזור 2: שיתוף (מנוע צמיחה — גלוי, אך קומפקטי) ───── -->
-    <div class="zone-title">🔗 שיתוף עם מורים אחרים</div>
-    <div id="share-panel"></div>
+    <!-- ───── שורה 2: שיתוף וספרייה (פותחים חלון צף) ───── -->
+    <div class="action-grid">
+      <div class="action-box" onclick="openShareOverlayFromEditor()"><span class="ab-ico">🔗</span><span>שיתוף עם מורים</span></div>
+      <div class="action-box" onclick="openLibraryOverlayFromEditor()"><span class="ab-ico">📚</span><span>הוספה לספרייה</span></div>
+    </div>
 
-    <!-- ───── אזור 3: ניהול (אקורדיון סגור — תחזוקה) ───── -->
-    <details class="adv-box" style="margin-top:8px;">
-      <summary style="cursor:pointer; font-size:14px; font-weight:500; color:var(--ink-dim); padding:10px 14px; background:rgba(255,255,255,.04); border-radius:12px; list-style:none; display:flex; align-items:center; gap:8px;">⚙️ ניהול החידון <span style="font-size:12px; font-weight:400; color:var(--ink-dim); opacity:.7;">(שמירה, ספרייה, ניקוי)</span></summary>
-      <div style="padding-top:16px; display:flex; flex-direction:column; gap:12px; align-items:center;">
-        <button class="btn ghost sm" onclick="saveNow()">💾 שמירה ידנית</button>
-        <span id="library-panel"></span>
-        <div id="clear-all-wrap" style="display:none;">
-          <button class="btn ghost sm" onclick="clearAllQuiz()" style="color:var(--coral); font-size:13px; opacity:.85;">🗑️ ניקוי החידון והתחלה מחדש</button>
-        </div>
-      </div>
-    </details>
+    <!-- ───── ניקוי: קישור מאופק, נפרד ───── -->
+    <div class="action-clear" id="clear-all-wrap" style="display:none;">
+      <button onclick="clearAllQuiz()">🗑️ ניקוי החידון והתחלה מחדש</button>
+    </div>
+
+    <!-- פאנלים מוסתרים: renderSharePanel/renderLibraryPanel עדיין כותבים אליהם מקריאות קיימות -->
+    <div id="share-panel" style="display:none;"></div>
+    <span id="library-panel" style="display:none;"></span>
   </div>
 </div>
 
@@ -1480,7 +1485,53 @@ function closeShareModal(){
   if (modalPanel) modalPanel.id = 'share-panel-modal';
   const stash = document.getElementById('share-panel-editor-stash');
   if (stash) stash.id = 'share-panel';
-  refreshMyList();   // רענון הרשימה (אם השם/מצב השיתוף השתנה)
+  // רענון הרשימה רק אם אנחנו בה (כשנפתח מהעורך — אסור לנווט לרשימה)
+  if (currentNavScreen() === 'mylist') refreshMyList();
+}
+
+// פתיחת חלון השיתוף מתוך העורך (v104): מחזר את אותו share-modal של הרשימה, אבל
+// בלי לטעון מחדש את quiz — בעורך quiz כבר הוא האובייקט החי שנערך (אסור לדרוס אותו).
+function openShareOverlayFromEditor(){
+  if (!myUid){ alert('צריך להתחבר עם Google כדי לשתף.'); return; }
+  $('share-modal-quizname').textContent = (quiz && quiz.title) ? quiz.title : 'חידון ללא שם';
+  // אותו מנגנון העברת-id כמו openShareModal — share-panel עובר זמנית למודאל
+  const leftover = document.getElementById('share-panel-editor-stash');
+  if (leftover) leftover.id = 'share-panel';
+  const editorPanel = document.getElementById('share-panel');
+  if (editorPanel) editorPanel.id = 'share-panel-editor-stash';
+  const modalEl = document.getElementById('share-panel-modal');
+  if (modalEl) modalEl.id = 'share-panel';
+  renderSharePanel();
+  $('share-modal-ov').classList.add('on');
+}
+
+// פתיחת חלון הספרייה מתוך העורך (v104): אם כבר בספרייה — חלון קטן עם הסרה;
+// אחרת — חלון הפרסום הקיים (openLibraryPublishFromCard) שכבר פותח overlay צף.
+function openLibraryOverlayFromEditor(){
+  if (!myUid){ alert('צריך להתחבר עם Google כדי להוסיף לספרייה.'); return; }
+  const sh = ensureShareObj();
+  if (sh.inLibrary){
+    const old = $('lib-status-overlay'); if (old) old.remove();
+    const ov = document.createElement('div'); ov.id='lib-status-overlay';
+    ov.style.cssText='position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;';
+    const box = document.createElement('div');
+    box.style.cssText='background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:22px 20px; max-width:420px; width:100%; box-shadow:0 12px 40px rgba(0,0,0,.5); text-align:center;';
+    const head = document.createElement('div');
+    head.style.cssText="font-family:'Secular One'; font-size:20px; color:var(--gold); margin-bottom:10px;";
+    head.textContent='📚 מופיע בספרייה';
+    const msg = document.createElement('div');
+    msg.style.cssText='font-size:14px; color:var(--teal); font-weight:600; margin-bottom:18px;';
+    msg.textContent='✓ החידון הזה מופיע בספרייה הציבורית.';
+    const btnRow = document.createElement('div'); btnRow.style.cssText='display:flex; gap:8px;';
+    const closeBtn = document.createElement('button'); closeBtn.className='btn ghost sm'; closeBtn.style.flex='1'; closeBtn.textContent='סגירה'; closeBtn.onclick=()=>ov.remove();
+    const remBtn = document.createElement('button'); remBtn.className='btn ghost sm'; remBtn.style.cssText='flex:1; color:var(--coral);'; remBtn.textContent='✕ הסרה מהספרייה';
+    remBtn.onclick=()=>{ ov.remove(); removeFromLibrary(); };
+    btnRow.appendChild(closeBtn); btnRow.appendChild(remBtn);
+    box.appendChild(head); box.appendChild(msg); box.appendChild(btnRow);
+    ov.appendChild(box); document.body.appendChild(ov);
+  } else {
+    openLibraryPublishFromCard(editCode, quiz, ()=>{ if ($('library-panel')) renderLibraryPanel(); });
+  }
 }
 
 async function newQuiz(){
