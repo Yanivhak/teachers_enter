@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v105 - שלב ב': מודל הטיוטות (היפוך ברירת-המחדל) + לשוניות ומחיקה-קבוצתית ב"החידונים שלי". העיקרון: עד כה ברירת-המחדל הייתה "טיוטה" (isConfirmed כבוי) והמשתמש סימן אקטיבית "אני רוצה" דרך פעולה. עכשיו הפוך — ברירת-המחדל היא "חידון", והמשתמש מדליק תגית "טיוטה" רק אם *לא* רוצה. הנימוק (של המשתמש): אובדן-מידע גרוע מעודף-מידע — "חידון נעלם לי" חמור מ"יש לי חידונים מיותרים", והסימון האקטיבי מונע טענות. מימוש: (1) שדה חדש isDraft (ברירת מחדל false=חידון), נבחר על-פני היפוך isConfirmed עצמו כדי לא לגעת ב-7 נקודות-הסנכרון הרגישות — isConfirmed נשאר בקוד אך מת (לא נקרא יותר לסינון/תצוגה). isDraft מתווסף ל-3 אובייקטי-הטעינה (openExisting/playExisting/testExisting) ול-newQuiz. (2) שני מתגים מסונכרנים בעורך על דגל-אמת אחד: עליון (pill-switch "סימון כטיוטה" ליד הכותרת) + תחתון (שורת-מצב "מצב החידון: חידון/טיוטה · [העברה]" באזור הפעולות, ניסוח שונה להקשר "לפני יציאה"). שניהם קוראים setDraft(), ש-syncDraftToggles מעדכן את *שניהם* יחד (סנכרון דו-כיווני). renderEditor קורא syncDraftToggles. (3) שתי לשוניות ב"החידונים שלי" (list-tabs, פס מפוצל, אקטיבית קדימה בכהה עם צל-עומק): "חידונים"=ברירת-מחדל, "טיוטות". מונה על כל לשונית (updateTabCounts → "(N)"). codesForActiveTab מסנן לפי isDraft + חיפוש + מיון-נעוצים. switchTab מחליף ומאפס מצב-בחירה. (4) התגית הישנה "● שמירה אוטומטית בלבד" (qlcard-draft) הוסרה מהכרטיסים + ה-CSS שלה — הלשונית נותנת את ההקשר. (5) מעבר דו-כיווני טיוטה↔חידון בתפריט ⋯ (toggleDraftFromList — כותב רק את isDraft, set על שדה בודד, בלי לגעת בשאר). (6) מחיקה קבוצתית בסגנון Gmail בשתי הלשוניות (enterSelectMode/exitSelectMode/toggleSelect/bulkSelectAll/bulkDelete + checkbox לכל כרטיס): מתחיל *ריק* (כלום לא מסומן — הגנה מפני מחיקה בשוגג, בניגוד מפורש לדיאלוג-החילוץ הישן שסימן הכל), "סימון הכל" כפתור-בחירה, אייקון פח עם אזהרה "המחיקה סופית ואי אפשר לשחזר", פועל בלשונית הפעילה בלבד. (7) cleanupDrafts + cleanup-drafts-wrap + cleanup-overlay (דיאלוג-החילוץ הישן) הוסרו לגמרי — הלשוניות + bulk-select מחליפים אותם. relativeTime נשמר (עדיין שימושי). חידונים קיימים: אין מיגרציה (לא מופץ — שלך ושל הבן + אולי 2 ישנים) — בלי isDraft נחשבים חידונים, וזה המקום הנכון. הערה: לא אומת על מסך אמיתי (סביבת-הבדיקה חוסמת את Firebase-auth ולכן לא ניתן להריץ את אתחול-האפליקציה) — node --check עבר, איזון-תגיות עבר, בדיקות-לוגיקה מבודדות עברו, אך הזרימה החיה דורשת בדיקה ידנית
   v104 - שלב א' משיפוץ אזור הפעולות בעורך (עיצוב אסתטי, צבע אחד): המשתמש קבע שאזור הפעולות נראה כמו "ארבעה כרטיסים אחד מתחת לשני" — עמוס, ארוך, ועם בליטות-צבע (טורקיז/זהב) ש"נראות כמו קרקס". המבנה הישן (v103) היה: zone-title "🎮 בדיקה והפעלה" + launch-card טורקיז בולט, zone-title "🔗 שיתוף" + share-panel inline, אקורדיון "⚙️ ניהול" (שמירה·ספרייה·ניקוי). המבנה החדש — שתי שורות של מלבנים אפורים *זהים* (action-grid/action-box, צבע אחד rgba(255,255,255,.06), אפס בליטות): שורה 1 = התחלת משחק · תצוגה מקדימה; שורה 2 = שיתוף עם מורים · הוספה לספרייה; ומתחת קישור-ניקוי אדום-עדין נפרד (action-clear). כפתור "שמירה ידנית" הוסר מהמסך (החלטה: ברגע שעוברים למודל-טיוטות עם תגית אקטיבית, isConfirmed-via-שמירה מאבד את תפקידו; saveNow נשאר מוגדר אך בלי טריגר-UI). שיתוף וספרייה נפתחים עכשיו כחלון צף (overlay) במקום פאנל inline: openShareOverlayFromEditor מחזר את share-modal הקיים של הרשימה (אותו מנגנון העברת-id של share-panel, אבל בלי לטעון מחדש את quiz — בעורך quiz הוא כבר האובייקט החי); openLibraryOverlayFromEditor — אם כבר בספרייה מציג חלון-סטטוס קטן עם הסרה, אחרת קורא ל-openLibraryPublishFromCard הקיים. closeShareModal תוקן לקרוא refreshMyList רק כש-currentNavScreen()==='mylist' (אחרת פתיחה מהעורך הייתה מנווטת לרשימה). הפאנלים share-panel/library-panel נשארו ב-DOM אך display:none — renderSharePanel/renderLibraryPanel עדיין נקראים מ-renderEditor וכותבים אליהם (לא נגענו בלוגיקה). Note: זהו שלב א' בלבד — מודל הטיוטות (היפוך isConfirmed, תגית-טיוטה כפולה מסונכרנת בעורך, לשוניות חידונים/טיוטות עם מונה ומחיקה-קבוצתית ברשימה) הוא שלב ב' שטרם נבנה. תוספות באותה גרסה: (א) "⚙️ אפשרויות נוספות" (רקע/מוזיקה) הוסר מהעורך — אי אפשר לשמור רקע/מוזיקה (blob מקומי בלבד, לא ב-Firebase) והבחירה קורית ממילא במסך ההכנה (pregame) סמוך להפעלה; המשתמש ביקש זאת מספר פעמים. נשמרו בעורך *רק* שני ה-file-inputs המוסתרים (bg-input/music-input) כי pregame לוחץ עליהם דרך $('bg-input')/$('music-input') — הם תשתית משותפת, לא UI. כל ה-UI הגלוי הוסר (כפתורי גלריה/מכשיר, bg-chip, music-list, bg-clear); הכתיבות אליהם ב-bgChosen/clearBg/musicChosen כבר היו מוגנות ב-if($('id')) אז הן פשוט מדלגות. (ב) הודעת השמירה האוטומטית נוסחה ברור יותר — "✓ נשמר אוטומטית — אין צורך לשמור" (במקום "נשמר אוטומטית ✓") גם ב-HTML הסטטי וגם ב-2 מחרוזות ה-JS שמעדכנות את save-state — כדי שהיעדר כפתור-שמירה יהיה מובן (הכלי שומר לבד). (ג) איחוד הודעות-תנאי בשיתוף ובספרייה (shareLibValidationError): קודם חידון ללא שם *וגם* ללא שאלה ייצר שתי הודעות-alert ברצף (המשתמש תיקן את השם, ניסה שוב, וחטף מיד הודעה על שאלה) — מטריד. עכשיו פונקציה אחת מחזירה הודעה *מאוחדת* כששניהם חסרים ("תנו שם לחידון והוסיפו לפחות שאלה אחת לפני..."), או הודעה ספציפית כשרק אחד חסר. הפונקציה מקבלת את אובייקט-החידון כפרמטר (q) כי הספרייה נקראת גם מכרטיס-רשימה עם q שאינו ה-quiz הגלובלי. deep=true בשיתוף (מהעורך) — שומר על בדיקת-התקינות העמוקה של quizReady (שאלה ריקה/חסרות תשובות/קבוצה ללא שם) כשהשם והשאלה קיימים; deep=false בספרייה. הוחלף ב-3 נקודות-כניסה: shareToEveryone, startSpecificShare, openLibraryPublishFromCard. הערה: בספרייה זה גם הדק קצת — קודם נבדק רק q.questions.length (קיום שאלה), עכשיו נבדק שיש בה תוכן אמיתי (טקסט/תשובה) — חידון עם שאלה ריקה לגמרי כבר לא ייכנס לספרייה הציבורית. לא נעשה overlay חדש (המשתמש הציע, נדחה) — הודעת-שגיאה של שורה אחת מתאימה ל-alert, לא ל-overlay מעוצב
   v103 - ארגון-מחדש של אזור הפעולות בעורך: היררכיה ברורה בארבעה אזורים, שיתוף קומפקטי: בעקבות משוב מפורט — היו 8+ פעולות באותו אזור בלי היררכיה, השיתוף תפס יותר מקום מההפעלה (הפוך מהחשיבות), ולא הייתה הפרדה ויזואלית בין "עריכה" ל"הפעלה". המבנה החדש: (1) ✏️ עריכת החידון — כל התוכן (שם/זמן/מבנה/שאלות/הוספת שאלה/⚙️ אפשרויות נוספות נשארות כאן). "נשמר אוטומטית ✓" הועבר מאמצע-הזרימה לשורה שקטה ליד כותרת העורך (מידע-מערכת, לא בזרימה). (2) קו מפריד חזק (zone-div) — הפרדה ויזואלית בין עריכה להפעלה, השינוי החשוב ביותר. (3) 🎮 בדיקה והפעלה — כרטיס אחד בולט (launch-card, רקע טורקיז עדין): "▶️ התחלת משחק" גדול+טורקיז, ומתחתיו "👁️ תצוגה מקדימה" כקישור משני-אך-גלוי (לא נקבר — בדיקה היא חלק מזרימת-העבודה, לא תחזוקה). (4) 🔗 שיתוף — גלוי כאזור שלישי (מנוע צמיחה, לא נקבר באקורדיון), אבל הוקטן דרמטית: renderSharePanel נכתב מחדש משורה-אחת קומפקטית — קוד + "העתקת קוד" + "העתקת קישור" בשורה אחת (במקום כרטיס ענק עם כפתור-קישור-ירוק-מלא-רוחב). אין "ביטול שיתוף" (v58 — עותקים שנלקחו בלתי-נגישים). (5) ⚙️ ניהול — אקורדיון סגור (שמירה ידנית · ספרייה · ניקוי). פלטת צבעים: ראשי=טורקיז, משני=אפור, מסוכן(ניקוי)=אדום-עדין. shareStatusBox הישן (הכרטיס הגדול) כבר לא בשימוש מהעורך
   v102 - "בניית חידון חדש" מהספרייה + תיקון: מורה מחובר נחת על מסך-כניסה במקום על הרשימה: (א) הבאג — קישור "החידונים שלי" (מהספרייה) הוביל ל-teacherquiz.html שנוחת על מסך-הבית (home), ש*נראה* כמו מסך-התחברות (כפתור Google, כניסה כאורח) למרות שהמורה כבר מחובר — כי onAuthStateChanged עדכן את תצוגת-ההתחברות אבל לא ניווט לרשימה. התיקון: onAuthStateChanged, כשהמשתמש מחובר והמסך הפעיל הוא home (ואין משחק/שיתוף/חידון-חדש ממתינים), קורא goShowList() ומעביר ישר לרשימת החידונים. מוגן: רק כש-home פעיל (לא יוצר/לובי) ורק בלי פעולה ממתינה — כך re-fire של onAuthStateChanged לא יזרוק מורה שכבר עובד בחזרה לרשימה. (ב) פיצ'ר חדש — "➕ בניית חידון חדש" בתפריט הספרייה: הספרייה מקשרת ל-teacherquiz.html?new=1; הקובץ קורא את הפרמטר, מנקה אותו מהכתובת (replaceState, כדי שרענון לא יפתח שוב), ופותח חידון חדש אחרי שההתחברות נפתרה (pendingNewQuiz + maybeStartPendingNewQuiz, נקרא מ-onAuthStateChanged). pendingNewQuiz מוצהר לפני ה-IIFE של initJoinFromURL כדי למנוע TDZ בטעינה עם ?new=1. (נדרש גם library v5)
@@ -147,7 +148,6 @@ input:focus{border-color:var(--gold); outline:none;}
 .qlcard-title{font-weight:800; font-size:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .qlcard-meta{font-size:13px; color:var(--ink-dim); margin-top:2px;}
 .qlcard-shared{font-size:12px; color:var(--teal); margin-top:2px;}
-.qlcard-draft{font-size:12px; color:#d9a441; margin-top:3px; font-weight:600;}
 .qlcard-menuwrap{position:relative; flex:0 0 auto;}
 .qlcard-dots{background:none; border:none; color:var(--ink-dim); font-size:26px; line-height:1; cursor:pointer; padding:0 6px; border-radius:8px;}
 .qlcard-dots:hover{background:rgba(255,255,255,.08); color:var(--ink);}
@@ -202,6 +202,33 @@ input:focus{border-color:var(--gold); outline:none;}
 .action-clear{text-align:center; margin-top:14px;}
 .action-clear button{background:none; border:none; color:var(--coral); font-family:'Heebo'; font-size:13px; cursor:pointer; opacity:.7; padding:6px 12px;}
 .action-clear button:hover{opacity:1;}
+/* ===== תגית טיוטה (v104 שלב ב') ===== */
+/* מתג עליון — pill switch קומפקטי ליד הכותרת */
+.draft-toggle{display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-family:'Heebo'; font-size:13px; font-weight:700; color:var(--ink-dim); user-select:none;}
+.draft-toggle .sw{width:34px; height:19px; border-radius:19px; background:rgba(255,255,255,.15); position:relative; transition:background .18s ease; flex:0 0 auto;}
+.draft-toggle .sw::after{content:''; position:absolute; top:2px; inset-inline-start:2px; width:15px; height:15px; border-radius:50%; background:var(--ink); transition:inset-inline-start .18s ease;}
+.draft-toggle.on .sw{background:var(--gold);}
+.draft-toggle.on .sw::after{inset-inline-start:17px; background:#1a2342;}
+.draft-toggle.on{color:var(--gold);}
+/* שורת המצב התחתונה — בהקשר "לפני יציאה" */
+.draft-bottom{display:flex; align-items:center; justify-content:center; gap:12px; margin-top:16px; flex-wrap:wrap;}
+.draft-bottom .dbl{font-family:'Heebo'; font-size:13px; font-weight:700; color:var(--ink-dim);}
+.draft-bottom button{background:none; border:1px solid rgba(255,255,255,.2); color:var(--ink-dim); font-family:'Heebo'; font-size:13px; font-weight:700; border-radius:9px; padding:6px 14px; cursor:pointer;}
+.draft-bottom button:hover{color:var(--ink); border-color:rgba(255,255,255,.4);}
+/* ===== לשוניות חידונים/טיוטות (v104 שלב ב') — פס מפוצל, אקטיבית קדימה בכהה ===== */
+.list-tabs{display:flex; width:100%; max-width:480px; margin:0 auto 18px; border-radius:14px; overflow:hidden; background:rgba(0,0,0,.25);}
+.list-tab{flex:1; text-align:center; padding:13px 10px; font-family:'Heebo'; font-size:15px; font-weight:700; color:var(--ink-dim); background:rgba(255,255,255,.04); cursor:pointer; border:none; transition:background .15s, color .15s, transform .15s; position:relative;}
+.list-tab .cnt{font-size:13px; opacity:.7; margin-inline-start:4px;}
+.list-tab.active{background:var(--card-hi); color:var(--ink); transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,.35); z-index:2;}
+.list-tab:not(.active):hover{background:rgba(255,255,255,.08);}
+/* ===== מצב בחירה ומחיקה קבוצתית (v104 שלב ב') ===== */
+.bulk-bar{display:flex; align-items:center; justify-content:space-between; gap:10px; max-width:480px; margin:0 auto 12px; padding:8px 12px; background:rgba(255,255,255,.05); border-radius:12px;}
+.bulk-bar .bulk-left{display:flex; align-items:center; gap:10px; font-family:'Heebo'; font-size:14px; color:var(--ink-dim);}
+.bulk-bar button{background:none; border:1px solid rgba(255,255,255,.22); color:var(--ink); font-family:'Heebo'; font-size:13px; font-weight:700; border-radius:9px; padding:6px 12px; cursor:pointer;}
+.bulk-bar .bulk-trash{border-color:rgba(255,107,107,.5); color:var(--coral);}
+.bulk-bar .bulk-trash:disabled{opacity:.35; cursor:default;}
+.qlcard-check{position:absolute; top:14px; inset-inline-start:14px; width:24px; height:24px; cursor:pointer; accent-color:var(--teal); z-index:3;}
+.qlcard.selecting{position:relative; padding-inline-start:48px;}
 /* שיתוף קומפקטי — שורה אחת */
 .share-compact{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center;}
 .share-compact .codeval{font-family:'Secular One'; font-size:22px; letter-spacing:.1em; color:var(--gold);}
@@ -299,7 +326,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v104</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v105</span></div>
 
 <!-- תפריט ניווט — נבנה דינמית לכל מסך (updateNavMenu): מציג רק את היעדים שאינם המסך הנוכחי -->
 <div id="nav-menu">
@@ -400,8 +427,24 @@ input:focus{border-color:var(--gold); outline:none;}
     <div id="quiz-search-wrap" style="display:none; margin-bottom:14px;">
       <input type="text" id="quiz-search" placeholder="🔍 חיפוש לפי שם החידון" oninput="filterQuizList()" style="width:100%; padding:11px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); font-family:'Heebo'; font-size:16px;">
     </div>
-    <div id="cleanup-drafts-wrap" style="display:none; margin-bottom:14px; text-align:center;">
-      <button class="btn ghost sm" onclick="cleanupDrafts()" style="color:#d9a441;">🗑 ניקוי חידונים בשמירה אוטומטית בלבד</button>
+    <!-- v104 שלב ב': לשוניות חידונים/טיוטות -->
+    <div class="list-tabs" id="list-tabs">
+      <button class="list-tab active" id="tab-quizzes" onclick="switchTab('quizzes')">חידונים<span class="cnt" id="cnt-quizzes"></span></button>
+      <button class="list-tab" id="tab-drafts" onclick="switchTab('drafts')">טיוטות<span class="cnt" id="cnt-drafts"></span></button>
+    </div>
+    <!-- v104 שלב ב': סרגל בחירה ומחיקה קבוצתית (מוסתר עד כניסה למצב בחירה) -->
+    <div class="bulk-bar" id="bulk-bar" style="display:none;">
+      <div class="bulk-left">
+        <button id="bulk-selectall" onclick="bulkSelectAll()">סימון הכל</button>
+        <span id="bulk-count">נבחרו 0</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="bulk-trash" id="bulk-trash" onclick="bulkDelete()" disabled>🗑 מחיקה</button>
+        <button onclick="exitSelectMode()">ביטול</button>
+      </div>
+    </div>
+    <div style="text-align:center; margin-bottom:10px;">
+      <button class="btn ghost sm" id="select-mode-btn" onclick="enterSelectMode()" style="display:none; font-size:13px;">☑️ בחירה ומחיקה</button>
     </div>
     <div id="quiz-list" style="display:flex; flex-direction:column; gap:10px;"></div>
     <p id="mylist-msg" style="color:var(--ink-dim); margin-top:14px;"></p>
@@ -426,6 +469,11 @@ input:focus{border-color:var(--gold); outline:none;}
     <div style="display:flex; align-items:baseline; justify-content:center; gap:12px; flex-wrap:wrap;">
       <h2 style="margin:0;">✏️ עריכת החידון</h2>
       <span class="save-state" id="save-state" style="margin:0;">✓ נשמר אוטומטית — אין צורך לשמור</span>
+    </div>
+    <div style="text-align:center; margin:10px 0 4px;">
+      <span class="draft-toggle" id="draft-toggle-top" onclick="setDraft(!(quiz&&quiz.isDraft))" title="חידון שמסומן כטיוטה יופיע בלשונית הטיוטות ולא בין החידונים">
+        <span class="sw"></span><span>סימון כטיוטה</span>
+      </span>
     </div>
     <div id="guest-editor-banner" style="display:none; background:rgba(192,57,43,.18); border:2px solid #e74c3c; border-radius:14px; padding:14px 18px; margin-bottom:18px; text-align:center;">
       <div style="font-size:16px; font-weight:800; color:#ff9a8d; margin-bottom:4px;">⚠️ מצב אורח — החידון לא נשמר</div>
@@ -485,6 +533,12 @@ input:focus{border-color:var(--gold); outline:none;}
     <div class="action-grid">
       <div class="action-box" onclick="openShareOverlayFromEditor()"><span class="ab-ico">🔗</span><span>שיתוף עם מורים</span></div>
       <div class="action-box" onclick="openLibraryOverlayFromEditor()"><span class="ab-ico">📚</span><span>הוספה לספרייה</span></div>
+    </div>
+
+    <!-- ───── מצב החידון: טיוטה/חידון (מתג תחתון, מסונכרן עם העליון) ───── -->
+    <div class="draft-bottom">
+      <span class="dbl" id="draft-bottom-label">מצב החידון: חידון</span>
+      <button id="draft-bottom-btn" onclick="setDraft(!(quiz&&quiz.isDraft))">העברה לטיוטה</button>
     </div>
 
     <!-- ───── ניקוי: קישור מאופק, נפרד ───── -->
@@ -1218,101 +1272,115 @@ function _renderQuizListMerged(all, pinnedMap){
   if (!codes.length){
     $('quiz-list').innerHTML = '';
     $('quiz-search-wrap').style.display = 'none';
-    $('cleanup-drafts-wrap').style.display = 'none';
+    if ($('list-tabs')) $('list-tabs').style.display = 'none';
+    if ($('select-mode-btn')) $('select-mode-btn').style.display = 'none';
+    exitSelectMode();
     $('mylist-msg').textContent = 'עוד אין חידונים. לחצו "בניית חידון חדש" כדי להתחיל.';
     return;
   }
   $('mylist-msg').textContent = '';
   $('quiz-search-wrap').style.display = (codes.length >= QUIZ_SEARCH_MIN) ? 'block' : 'none';
-  // כפתור הניקוי מופיע רק אם יש חידונים שלא אושרו (isConfirmed כבוי)
-  const hasDrafts = codes.some(c => !_quizListData[c].isConfirmed);
-  $('cleanup-drafts-wrap').style.display = hasDrafts ? 'block' : 'none';
+  if ($('list-tabs')) $('list-tabs').style.display = 'flex';
+  // איפוס מצב בחירה בטעינה מלאה (בלי קריאה רקורסיבית ל-drawQuizCards)
+  selectMode = false; selectedCodes = {};
+  if ($('bulk-bar')) $('bulk-bar').style.display = 'none';
+  updateTabCounts();
   drawQuizCards();
 }
 
-// "ניקוי" עם הצלה: פותח רשימת החידונים שבשמירה-אוטומטית-בלבד (isConfirmed כבוי),
-// ממוינת לפי עדכון אחרון (חדש למעלה). כולם מסומנים למחיקה כברירת מחדל; המשתמש מוריד סימן
-// כדי "להציל" חידון. מונה חי, ומחיקה רק של מה שנשאר מסומן. לא נוגע במאושרים.
-function cleanupDrafts(){
-  if (!myStoreKey) return;
+// v104 שלב ב': ספירת חידונים מול טיוטות לעדכון המונים על הלשוניות
+function updateTabCounts(){
   const all = _quizListData || {};
-  let drafts = Object.keys(all).filter(c => !all[c].isConfirmed);
-  if (!drafts.length){ alert('אין חידונים בשמירה אוטומטית בלבד.'); return; }
-  // מיון לפי עדכון אחרון — החדש קודם (לרוב זה שרוצים להציל)
-  drafts.sort((a,b)=>(all[b].updated||0)-(all[a].updated||0));
+  let nQ = 0, nD = 0;
+  Object.keys(all).forEach(c => { if (all[c].isDraft) nD++; else nQ++; });
+  if ($('cnt-quizzes')) $('cnt-quizzes').textContent = '(' + nQ + ')';
+  if ($('cnt-drafts')) $('cnt-drafts').textContent = '(' + nD + ')';
+}
 
-  const old = $('cleanup-overlay'); if (old) old.remove();
-  const ov = document.createElement('div'); ov.id='cleanup-overlay';
-  ov.style.cssText='position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;';
-  const box = document.createElement('div');
-  box.style.cssText='background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:22px 20px; max-width:420px; width:100%; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,.5);';
+// ===== v104 שלב ב': לשוניות, מצב בחירה, מחיקה קבוצתית =====
+let activeTab = 'quizzes';   // 'quizzes' | 'drafts' — ברירת מחדל: חידונים
+let selectMode = false;
+let selectedCodes = {};      // code -> true עבור פריטים מסומנים (מתחיל ריק תמיד)
 
-  const head = document.createElement('div');
-  head.style.cssText="font-family:'Secular One'; font-size:20px; color:var(--gold); margin-bottom:6px; text-align:center;";
-  head.textContent='ניקוי חידונים';
-  box.appendChild(head);
-  const sub = document.createElement('div');
-  sub.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:14px; text-align:center; line-height:1.5;';
-  sub.textContent='אלה חידונים שנשמרו אוטומטית בלבד. כולם מסומנים למחיקה — הסירו סימון מחידון כדי להשאיר אותו.';
-  box.appendChild(sub);
+function switchTab(tab){
+  activeTab = tab;
+  $('tab-quizzes').classList.toggle('active', tab === 'quizzes');
+  $('tab-drafts').classList.toggle('active', tab === 'drafts');
+  exitSelectMode();   // מעבר לשונית מאפס מצב בחירה
+  drawQuizCards();
+}
 
-  // מצב המחיקה לכל חידון (ברירת מחדל: למחוק)
-  const markDelete = {};
-  drafts.forEach(c => markDelete[c] = true);
-
-  const list = document.createElement('div');
-  list.style.cssText='overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px; margin-bottom:14px;';
-
-  const counter = document.createElement('div');
-  counter.style.cssText='font-size:14px; text-align:center; margin-bottom:12px; color:var(--ink);';
-  const updateCounter = ()=>{
-    const del = drafts.filter(c=>markDelete[c]).length;
-    const keep = drafts.length - del;
-    counter.innerHTML = 'יימחקו: <b style="color:#d9a441;">'+del+'</b> · יישארו: <b style="color:var(--teal);">'+keep+'</b>';
-    delBtn.disabled = (del === 0);
-    delBtn.style.opacity = (del === 0) ? '.5' : '1';
-    delBtn.textContent = del === 0 ? 'אין מה למחוק' : ('🗑 מחיקת ' + del);
-  };
-
-  drafts.forEach(c => {
-    const q = all[c];
-    const row = document.createElement('label');
-    row.style.cssText='display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.05); border-radius:10px; padding:10px 12px; cursor:pointer;';
-    const cb = document.createElement('input'); cb.type='checkbox'; cb.checked=true;
-    cb.style.cssText='width:18px; height:18px; flex-shrink:0; accent-color:#d9a441;';
-    cb.onchange=()=>{ markDelete[c]=cb.checked; updateCounter(); };
-    const info = document.createElement('div'); info.style.cssText='flex:1; min-width:0;';
-    const nm = document.createElement('div'); nm.style.cssText='font-size:15px; color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;';
-    nm.textContent = q.title && q.title.trim() ? q.title : 'חידון ללא שם';
-    const tm = document.createElement('div'); tm.style.cssText='font-size:12px; color:var(--ink-dim);';
-    tm.textContent = 'עודכן ' + relativeTime(q.updated);
-    info.appendChild(nm); info.appendChild(tm);
-    row.appendChild(cb); row.appendChild(info);
-    list.appendChild(row);
+// קודים בלשונית הפעילה (לפי isDraft), עם סינון חיפוש ומיון נעוצים-קודם
+function codesForActiveTab(){
+  const all = _quizListData || {};
+  const term = ($('quiz-search') && $('quiz-search').value || '').trim().toLowerCase();
+  let codes = Object.keys(all).filter(c => activeTab === 'drafts' ? !!all[c].isDraft : !all[c].isDraft);
+  if (term) codes = codes.filter(c => (all[c].title || '').toLowerCase().includes(term));
+  codes.sort((a,b)=>{
+    const pa = all[a].pinned ? 1 : 0, pb = all[b].pinned ? 1 : 0;
+    if (pa !== pb) return pb - pa;
+    return (all[b].updated||0) - (all[a].updated||0);
   });
-  box.appendChild(list);
-  box.appendChild(counter);
+  return codes;
+}
 
-  const btnRow = document.createElement('div'); btnRow.style.cssText='display:flex; gap:8px;';
-  const cancelBtn = document.createElement('button'); cancelBtn.className='btn ghost sm'; cancelBtn.style.flex='1'; cancelBtn.textContent='ביטול';
-  cancelBtn.onclick=()=>ov.remove();
-  const delBtn = document.createElement('button'); delBtn.className='btn'; delBtn.style.cssText='flex:1; background:#d9a441; color:#0b0b2a;';
-  delBtn.onclick=()=>{
-    const toDelete = drafts.filter(c=>markDelete[c]);
-    if (!toDelete.length) return;
-    if (!confirm('למחוק ' + toDelete.length + ' חידונים? אי אפשר לבטל.')) return;
-    delBtn.disabled=true; delBtn.textContent='מוחק...';
-    const ops = toDelete.map(c => {
-      fdb.ref('teachers_meta/'+myStoreKey+'/pinned/'+c).remove().catch(()=>{});
-      return fdb.ref('teachers/'+myStoreKey+'/'+c).remove().catch(()=>{});
-    });
-    Promise.all(ops).then(()=>{ ov.remove(); refreshMyList(); });
-  };
-  btnRow.appendChild(cancelBtn); btnRow.appendChild(delBtn);
-  box.appendChild(btnRow);
+function enterSelectMode(){
+  selectMode = true;
+  selectedCodes = {};   // מתחיל ריק — כלום לא מסומן (הגנה מפני מחיקה בשוגג, כמו Gmail)
+  $('bulk-bar').style.display = 'flex';
+  $('select-mode-btn').style.display = 'none';
+  updateBulkBar();
+  drawQuizCards();
+}
+function exitSelectMode(){
+  selectMode = false;
+  selectedCodes = {};
+  if ($('bulk-bar')) $('bulk-bar').style.display = 'none';
+  // כפתור "בחירה ומחיקה" מוצג רק כשיש פריטים בלשונית הפעילה
+  if ($('select-mode-btn')) $('select-mode-btn').style.display = (codesForActiveTab().length ? 'inline-block' : 'none');
+  drawQuizCards();
+}
+function toggleSelect(code, on){
+  if (on) selectedCodes[code] = true; else delete selectedCodes[code];
+  updateBulkBar();
+}
+function bulkSelectAll(){
+  const codes = codesForActiveTab();
+  const allSelected = codes.length && codes.every(c => selectedCodes[c]);
+  selectedCodes = {};
+  if (!allSelected) codes.forEach(c => selectedCodes[c] = true);   // אם הכל מסומן — מבטל; אחרת מסמן הכל
+  updateBulkBar();
+  drawQuizCards();
+}
+function updateBulkBar(){
+  const n = Object.keys(selectedCodes).length;
+  if ($('bulk-count')) $('bulk-count').textContent = 'נבחרו ' + n;
+  const tb = $('bulk-trash');
+  if (tb){ tb.disabled = (n === 0); tb.textContent = n ? ('🗑 מחיקת ' + n) : '🗑 מחיקה'; }
+  const codes = codesForActiveTab();
+  const allSelected = codes.length && codes.every(c => selectedCodes[c]);
+  if ($('bulk-selectall')) $('bulk-selectall').textContent = allSelected ? 'ביטול הסימון' : 'סימון הכל';
+}
+function bulkDelete(){
+  const codes = Object.keys(selectedCodes);
+  if (!codes.length) return;
+  const what = activeTab === 'drafts' ? 'טיוטות' : 'חידונים';
+  if (!confirm('למחוק ' + codes.length + ' ' + what + ' לצמיתות?\n\nהמחיקה סופית ואי אפשר לשחזר.')) return;
+  const tb = $('bulk-trash'); if (tb){ tb.disabled = true; tb.textContent = 'מוחק...'; }
+  const ops = codes.map(c => {
+    fdb.ref('teachers_meta/'+myStoreKey+'/pinned/'+c).remove().catch(()=>{});
+    return fdb.ref('teachers/'+myStoreKey+'/'+c).remove().catch(()=>{});
+  });
+  Promise.all(ops).then(()=>{ exitSelectMode(); refreshMyList(); });
+}
 
-  ov.appendChild(box); document.body.appendChild(ov);
-  updateCounter();
+// העברת חידון בין מצב חידון/טיוטה ישירות מהרשימה (תפריט ⋯). דגל-אמת אחד (isDraft).
+function toggleDraftFromList(code, q){
+  const newVal = !q.isDraft;
+  // כותבים רק את isDraft בחזרה, בלי לגעת בשאר השדות (set על שדה בודד)
+  fdb.ref('teachers/'+myStoreKey+'/'+code+'/isDraft').set(newVal)
+    .then(()=>refreshMyList())
+    .catch(()=>alert('תקלה בעדכון. נסו שוב.'));
 }
 
 // "עודכן לפני..." בעברית פשוטה
@@ -1329,24 +1397,22 @@ function relativeTime(ts){
 }
 
 
-// ממיין ומצייר את הכרטיסים, עם סינון אופציונלי לפי טקסט חיפוש
+// ממיין ומצייר את הכרטיסים של הלשונית הפעילה (חידונים/טיוטות)
 function drawQuizCards(){
   const box = $('quiz-list'); box.innerHTML = '';
   const all = _quizListData;
-  const term = ($('quiz-search') && $('quiz-search').value || '').trim().toLowerCase();
-  let codes = Object.keys(all);
-  // סינון לפי שם (אם יש חיפוש)
-  if (term){
-    codes = codes.filter(c => (all[c].title || '').toLowerCase().includes(term));
+  const codes = codesForActiveTab();
+  // נראות כפתור "בחירה ומחיקה" — רק כשיש פריטים בלשונית ולא במצב בחירה
+  if ($('select-mode-btn') && !selectMode){
+    $('select-mode-btn').style.display = codes.length ? 'inline-block' : 'none';
   }
-  // מיון: נעוצים קודם, ובכל קבוצה לפי עדכון אחרון
-  codes.sort((a,b)=>{
-    const pa = all[a].pinned ? 1 : 0, pb = all[b].pinned ? 1 : 0;
-    if (pa !== pb) return pb - pa;
-    return (all[b].updated||0) - (all[a].updated||0);
-  });
   if (!codes.length){
-    box.innerHTML = '<div style="text-align:center; color:var(--ink-dim); padding:20px 0;">לא נמצאו חידונים שמתאימים לחיפוש.</div>';
+    const term = ($('quiz-search') && $('quiz-search').value || '').trim();
+    let msg;
+    if (term) msg = 'לא נמצאו תוצאות לחיפוש.';
+    else if (activeTab === 'drafts') msg = 'אין טיוטות. חידון שתסמנו כטיוטה יופיע כאן.';
+    else msg = 'אין חידונים בלשונית זו.';
+    box.innerHTML = '<div style="text-align:center; color:var(--ink-dim); padding:20px 0;">' + msg + '</div>';
     return;
   }
   codes.forEach(code => box.appendChild(buildQuizCard(code, all[code])));
@@ -1359,6 +1425,15 @@ function buildQuizCard(code, q){
   const card = document.createElement('div');
   card.className = 'qlcard';
 
+  // v104 שלב ב': במצב בחירה — checkbox בפינה, והכרטיס מקבל class לריווח
+  if (selectMode){
+    card.classList.add('selecting');
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.className='qlcard-check';
+    cb.checked = !!selectedCodes[code];
+    cb.onclick=(e)=>{ e.stopPropagation(); toggleSelect(code, cb.checked); };
+    card.appendChild(cb);
+  }
+
   // --- שורה עליונה: כותרת + תפריט ⋯ ---
   const top = document.createElement('div'); top.className='qlcard-top';
   const titleWrap = document.createElement('div'); titleWrap.className='qlcard-titlewrap';
@@ -1367,12 +1442,8 @@ function buildQuizCard(code, q){
   const sharedLine = (q.copiedFrom && q.copiedFrom.ownerName)
     ? '<div class="qlcard-shared">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
     : '';
-  const draftBadge = !q.isConfirmed
-    ? '<div class="qlcard-draft">● שמירה אוטומטית בלבד</div>'
-    : '';
   titleWrap.innerHTML = '<div class="qlcard-title">' + pinMark + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
                         '<div class="qlcard-meta">קוד ' + escapeHtml(q.displayCode || '——') + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
-                        draftBadge +
                         sharedLine;
 
   // כפתור ⋯ + תפריט נפתח
@@ -1385,6 +1456,10 @@ function buildQuizCard(code, q){
   pinItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); togglePin(code, !q.pinned); };
   const shareItem = document.createElement('button'); shareItem.className='qlcard-menu-item'; shareItem.textContent='🔗 שיתוף';
   shareItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); openShareModal(code, q); };
+  // v104 שלב ב': מעבר דו-כיווני טיוטה↔חידון
+  const moveItem = document.createElement('button'); moveItem.className='qlcard-menu-item';
+  moveItem.textContent = q.isDraft ? '📤 העברה לחידונים' : '📝 העברה לטיוטות';
+  moveItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); toggleDraftFromList(code, q); };
   const libItem = document.createElement('button'); libItem.className='qlcard-menu-item';
   if (q.share && q.share.inLibrary){
     libItem.textContent = '✕ הסרה מהספרייה';
@@ -1396,7 +1471,7 @@ function buildQuizCard(code, q){
   }
   const delItem = document.createElement('button'); delItem.className='qlcard-menu-item danger'; delItem.textContent='🗑 מחיקה';
   delItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myStoreKey+'/'+code).remove().then(()=>refreshMyList()); } };
-  menu.appendChild(pinItem); menu.appendChild(shareItem); menu.appendChild(libItem); menu.appendChild(delItem);
+  menu.appendChild(pinItem); menu.appendChild(moveItem); menu.appendChild(shareItem); menu.appendChild(libItem); menu.appendChild(delItem);
   dots.onclick=(e)=>{ e.stopPropagation(); const wasOpen = menu.classList.contains('on'); closeAllCardMenus(); if(!wasOpen) menu.classList.add('on'); };
   menuWrap.appendChild(dots); menuWrap.appendChild(menu);
 
@@ -1518,7 +1593,7 @@ function openLibraryOverlayFromEditor(){
 async function newQuiz(){
   editCode = await genUniqueCode();
   const displayCode = await genDisplayCode();   // קוד-תצוגה אנושי קבוע, נוצר פעם אחת
-  quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], displayCode: displayCode, originalAuthor: (myAuthName || myEmail || ''), share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
+  quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], displayCode: displayCode, originalAuthor: (myAuthName || myEmail || ''), isDraft:false, share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
   resetAiMeta();             // חידון חדש — בחירות AI מתאפסות (פריט 1)
   aiCardDismissed = false;   // חידון חדש — הכרטיס יוצג שוב
   quiz.questions.push({ text:'', answers:['',''], correct:0 });  // שאלה ריקה ראשונה — לפני הרינדור, כדי לרנדר פעם אחת בלבד
@@ -1556,6 +1631,7 @@ function openExisting(code, data){
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
+    isDraft: data.isDraft || false,   // v104 שלב ב': ברירת מחדל=חידון; טיוטה היא סימון אקטיבי
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1576,6 +1652,7 @@ function playExisting(code, data){
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
+    isDraft: data.isDraft || false,   // v104 שלב ב': ברירת מחדל=חידון; טיוטה היא סימון אקטיבי
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1608,6 +1685,7 @@ function testExisting(code, data){
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
+    isDraft: data.isDraft || false,   // v104 שלב ב': ברירת מחדל=חידון; טיוטה היא סימון אקטיבי
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
@@ -1655,6 +1733,7 @@ function renderEditor(){
   // פאנל השיתוף
   renderSharePanel();
   if ($('library-panel')) renderLibraryPanel();
+  syncDraftToggles();   // v104 שלב ב': עדכון מצב שני מתגי-הטיוטה לפי quiz.isDraft
 }
 
 function teamCountChanged(){
@@ -2361,6 +2440,27 @@ function confirmQuiz(){
   if (!quiz || quiz.isConfirmed) return;
   quiz.isConfirmed = true;
   saveQuiz();   // נשמר באותה כתיבה כמו שאר אובייקט החידון
+}
+
+// v104 שלב ב': קובע אם החידון הוא טיוטה. דגל-אמת אחד (quiz.isDraft), שני מתגים בעורך
+// (עליון ליד הכותרת + תחתון באזור הפעולות) שמסונכרנים דרך syncDraftToggles. נשמר מיד.
+function setDraft(val){
+  if (!quiz) return;
+  quiz.isDraft = !!val;
+  saveQuiz();
+  syncDraftToggles();
+}
+// מעדכן את התצוגה של *שני* המתגים לפי quiz.isDraft (סנכרון דו-כיווני: סימון באחד משתקף בשני)
+function syncDraftToggles(){
+  const isD = !!(quiz && quiz.isDraft);
+  // מתג עליון — checkbox-style toggle עם תווית "טיוטה"
+  const topT = $('draft-toggle-top');
+  if (topT) topT.classList.toggle('on', isD);
+  // מתג תחתון — שורת-מצב בהקשר-יציאה: "מצב החידון: חידון/טיוטה · [העברה]"
+  const botLabel = $('draft-bottom-label');
+  const botBtn = $('draft-bottom-btn');
+  if (botLabel) botLabel.textContent = isD ? 'מצב החידון: טיוטה' : 'מצב החידון: חידון';
+  if (botBtn) botBtn.textContent = isD ? 'החזרה לחידון' : 'העברה לטיוטה';
 }
 
 // מסנכרן את shared/ ו-library/ עם המקור, רק אם החידון משותף.
