@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v106 - תיקון באג אמיתי שדווח: בדיקת-התקינות בשיתוף *לא* רצה בפועל, וניתן היה לשתף חידון שבור (רק כותרת / שאלה עם תשובה אחת / בלי תשובה נכונה). הסיבה: ב-v104/v105 הבדיקה (shareLibValidationError) הוצמדה לכפתור הפנימי shareToEveryone *בתוך* ה-overlay — אבל openShareOverlayFromEditor פתחה את ה-overlay בלי בדיקה, ואם החידון כבר שותף (sh.mode==='public') renderSharePanel הציגה את הקוד/קישור הקיימים מיד בלי לעבור דרך הכפתור בכלל. כלומר התיקון "היה בקוד" אך ישב במקום הלא-נכון בזרימה — בדיוק כפי שהמשתמש זיהה ("בשיתוף לא יישמת כלום"). לעומת זאת בספרייה זה כן עבד כי openLibraryPublishFromCard מריצה את הבדיקה בתחילתה ("בספרייה חלק"). התיקון: (1) הבדיקה הועברה ל-*פתיחת* ה-overlay בשלוש נקודות — openShareOverlayFromEditor (שיתוף מהעורך), openShareModal (שיתוף מהרשימה — לא היה מוגן כלל), ו-openLibraryPublishFromCard (כבר היה). חידון שבור לא פותח את חלון השיתוף בכלל ומציג הודעה מיד. (2) באג שני: quizReady היה חסר-פרמטר וקרא את quiz הגלובלי תמיד; shareLibValidationError(q,...) העבירה q אך quizReady התעלמה ממנו (עבד מהעורך במקרה, שביר מהרשימה). תוקן — quizReady(qz) מקבל פרמטר, ברירת-מחדל ל-quiz הגלובלי (תאימות לאחור), ו-shareLibValidationError קוראת quizReady(q). אומת בבדיקת-לוגיקה: כל ארבעת המקרים (רק כותרת / תשובה אחת / שאלה ריקה / תקין) מחזירים את ההודעה הנכונה. הערה: נתיבי המשחק (prePlay) והבדיקה (previewQuiz) כבר בדקו quizReady ולא היו שבורים — רק השיתוף היה. עדיין דורש אימות על מסך חי (Firebase חסום בסביבת-הפיתוח)
   v105 - שלב ב': מודל הטיוטות (היפוך ברירת-המחדל) + לשוניות ומחיקה-קבוצתית ב"החידונים שלי". העיקרון: עד כה ברירת-המחדל הייתה "טיוטה" (isConfirmed כבוי) והמשתמש סימן אקטיבית "אני רוצה" דרך פעולה. עכשיו הפוך — ברירת-המחדל היא "חידון", והמשתמש מדליק תגית "טיוטה" רק אם *לא* רוצה. הנימוק (של המשתמש): אובדן-מידע גרוע מעודף-מידע — "חידון נעלם לי" חמור מ"יש לי חידונים מיותרים", והסימון האקטיבי מונע טענות. מימוש: (1) שדה חדש isDraft (ברירת מחדל false=חידון), נבחר על-פני היפוך isConfirmed עצמו כדי לא לגעת ב-7 נקודות-הסנכרון הרגישות — isConfirmed נשאר בקוד אך מת (לא נקרא יותר לסינון/תצוגה). isDraft מתווסף ל-3 אובייקטי-הטעינה (openExisting/playExisting/testExisting) ול-newQuiz. (2) שני מתגים מסונכרנים בעורך על דגל-אמת אחד: עליון (pill-switch "סימון כטיוטה" ליד הכותרת) + תחתון (שורת-מצב "מצב החידון: חידון/טיוטה · [העברה]" באזור הפעולות, ניסוח שונה להקשר "לפני יציאה"). שניהם קוראים setDraft(), ש-syncDraftToggles מעדכן את *שניהם* יחד (סנכרון דו-כיווני). renderEditor קורא syncDraftToggles. (3) שתי לשוניות ב"החידונים שלי" (list-tabs, פס מפוצל, אקטיבית קדימה בכהה עם צל-עומק): "חידונים"=ברירת-מחדל, "טיוטות". מונה על כל לשונית (updateTabCounts → "(N)"). codesForActiveTab מסנן לפי isDraft + חיפוש + מיון-נעוצים. switchTab מחליף ומאפס מצב-בחירה. (4) התגית הישנה "● שמירה אוטומטית בלבד" (qlcard-draft) הוסרה מהכרטיסים + ה-CSS שלה — הלשונית נותנת את ההקשר. (5) מעבר דו-כיווני טיוטה↔חידון בתפריט ⋯ (toggleDraftFromList — כותב רק את isDraft, set על שדה בודד, בלי לגעת בשאר). (6) מחיקה קבוצתית בסגנון Gmail בשתי הלשוניות (enterSelectMode/exitSelectMode/toggleSelect/bulkSelectAll/bulkDelete + checkbox לכל כרטיס): מתחיל *ריק* (כלום לא מסומן — הגנה מפני מחיקה בשוגג, בניגוד מפורש לדיאלוג-החילוץ הישן שסימן הכל), "סימון הכל" כפתור-בחירה, אייקון פח עם אזהרה "המחיקה סופית ואי אפשר לשחזר", פועל בלשונית הפעילה בלבד. (7) cleanupDrafts + cleanup-drafts-wrap + cleanup-overlay (דיאלוג-החילוץ הישן) הוסרו לגמרי — הלשוניות + bulk-select מחליפים אותם. relativeTime נשמר (עדיין שימושי). חידונים קיימים: אין מיגרציה (לא מופץ — שלך ושל הבן + אולי 2 ישנים) — בלי isDraft נחשבים חידונים, וזה המקום הנכון. הערה: לא אומת על מסך אמיתי (סביבת-הבדיקה חוסמת את Firebase-auth ולכן לא ניתן להריץ את אתחול-האפליקציה) — node --check עבר, איזון-תגיות עבר, בדיקות-לוגיקה מבודדות עברו, אך הזרימה החיה דורשת בדיקה ידנית
   v104 - שלב א' משיפוץ אזור הפעולות בעורך (עיצוב אסתטי, צבע אחד): המשתמש קבע שאזור הפעולות נראה כמו "ארבעה כרטיסים אחד מתחת לשני" — עמוס, ארוך, ועם בליטות-צבע (טורקיז/זהב) ש"נראות כמו קרקס". המבנה הישן (v103) היה: zone-title "🎮 בדיקה והפעלה" + launch-card טורקיז בולט, zone-title "🔗 שיתוף" + share-panel inline, אקורדיון "⚙️ ניהול" (שמירה·ספרייה·ניקוי). המבנה החדש — שתי שורות של מלבנים אפורים *זהים* (action-grid/action-box, צבע אחד rgba(255,255,255,.06), אפס בליטות): שורה 1 = התחלת משחק · תצוגה מקדימה; שורה 2 = שיתוף עם מורים · הוספה לספרייה; ומתחת קישור-ניקוי אדום-עדין נפרד (action-clear). כפתור "שמירה ידנית" הוסר מהמסך (החלטה: ברגע שעוברים למודל-טיוטות עם תגית אקטיבית, isConfirmed-via-שמירה מאבד את תפקידו; saveNow נשאר מוגדר אך בלי טריגר-UI). שיתוף וספרייה נפתחים עכשיו כחלון צף (overlay) במקום פאנל inline: openShareOverlayFromEditor מחזר את share-modal הקיים של הרשימה (אותו מנגנון העברת-id של share-panel, אבל בלי לטעון מחדש את quiz — בעורך quiz הוא כבר האובייקט החי); openLibraryOverlayFromEditor — אם כבר בספרייה מציג חלון-סטטוס קטן עם הסרה, אחרת קורא ל-openLibraryPublishFromCard הקיים. closeShareModal תוקן לקרוא refreshMyList רק כש-currentNavScreen()==='mylist' (אחרת פתיחה מהעורך הייתה מנווטת לרשימה). הפאנלים share-panel/library-panel נשארו ב-DOM אך display:none — renderSharePanel/renderLibraryPanel עדיין נקראים מ-renderEditor וכותבים אליהם (לא נגענו בלוגיקה). Note: זהו שלב א' בלבד — מודל הטיוטות (היפוך isConfirmed, תגית-טיוטה כפולה מסונכרנת בעורך, לשוניות חידונים/טיוטות עם מונה ומחיקה-קבוצתית ברשימה) הוא שלב ב' שטרם נבנה. תוספות באותה גרסה: (א) "⚙️ אפשרויות נוספות" (רקע/מוזיקה) הוסר מהעורך — אי אפשר לשמור רקע/מוזיקה (blob מקומי בלבד, לא ב-Firebase) והבחירה קורית ממילא במסך ההכנה (pregame) סמוך להפעלה; המשתמש ביקש זאת מספר פעמים. נשמרו בעורך *רק* שני ה-file-inputs המוסתרים (bg-input/music-input) כי pregame לוחץ עליהם דרך $('bg-input')/$('music-input') — הם תשתית משותפת, לא UI. כל ה-UI הגלוי הוסר (כפתורי גלריה/מכשיר, bg-chip, music-list, bg-clear); הכתיבות אליהם ב-bgChosen/clearBg/musicChosen כבר היו מוגנות ב-if($('id')) אז הן פשוט מדלגות. (ב) הודעת השמירה האוטומטית נוסחה ברור יותר — "✓ נשמר אוטומטית — אין צורך לשמור" (במקום "נשמר אוטומטית ✓") גם ב-HTML הסטטי וגם ב-2 מחרוזות ה-JS שמעדכנות את save-state — כדי שהיעדר כפתור-שמירה יהיה מובן (הכלי שומר לבד). (ג) איחוד הודעות-תנאי בשיתוף ובספרייה (shareLibValidationError): קודם חידון ללא שם *וגם* ללא שאלה ייצר שתי הודעות-alert ברצף (המשתמש תיקן את השם, ניסה שוב, וחטף מיד הודעה על שאלה) — מטריד. עכשיו פונקציה אחת מחזירה הודעה *מאוחדת* כששניהם חסרים ("תנו שם לחידון והוסיפו לפחות שאלה אחת לפני..."), או הודעה ספציפית כשרק אחד חסר. הפונקציה מקבלת את אובייקט-החידון כפרמטר (q) כי הספרייה נקראת גם מכרטיס-רשימה עם q שאינו ה-quiz הגלובלי. deep=true בשיתוף (מהעורך) — שומר על בדיקת-התקינות העמוקה של quizReady (שאלה ריקה/חסרות תשובות/קבוצה ללא שם) כשהשם והשאלה קיימים; deep=false בספרייה. הוחלף ב-3 נקודות-כניסה: shareToEveryone, startSpecificShare, openLibraryPublishFromCard. הערה: בספרייה זה גם הדק קצת — קודם נבדק רק q.questions.length (קיום שאלה), עכשיו נבדק שיש בה תוכן אמיתי (טקסט/תשובה) — חידון עם שאלה ריקה לגמרי כבר לא ייכנס לספרייה הציבורית. לא נעשה overlay חדש (המשתמש הציע, נדחה) — הודעת-שגיאה של שורה אחת מתאימה ל-alert, לא ל-overlay מעוצב
   v103 - ארגון-מחדש של אזור הפעולות בעורך: היררכיה ברורה בארבעה אזורים, שיתוף קומפקטי: בעקבות משוב מפורט — היו 8+ פעולות באותו אזור בלי היררכיה, השיתוף תפס יותר מקום מההפעלה (הפוך מהחשיבות), ולא הייתה הפרדה ויזואלית בין "עריכה" ל"הפעלה". המבנה החדש: (1) ✏️ עריכת החידון — כל התוכן (שם/זמן/מבנה/שאלות/הוספת שאלה/⚙️ אפשרויות נוספות נשארות כאן). "נשמר אוטומטית ✓" הועבר מאמצע-הזרימה לשורה שקטה ליד כותרת העורך (מידע-מערכת, לא בזרימה). (2) קו מפריד חזק (zone-div) — הפרדה ויזואלית בין עריכה להפעלה, השינוי החשוב ביותר. (3) 🎮 בדיקה והפעלה — כרטיס אחד בולט (launch-card, רקע טורקיז עדין): "▶️ התחלת משחק" גדול+טורקיז, ומתחתיו "👁️ תצוגה מקדימה" כקישור משני-אך-גלוי (לא נקבר — בדיקה היא חלק מזרימת-העבודה, לא תחזוקה). (4) 🔗 שיתוף — גלוי כאזור שלישי (מנוע צמיחה, לא נקבר באקורדיון), אבל הוקטן דרמטית: renderSharePanel נכתב מחדש משורה-אחת קומפקטית — קוד + "העתקת קוד" + "העתקת קישור" בשורה אחת (במקום כרטיס ענק עם כפתור-קישור-ירוק-מלא-רוחב). אין "ביטול שיתוף" (v58 — עותקים שנלקחו בלתי-נגישים). (5) ⚙️ ניהול — אקורדיון סגור (שמירה ידנית · ספרייה · ניקוי). פלטת צבעים: ראשי=טורקיז, משני=אפור, מסוכן(ניקוי)=אדום-עדין. shareStatusBox הישן (הכרטיס הגדול) כבר לא בשימוש מהעורך
@@ -326,7 +327,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v105</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v106</span></div>
 
 <!-- תפריט ניווט — נבנה דינמית לכל מסך (updateNavMenu): מציג רק את היעדים שאינם המסך הנוכחי -->
 <div id="nav-menu">
@@ -1522,6 +1523,9 @@ function openShareModal(code, data){
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
   if (data.aiMeta) quiz.aiMeta = data.aiMeta;
+  // v105 תיקון: בדיקת-תקינות לפני פתיחת חלון השיתוף גם מהרשימה — חידון שבור לא יישלח.
+  const verr = shareLibValidationError(quiz, 'השיתוף', true);
+  if (verr){ alert(verr); return; }
   $('share-modal-quizname').textContent = quiz.title || 'חידון ללא שם';
   // הגנה: אם נשאר מצב id ישן (מודאל שלא נסגר תקין) — מאפסים קודם
   const leftover = document.getElementById('share-panel-editor-stash');
@@ -1549,6 +1553,10 @@ function closeShareModal(){
 // בלי לטעון מחדש את quiz — בעורך quiz כבר הוא האובייקט החי שנערך (אסור לדרוס אותו).
 function openShareOverlayFromEditor(){
   if (!myUid){ alert('צריך להתחבר עם Google כדי לשתף.'); return; }
+  // v105 תיקון: בדיקת-תקינות *לפני* פתיחת ה-overlay (כמו בספרייה). חידון שבור (בלי שם/שאלה/תשובות)
+  // לא יפתח את חלון השיתוף בכלל — קודם נסגרה הבעיה שהבדיקה ישבה רק על כפתור פנימי שלעיתים לא נלחץ.
+  const verr = shareLibValidationError(quiz, 'השיתוף', true);
+  if (verr){ alert(verr); return; }
   $('share-modal-quizname').textContent = (quiz && quiz.title) ? quiz.title : 'חידון ללא שם';
   // אותו מנגנון העברת-id כמו openShareModal — share-panel עובר זמנית למודאל
   const leftover = document.getElementById('share-panel-editor-stash');
@@ -3218,21 +3226,22 @@ function shareLibValidationError(q, actionWord, deep){
   if (noName && !hasContent) return 'תנו שם לחידון והוסיפו לפחות שאלה אחת לפני ' + actionWord + '.';
   if (noName) return 'תנו שם לחידון לפני ' + actionWord + '.';
   if (!hasContent) return 'הוסיפו לפחות שאלה אחת לפני ' + actionWord + '.';
-  if (deep){ const d = quizReady(); if (d) return d; }
+  if (deep){ const d = quizReady(q); if (d) return d; }
   return null;
 }
 
-function quizReady(){
-  if (!quiz.questions.length) return 'צריך לפחות שאלה אחת.';
-  for (let i=0;i<quiz.questions.length;i++){
-    const q = quiz.questions[i];
+function quizReady(qz){
+  const Q = qz || quiz;   // v105 תיקון: מקבל את אובייקט-החידון; ברירת-מחדל ל-quiz הגלובלי (תאימות לאחור)
+  if (!Q.questions.length) return 'צריך לפחות שאלה אחת.';
+  for (let i=0;i<Q.questions.length;i++){
+    const q = Q.questions[i];
     if (!q.text.trim()) return 'שאלה ' + (i+1) + ' ריקה.';
     const filled = q.answers.filter(a => a.trim());
     if (filled.length < 2) return 'בשאלה ' + (i+1) + ' צריך לפחות 2 תשובות.';
     if (!q.answers[q.correct] || !q.answers[q.correct].trim()) return 'בשאלה ' + (i+1) + ' לא סומנה תשובה נכונה תקינה.';
   }
-  if (quiz.teamCount > 0){
-    for (let i=0;i<quiz.teamCount;i++) if (!quiz.teamNames[i] || !quiz.teamNames[i].trim()) return 'מלאו שם לכל הקבוצות.';
+  if (Q.teamCount > 0){
+    for (let i=0;i<Q.teamCount;i++) if (!Q.teamNames[i] || !Q.teamNames[i].trim()) return 'מלאו שם לכל הקבוצות.';
   }
   return null;
 }
