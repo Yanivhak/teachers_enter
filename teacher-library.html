@@ -40,7 +40,7 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
 </style>
 </head>
 <body>
-<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v2</div>
+<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v3</div>
 <div class="wrap">
   <h1>📚 ספריית חידונים</h1>
   <p class="sub">חידונים ששיתפו מורים אחרים. אפשר להעתיק אותם לעצמכם בלחיצה.</p>
@@ -56,7 +56,7 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
   <p id="msg">טוען...</p>
 
   <div style="text-align:center;">
-    <a class="back" href="index.html">→ חזרה לתפריט הראשי</a>
+    <a class="back" href="index.html" onclick="goBackSmart(event)">→ חזרה</a>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -86,6 +86,19 @@ let myReports = {};        // הדיווחים שלי: quizId -> true
 function $(id){ return document.getElementById(id); }
 function emailToKey(e){ return e.trim().toLowerCase().replace(/[.#$\[\]\/@]/g, '_'); }
 function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2200); }
+
+// חזרה חכמה: חוזר לדף שממנו הגעת (חידון/מצגת/אינדקס) במקום תמיד לאינדקס.
+// אם הגעת מדף אחר באותו אתר — history.back() מחזיר אליו. אם נכנסת ישירות (אין referrer
+// מאותו origin) — נופלים לאינדקס. כך "חזרה" היא צעד-אחד-אחורה אמיתי, לא יעד קבוע.
+function goBackSmart(ev){
+  if (ev) ev.preventDefault();
+  let sameOriginRef = false;
+  try {
+    sameOriginRef = !!document.referrer && new URL(document.referrer).origin === location.origin;
+  } catch(e){ sameOriginRef = false; }
+  if (sameOriginRef && history.length > 1){ history.back(); }
+  else { location.href = 'index.html'; }
+}
 
 function signIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
