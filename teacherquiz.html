@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v91 - סרגל המנחה במשחק הומר לתפריט נגלל (כמו במונטאז'), לתיקון בעיית הטלפון: עד כה סרגל המנחה היה שורה אופקית אחת של 5-6 כפתורים (host-bar) שגלשה מעבר לרוחב הטלפון — מונה הנוכחות "👥 מחוברים: X/Y", שהיה הרכיב האחרון בשורה, נדחף החוצה והוסתר מאחורי הכפתורים. עכשיו מבנה חדש (host-menu) בפינה ימין-למטה: (א) שורה קבועה תמיד-גלויה — מונה הנוכחות (מקוצר ל"👥 X/Y") + כפתור "📲 קוד חזרה" + כפתור "☰ תפריט ▾". (ב) הרשימה הנגללת (host-controls) נפתחת מעל השורה בלחיצה על "תפריט", ומכילה: הבא / מוזיקה / רקע / חיזוקים / סיום. נפתחת סגורה כברירת מחדל (מסך נקי בזמן המשחק), נסגרת/נפתחת עם סיבוב החץ. החלטות עיצוב: (1) המונה נשאר תמיד-גלוי ולא נכנס לתפריט — זה מידע שהמנחה צריך לראות תמיד (אם תלמיד נפל), לא פעולה. (2) כפתור "קוד חזרה" נשאר גלוי וקבוע ליד המונה (לא קופץ לפי-צורך) — קפיצת כפתור באמצע שאלה היא בדיוק ההסחה ש-v88 בא לתקן; במקום זה *המונה* מצהיב (טקסט כהה + רקע/מסגרת זהובים) כשמישהו חסר, והכפתור היציב כבר שם. (3) כפתור התפריט כהה כברירת מחדל — זהוב שמור להתראת המונה בלבד. הטרייד-אוף המודע: מצב המתגים (מוזיקה דולקת/כבויה, חיזוקים פעיל/כבוי) מוסתר עד פתיחת התפריט — מקובל כי מגדירים אותם פעם אחת בתחילת המשחק. host-bar הישן נשמר רק למצב-בדיקה (solo-bar) שהוא קצר ולא גולש. כל קריאות $('host-bar') ב-JS עודכנו ל-$('host-menu'); נוספה toggleHostMenu()
   v90 - רציפות ויזואלית בין שתי נקודות-הכניסה ל-AI: עד כה כרטיס ה-AI (חידון ריק) היה טורקיז עם הטקסט "יצירת חידון באמצעות בינה מלאכותית", והכפתור (חידון עם תוכן) היה סגול עם "עריכת חידון באמצעות AI" — צבע שונה וניסוח שונה גרמו לכך שהמשתמש לא בהכרח הבין שזו אותה פעולה. עכשיו שניהם זהים: אותו אייקון (🤖), אותו צבע (טורקיז/teal), ואותו ניסוח "...באמצעות AI" — נבדלים רק בפועל (יצירת/עריכת) שמשקף את ההקשר. כותרת חלון ה-AI עצמו (openImport) נשארה עם "בינה מלאכותית" המלא (כותרת פורמלית, הקשר אחר)
   v89 - הסרה מהספרייה ישירות מהרשימה: עד כה בכרטיס ברשימה הפריט "📚 נמצא בספרייה" היה מושבת — אי אפשר היה להסיר מהספרייה בלי להיכנס לעורך. עכשיו כשהחידון בספרייה, הפריט בתפריט ⋯ הוא "✕ הסרה מהספרייה" פעיל (אדום), עם אישור ברור ("להסיר את החידון X מהספרייה הציבורית? ... החידון עצמו יישאר אצלכם ברשימה"). removeFromLibraryCard מסיר לפי ה-libraryId של אותה רשומה וכותב את share בחזרה ל-teachers/{key}/{code}/share. המשתמש מסיר רק את הרשומה שלו (הסרה-כאדמין-לכולם היא מנגנון נפרד). כך יש שליטה מלאה מהמקום שבו כל החידונים מופיעים, בלי מעבר לעריכה
   v88 - QR-לחזרה הפך מ-overlay מסך-מלא לפינה קטנה שלא עוצרת את המשחק: עד כה כפתור "📲 קוד חזרה" פתח overlay על כל המסך (inset:0, רקע כהה) שכיסה את השאלה והתשובות — המשחק נעצר לכולם בזמן ששחקן אחד רק רצה לחזור. עכשיו showReturnQR מציג פאנל קומפקטי בפינה שמאלית-תחתונה (הצד הנגדי לסרגל המנחה שיושב מימין-למטה), מעל שורת הקרדיט: QR בגודל 150px + קוד המשחק + הסבר קצר "מי שיצא — סרקו לחזרה". בלי רקע כהה — השאלה והתשופות במרכז נשארות גלויות ופעילות, וכולם ממשיכים לשחק. הכפתור הפך למתג אמיתי: לחיצה ראשונה מציגה, נוספת מסתירה (גם כפתור "✕ הסתרה" בפאנל). hideReturnQR מנקה את הפינה ביציאה/סיום משחק (backToEditor/restartGame/finishToList/newQuizFromGame ומסך הסיום)
@@ -173,6 +174,22 @@ input:focus{border-color:var(--gold); outline:none;}
 .bar.is-correct .name{color:var(--gold);}
 .bar .n{color:#fff; text-align:left; font-weight:800;}
 .host-bar{position:fixed; bottom:14px; right:14px; z-index:80; display:flex; gap:8px;}
+/* סרגל מנחה במשחק — תפריט נגלל (כמו במונטאז'): שורה תמיד-גלויה (מונה + קוד-חזרה + כפתור תפריט), והרשימה נפתחת מעליה */
+#host-menu{position:fixed; bottom:14px; right:14px; z-index:80; display:flex; flex-direction:column; align-items:flex-end; gap:8px;}
+/* השורה הקבועה התחתונה — תמיד על המסך */
+#host-menu-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+/* מונה הנוכחות — רכיב מידע עצמאי, תמיד גלוי. מצהיב כשמישהו חסר (נשלט מ-JS) */
+#presence-counter{font-size:14px; font-weight:800; color:var(--ink-dim); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:9px 14px; white-space:nowrap;}
+/* כפתור פתיחת/סגירת התפריט — כהה כברירת מחדל (זהוב שמור להתראת המונה) */
+#host-menu-toggle{display:flex; align-items:center; gap:8px; font-family:'Heebo'; font-size:14px; font-weight:800; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:9px 14px; cursor:pointer;}
+#host-menu-toggle:active{transform:translateY(1px);}
+#host-menu-toggle .chev{font-size:11px; transition:transform .2s ease;}
+#host-menu.open #host-menu-toggle .chev{transform:rotate(180deg);}
+/* הרשימה הנגללת — מוסתרת עד פתיחה */
+#host-controls{display:none; flex-direction:column; align-items:stretch; gap:8px; background:rgba(10,16,32,.96); padding:8px; border-radius:14px; box-shadow:0 6px 22px rgba(0,0,0,.55); min-width:180px;}
+#host-menu.open #host-controls{display:flex;}
+#host-controls button{font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:10px 16px; cursor:pointer; text-align:right;}
+#host-controls button:active{transform:translateY(1px);}
 .banner{font-weight:800; font-size:clamp(20px,2.6vw,30px); border-radius:12px; padding:10px 22px; max-width:90vw; text-shadow:0 1px 6px rgba(0,0,0,.4);}
 .banner.gold{background:var(--gold); color:#1a2342;}
 .banner.teal{background:var(--teal); color:#06231f;}
@@ -225,7 +242,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v90</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v91</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -652,14 +669,21 @@ input:focus{border-color:var(--gold); outline:none;}
   </div>
 </div>
 
-<div class="host-bar" id="host-bar" style="display:none;">
-  <button onclick="hostSkip()">⏭️ הבא</button>
-  <button onclick="hostToggleMusic()" id="music-toggle">🔊 מוזיקה</button>
-  <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🖼️ רקע</button>
-  <button onclick="showReturnQR()">📲 קוד חזרה</button>
-  <button onclick="toggleReinforce()" id="reinforce-toggle">🌟 חיזוקים: פעיל</button>
-  <button onclick="hostJumpFinish()">🏁 סיום</button>
-  <span id="presence-counter" style="display:none; font-size:13px; color:var(--ink-dim); align-self:center; margin-inline-start:auto; white-space:nowrap;"></span>
+<div id="host-menu" style="display:none;">
+  <!-- הרשימה הנגללת — נפתחת מעל השורה הקבועה -->
+  <div id="host-controls">
+    <button onclick="hostSkip()">⏭️ הבא</button>
+    <button onclick="hostToggleMusic()" id="music-toggle">🔊 מוזיקה</button>
+    <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🖼️ רקע</button>
+    <button onclick="toggleReinforce()" id="reinforce-toggle">🌟 חיזוקים: פעיל</button>
+    <button onclick="hostJumpFinish()">🏁 סיום</button>
+  </div>
+  <!-- השורה הקבועה התחתונה — תמיד גלויה: מונה, קוד-חזרה, וכפתור פתיחת התפריט -->
+  <div id="host-menu-bar">
+    <span id="presence-counter" style="display:none;"></span>
+    <button id="return-code-btn" onclick="showReturnQR()" style="font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:9px 14px; cursor:pointer;">📲 קוד חזרה</button>
+    <button id="host-menu-toggle" onclick="toggleHostMenu()" title="פתיחה/סגירה של תפריט הבקרה">☰ תפריט <span class="chev">▾</span></button>
+  </div>
 </div>
 <!-- סרגל מצב בדיקה — זהה במראה לסרגל המשחק, אבל עם חזרה לעריכה זמינה תמיד -->
 <div class="host-bar" id="solo-bar" style="display:none;">
@@ -2983,10 +3007,13 @@ function updatePresenceCounter(connectedNow){
   if (!el) return;
   const totalJoined = Object.keys(players).length;
   if (totalJoined === 0){ el.style.display = 'none'; return; }
-  el.style.display = 'inline';
-  el.textContent = '👥 מחוברים: ' + connectedNow + ' / ' + totalJoined;
-  // צבע אזהרה אם ירדו הרבה
-  el.style.color = (connectedNow < totalJoined) ? 'var(--gold)' : 'var(--ink-dim)';
+  el.style.display = 'inline-block';
+  el.textContent = '👥 ' + connectedNow + ' / ' + totalJoined;
+  // התראה ויזואלית כשמישהו חסר — המונה הוא האות היחיד לנשירה, אז הוא מצהיב בולט (טקסט + מסגרת)
+  const missing = connectedNow < totalJoined;
+  el.style.color = missing ? '#1a2342' : 'var(--ink-dim)';
+  el.style.background = missing ? 'var(--gold)' : 'rgba(34,50,92,.92)';
+  el.style.borderColor = missing ? 'var(--gold)' : 'rgba(255,255,255,.22)';
 }
 function send(o){ o.from = myId; o.ts = Date.now(); if (gameRef) gameRef.push(o); }
 
@@ -3030,8 +3057,15 @@ function renderJoined(){
   $('go-btn').disabled = Object.keys(players).length === 0;
 }
 
+/* פתיחה/סגירה של תפריט הבקרה של המנחה במשחק (החץ מסתובב לפי המצב) */
+function toggleHostMenu(){
+  const m = $('host-menu');
+  if (m) m.classList.toggle('open');
+}
+
 function hostStart(){
-  $('host-bar').style.display = 'flex';
+  $('host-menu').style.display = 'flex';
+  $('host-menu').classList.remove('open');   // התפריט מתחיל סגור — מסך נקי בזמן המשחק
   $('ingame-credit').style.display = 'block';
   if ($('solo-answers')) $('solo-answers').style.display='none';
   if ($('solo-next')) $('solo-next').style.display='none';
@@ -3716,7 +3750,7 @@ function hostFinish(){
   clearInterval(hostTimer);
   stopGameMusic();
   applyGameBg(false);
-  $('host-bar').style.display='none';
+  $('host-menu').style.display='none';
   $('ingame-credit').style.display='none';
   hideReturnQR();
   const board = scoreboard();
@@ -3772,11 +3806,11 @@ function hostSkip(){
   if (!revealed && curQ){ revealQ(); } else { nextQ(); }
 }
 function hostJumpFinish(){ clearInterval(hostTimer); hostFinish(); }
-function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); renderEditor(); show('editor'); }
-function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); goPlay(); }
-function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); refreshMyList(); }
+function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); renderEditor(); show('editor'); }
+function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); goPlay(); }
+function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); refreshMyList(); }
 // יצירת חידון חדש ישירות ממסך הסיום (אותו ניקוי מצב משחק, ואז newQuiz)
-function newQuizFromGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-bar').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); newQuiz(); }
+function newQuizFromGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); newQuiz(); }
 
 // מסיר את פינת ה-QR אם פתוחה (בסיום/יציאה מהמשחק)
 function hideReturnQR(){ const c = $('return-qr-corner'); if (c) c.remove(); }
@@ -3841,7 +3875,7 @@ function previewQuiz(){
   players = { _me:{ name:'אתם (בדיקה)', team:(quiz.teamCount>0?0:-1), score:0, streak:0, correct:0 } };
   bestMs = Infinity; bestName=''; maxStreak=0; streakKing='';
   intermissionDone = new Set();
-  $('host-bar').style.display='none';
+  $('host-menu').style.display='none';
   // סרגל בדיקה + תג בדיקה + מוזיקה — כדי שהבדיקה תרגיש כמו המשחק האמיתי
   $('solo-bar').style.display='flex';
   $('solo-badge').style.display='block';
