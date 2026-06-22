@@ -53,16 +53,16 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
 </style>
 </head>
 <body>
-<!-- library v5 — תפריט ניווט (זהה לחידון) מחליף את כפתור "חזרה". יעדים מפורשים במקום ניחוש:
-     ➕ בניית חידון חדש (דרך teacherquiz.html?new=1) · 🗂️ החידונים שלי · 🎬 יציאה למצגת.
+<!-- library v6 — תפריט ניווט (זהה לחידון) מחליף את כפתור "חזרה". יעדים מפורשים במקום ניחוש:
+     ➕ בניית חידון חדש (teacherquiz.html?new=1) · 🗂️ החידונים שלי (teacherquiz.html?list=1 — ?list=1 מקפיץ ישר לרשימה) · 🎬 יציאה למצגת.
      "ספרייה" לא בתפריט (אנחנו כאן). הסגנון זהה ל-nav-menu בקובץ teacherquiz.html. -->
-<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v5</div>
+<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v6</div>
 
 <!-- תפריט ניווט — זהה לחידון. בספרייה היעדים הם: חידון חדש + חידונים שלי + יציאה למצגת (לא "ספרייה" כי אנחנו כאן) -->
 <div id="nav-menu">
   <div id="nav-list">
     <a href="teacherquiz.html?new=1" class="nav-item-link">➕ בניית חידון חדש</a>
-    <a href="teacherquiz.html" class="nav-item-link">🗂️ החידונים שלי</a>
+    <a href="teacherquiz.html?list=1" class="nav-item-link">🗂️ החידונים שלי</a>
     <a href="index.html" class="nav-exit">🎬 יציאה לבניית מצגת</a>
   </div>
   <button id="nav-toggle" onclick="toggleNavMenu()" title="פתיחה/סגירה של תפריט הניווט">☰ <span id="nav-toggle-label">ניווט</span> <span class="chev">▾</span></button>
