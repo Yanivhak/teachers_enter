@@ -35,12 +35,37 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
 #msg{text-align:center; color:var(--ink-dim); margin:30px 0;}
 .gate{text-align:center; margin:30px 0;}
 .back{display:inline-block; margin-top:24px; color:var(--ink-dim); text-decoration:none; font-size:15px;}
+/* ===== תפריט ניווט — זהה לזה של החידון (פינה ימנית-עליונה, מתקפל) ===== */
+#nav-menu{position:fixed; top:12px; right:14px; z-index:60; display:flex; flex-direction:column; align-items:flex-end; gap:8px;}
+#nav-toggle{display:flex; align-items:center; gap:7px; font-family:'Heebo'; font-size:15px; font-weight:800; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.28); border-radius:11px; padding:10px 17px; cursor:pointer;}
+#nav-toggle:active{transform:translateY(1px);}
+#nav-toggle .chev{font-size:11px; transition:transform .2s ease;}
+#nav-menu.open #nav-toggle .chev{transform:rotate(180deg);}
+#nav-list{display:none; flex-direction:column; align-items:stretch; gap:6px; background:rgba(10,16,32,.97); padding:8px; border-radius:14px; box-shadow:0 6px 22px rgba(0,0,0,.55); min-width:190px;}
+#nav-menu.open #nav-list{display:flex;}
+#nav-list a.nav-item-link{font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:10px 16px; cursor:pointer; text-align:right; text-decoration:none; display:block;}
+#nav-list a.nav-item-link:active{transform:translateY(1px);}
+#nav-list a.nav-exit{font-family:'Heebo'; font-size:13px; font-weight:400; color:var(--ink-dim); background:transparent; border:none; border-radius:10px; padding:9px 16px; cursor:pointer; text-align:right; text-decoration:none; display:block; opacity:.55; margin-top:4px;}
+#nav-list a.nav-exit:hover{opacity:.85;}
+#nav-list a.nav-exit:active{transform:translateY(1px);}
 .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 20px; font-size:15px; box-shadow:0 10px 30px rgba(0,0,0,.5); z-index:100; opacity:0; transition:opacity .3s; pointer-events:none;}
 .toast.show{opacity:1;}
 </style>
 </head>
 <body>
-<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v3</div>
+<!-- library v4 — תפריט ניווט (זהה לחידון) מחליף את כפתור "חזרה": במקום לנחש מאיפה הגעת
+     (goBackSmart, שהיה מסבך כשמגיעים מכמה יעדים), יעדים מפורשים: 🗂️ החידונים שלי + 🎬 יציאה למצגת.
+     "ספרייה" לא בתפריט (אנחנו כאן). הסגנון זהה ל-nav-menu בקובץ teacherquiz.html. -->
+<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v4</div>
+
+<!-- תפריט ניווט — זהה לחידון. בספרייה היעדים הם: חידונים שלי + יציאה למצגת (לא "ספרייה" כי אנחנו כאן) -->
+<div id="nav-menu">
+  <div id="nav-list">
+    <a href="teacherquiz.html" class="nav-item-link">🗂️ החידונים שלי</a>
+    <a href="index.html" class="nav-exit">🎬 יציאה לבניית מצגת</a>
+  </div>
+  <button id="nav-toggle" onclick="toggleNavMenu()" title="פתיחה/סגירה של תפריט הניווט">☰ <span id="nav-toggle-label">ניווט</span> <span class="chev">▾</span></button>
+</div>
 <div class="wrap">
   <h1>📚 ספריית חידונים</h1>
   <p class="sub">חידונים ששיתפו מורים אחרים. אפשר להעתיק אותם לעצמכם בלחיצה.</p>
@@ -54,10 +79,6 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
 
   <div id="list"></div>
   <p id="msg">טוען...</p>
-
-  <div style="text-align:center;">
-    <a class="back" href="index.html" onclick="goBackSmart(event)">→ חזרה</a>
-  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -87,17 +108,13 @@ function $(id){ return document.getElementById(id); }
 function emailToKey(e){ return e.trim().toLowerCase().replace(/[.#$\[\]\/@]/g, '_'); }
 function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2200); }
 
-// חזרה חכמה: חוזר לדף שממנו הגעת (חידון/מצגת/אינדקס) במקום תמיד לאינדקס.
-// אם הגעת מדף אחר באותו אתר — history.back() מחזיר אליו. אם נכנסת ישירות (אין referrer
-// מאותו origin) — נופלים לאינדקס. כך "חזרה" היא צעד-אחד-אחורה אמיתי, לא יעד קבוע.
-function goBackSmart(ev){
-  if (ev) ev.preventDefault();
-  let sameOriginRef = false;
-  try {
-    sameOriginRef = !!document.referrer && new URL(document.referrer).origin === location.origin;
-  } catch(e){ sameOriginRef = false; }
-  if (sameOriginRef && history.length > 1){ history.back(); }
-  else { location.href = 'index.html'; }
+// תפריט הניווט — פתיחה/סגירה, ועדכון התווית (סגירה/ניווט). מחליף את כפתור-החזרה הישן:
+// במקום לנחש מאיפה הגעת, התפריט נותן יעדים מפורשים (חידונים שלי / יציאה למצגת).
+function toggleNavMenu(){
+  const m=$('nav-menu'); if(!m) return;
+  m.classList.toggle('open');
+  const lbl=$('nav-toggle-label');
+  if (lbl) lbl.textContent = m.classList.contains('open') ? 'סגירה' : 'ניווט';
 }
 
 function signIn(){
