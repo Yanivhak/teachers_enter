@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v97 - ניקוי וסידור כפתורים ב"חידונים שלי" ובעורך (המשך הפרדת ניווט/פעולה): (א) "חידונים שלי" — כפתור "→ חזרה" הוסר לגמרי (הוביל ל-home שהוא מסך-התחברות שאף אחד לא חוזר אליו; הרשימה היא בסיס הזרימה, אין לאן לחזור ממנה). "➕ בניית חידון חדש" נשאר בולט בראש — הוא פעולה ראשית, לא ניווט, ולכן לא נכנס לתפריט. (ב) עורך — "→ חזרה" התחתון הוסר (ניווט, כבר קיים בתפריט-הניווט מ-v95). (ג) עורך — הכפתורים "🔗 יצירת קישור שיתוף" ו"📚 הוספה לספרייה הציבורית" היו btn teal sm עם width:100% (מתוחים לרוחב מלא, נראו ענקיים); הוקטנו ל-btn ghost sm קומפקטיים וממורכזים, אחידים עם "💾 שמירה". "🗑️ ניקוי" נשאר כפי שהיה (דק ומאופק). הפעולות הראשיות (▶️ התחלת משחק, 👁️ בדיקה) נשארו בולטות. (ד) כפתור התפריט (nav-toggle) הוגדל מעט (15px/800, padding גדול יותר). עיקרון מנחה: תפריט-הניווט נשאר רזה (ניווט בלבד) — פעולות לא נדחסות אליו; הן נשארות במסך אך מסודרות וקומפקטיות. מיזוג פעולות-לתפריט נדחה במכוון כי היה מחזיר את ערבוב ניווט/פעולה
   v96 - תצוגת רקע חיה במסך ההכנה (pregame) — המורה רואה את הרקע לפני המשחק, לא מגלה אותו תוך-כדי: הבעיה — המורה בחר רקע ב-pregame לפי *שם* בלבד ("🌌 חלל"), בלי לראות אותו, וראה את הבחירה לראשונה רק כשהמשחק כבר רץ מול הכיתה. אם לא מצא חן — היה תקוע. עכשיו: ברגע שבוחרים רקע ב-pregame, אלמנט game-bg (אותו אלמנט מסך-מלא z-index:0 ששימש במשחק, כולל אותו overlay כהה rgba(5,8,15,.70)) נדלק *מיד* מאחורי כרטיסי-ההכנה — תצוגה מקדימה באותם תנאים בדיוק כמו במשחק. המורה רואה, ואם לא מתאים — מחליף *שם*, לפני שהתחיל ולפני שתלמיד מסתכל. previewBgIfPregame() מדליק/מכבה את התצוגה לפי הרקע הפעיל, נקרא מ-bgChosen/setGalleryBg/clearBg/prePlay. תווית "👁️ זו תצוגה מקדימה — ככה הרקע ייראה במשחק" (pg-preview-note) מופיעה רק כשיש רקע פעיל. show() מכבה את game-bg במעבר למסך שאינו pregame/משחק (bgScreens) — כדי שהרקע לא ידלוף לעורך/רשימה; hostStart מדליק שוב למשחק האמיתי. אומת: נדלק בבחירה, כבה ביציאה לעורך/רשימה, נשאר במשחק. הנימוק — זה פותר את "התחרטתי על הרקע" *לפני* המשחק (בטוח), במקום להוסיף החלפת-רקע תוך-כדי-משחק חי (שהיה זורק מצטרפים / יוצר שני-מצבים-פעילים — סיכון גדול לתרחיש שכמעט לא קורה). בלובי אפשר לחזור צעד אחד ל-pregame (v95, בלי לזרוק מצטרפים) ולהחליף שם
   v95 - מערכת ניווט חדשה (ניווט A) — "חזרה" ליניארית + תפריט ניווט קבוע, וניקוי כפתורים מיותרים: עד כה כפתורי ה"חזרה" היו לא-עקביים — אותו מושג ("חזרה") הוביל ליעדים שונים ממסכים שונים (חזרה-לרשימה / חזרה-לעריכה), והסדר היה לקוי (מהלובי קפצו לעורך ודילגו על מסך המוזיקה/רקע; ל-pregame לא הייתה גישה מהעורך כלל). בנוסף, כל מסך המציא לעצמו סט כפתורי-ניווט בתחתית, מעורבב עם פעולות. עכשיו:
   • מחסנית-היסטוריה (navStack): מעבר למסך-ניווט דוחף את הקודם, ו"חזרה" (goBack) שולפת — תמיד צעד-אחד-אחורה אמיתי, צפוי, לא משנה מאיזה נתיב הגעת. רק 6 מסכי-המארח הניווטיים (home/mylist/editor/pregame/lobby/preview) נכנסים למחסנית; מסכי-משחק חיים (hq/hr/hint/hfin) ומסכי-תלמיד משתמשים ב-show() הרגיל ולא נכנסים — כדי ש"חזרה" לא תזרוק לאמצע משחק. nav() דוחף בלי כפילויות; goBack() נופל ל-mylist אם המחסנית ריקה. refreshMyList מאפס את המחסנית (הרשימה היא בסיס הזרימה).
@@ -103,7 +104,7 @@ input:focus{border-color:var(--gold); outline:none;}
 /* ===== תפריט ניווט קבוע (ניווט A) — פינה ימנית-עליונה, מתקפל. נפרד מכפתור ה"חזרה" ===== */
 #nav-menu{position:fixed; top:12px; right:14px; z-index:60; display:none; flex-direction:column; align-items:flex-end; gap:8px;}
 #nav-menu.show{display:flex;}
-#nav-toggle{display:flex; align-items:center; gap:7px; font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:8px 14px; cursor:pointer;}
+#nav-toggle{display:flex; align-items:center; gap:7px; font-family:'Heebo'; font-size:15px; font-weight:800; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.28); border-radius:11px; padding:10px 17px; cursor:pointer;}
 #nav-toggle:active{transform:translateY(1px);}
 #nav-toggle .chev{font-size:11px; transition:transform .2s ease;}
 #nav-menu.open #nav-toggle .chev{transform:rotate(180deg);}
@@ -267,7 +268,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v96</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v97</span></div>
 
 <!-- תפריט ניווט קבוע (ניווט A) — מופיע בכל מסכי-הניווט, מוסתר במסכי-משחק חיים -->
 <div id="nav-menu">
@@ -369,7 +370,6 @@ input:focus{border-color:var(--gold); outline:none;}
     <h2 id="mylist-title">החידונים שלי</h2>
     <div class="row" style="margin-bottom:18px;">
       <button class="btn teal" onclick="newQuiz()">➕ בניית חידון חדש</button>
-      <button class="btn ghost sm" onclick="show('home')">→ חזרה</button>
     </div>
     <div id="quiz-search-wrap" style="display:none; margin-bottom:14px;">
       <input type="text" id="quiz-search" placeholder="🔍 חיפוש לפי שם החידון" oninput="filterQuizList()" style="width:100%; padding:11px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); font-family:'Heebo'; font-size:16px;">
@@ -473,7 +473,6 @@ input:focus{border-color:var(--gold); outline:none;}
     <!-- בלוק ניהול -->
     <div class="row" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
       <button class="btn ghost sm" onclick="saveNow()">💾 שמירה</button>
-      <button class="btn ghost sm" onclick="goBack()">→ חזרה</button>
     </div>
 
     <!-- בלוק שיתוף -->
@@ -2382,8 +2381,8 @@ function renderSharePanel(){
   } else {
     // לא משותף — שיתוף בקישור בלבד (שיתוף-מייל הוסר: יצר אשליית הגנה שקרית).
     // הקוד של מצב 'specific' נשאר כקוד מת למקרה שנרצה להחזיר בעתיד.
-    const row = document.createElement('div'); row.style.cssText='display:flex; flex-direction:column; gap:8px;';
-    const b2 = document.createElement('button'); b2.className='btn teal sm'; b2.textContent='🔗 יצירת קישור שיתוף'; b2.onclick=shareToEveryone;
+    const row = document.createElement('div'); row.style.cssText='display:flex; justify-content:center;';
+    const b2 = document.createElement('button'); b2.className='btn ghost sm'; b2.textContent='🔗 יצירת קישור שיתוף'; b2.onclick=shareToEveryone;
     row.appendChild(b2);
     panel.appendChild(row);
   }
@@ -2406,9 +2405,10 @@ function renderLibraryPanel(){
     x.onclick=removeFromLibrary;
     r.appendChild(s); r.appendChild(x); panel.appendChild(r);
   } else {
-    const addBtn = document.createElement('button'); addBtn.className='btn teal sm'; addBtn.style.width='100%'; addBtn.textContent='📚 הוספה לספרייה הציבורית';
+    const wrap = document.createElement('div'); wrap.style.cssText='display:flex; justify-content:center;';
+    const addBtn = document.createElement('button'); addBtn.className='btn ghost sm'; addBtn.textContent='📚 הוספה לספרייה הציבורית';
     addBtn.onclick=()=>openLibraryPublishFromCard(editCode, quiz, ()=>{ renderLibraryPanel(); });
-    panel.appendChild(addBtn);
+    wrap.appendChild(addBtn); panel.appendChild(wrap);
   }
 }
 
