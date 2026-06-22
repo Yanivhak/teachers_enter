@@ -48,6 +48,8 @@ h1{font-family:'Secular One'; font-size:clamp(32px,5vw,52px); margin:0 0 6px; co
 .howto-step:last-child{margin-bottom:0;}
 .howto-step b{color:var(--ink); font-weight:700;}
 .howto-ic{flex:0 0 auto; font-size:16px; line-height:1.4; width:22px; text-align:center;}
+.grad-swatch{flex:1 1 0; min-width:44px; height:40px; border-radius:9px; border:none; cursor:pointer; outline:2px solid rgba(255,255,255,.15); background-size:300% 300% !important; transition:transform .12s, outline .12s; padding:0;}
+.grad-swatch:hover{transform:scale(1.05);}
 
 /* כפתורי השער הגדולים */
 #welcome-actions{display:flex; gap:14px; justify-content:center; flex-wrap:wrap; width:100%; max-width:560px; margin:0 auto;}
@@ -148,7 +150,7 @@ const fauth = (firebase.apps && firebase.apps.length) ? firebase.auth() : null;
 <body>
 
 <!-- תג גרסה (גלובלי לכל המסכים) -->
-<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v78</div>
+<div style="position:fixed; top:8px; right:10px; z-index:60; font-family:'Heebo',sans-serif; font-size:12px; color:rgba(255,255,255,.5); background:rgba(0,0,0,.35); padding:3px 9px; border-radius:8px; pointer-events:none;">montage v79</div>
 
 <!-- מסך 1: שער כניסה -->
 <div class="screen on" id="welcome">
@@ -1384,23 +1386,129 @@ function getCaptions(){
 }
 
 /* ---------- שקופית פתיחה וסיום ---------- */
+
+/* אוסף רקעי gradient מוכנים לבחירה. כל אחד עם מזהה, שם ידידותי, וערך CSS.
+   הערך מוטמע גם בקובץ המיוצא, כך שאין תלות חיצונית. */
+const SLIDE_GRADIENTS = [
+  { id: 'rainbow', name: '🌈 קשת', css: 'linear-gradient(-45deg,#ff5e62,#ff9966,#ffd200,#36d1dc,#5b86e5,#c471ed,#ff5e9c)' },
+  { id: 'sunset',  name: '🌅 שקיעה', css: 'linear-gradient(-45deg,#ee9ca7,#ff8177,#ff867a,#f99185,#cf556c)' },
+  { id: 'ocean',   name: '🌊 ים',   css: 'linear-gradient(-45deg,#2193b0,#6dd5ed,#36d1dc,#5b86e5)' },
+  { id: 'forest',  name: '🌿 טבע',  css: 'linear-gradient(-45deg,#11998e,#38ef7d,#43cea2,#185a9d)' },
+  { id: 'royal',   name: '👑 מלכותי', css: 'linear-gradient(-45deg,#5b247a,#1bcedf,#7117ea,#6a3093)' },
+  { id: 'warm',    name: '🔥 חמים',  css: 'linear-gradient(-45deg,#f12711,#f5af19,#ff8008,#ffc837)' }
+];
+function gradientCss(id){
+  const g = SLIDE_GRADIENTS.find(x => x.id === id);
+  return g ? g.css : SLIDE_GRADIENTS[0].css;
+}
+
 /* המשתנים הישנים נשמרים כפי שהם (תאימות לאחור). שדות חדשים מתווספים לצידם. */
 let endTitle = '', endText = '', endBg = 'gradient';   // endBg: 'gradient' / 'photo' / 'upload'
+let endGrad = 'rainbow';  // מזהה ה-gradient הנבחר (כשendBg='gradient')
 let endImage = '';        // dataURL של תמונה ייעודית שהועלתה (כשendBg='upload')
-let endPicIdx = -1;       // אינדקס תמונה מהמצגת (כשendBg='photo'); -1 = האחרונה
+let endPicIdx = -1;       // (לא בשימוש כרגע — נשמר לתאימות)
 let endPos = 'center';    // מיקום הטקסט: top / center / bottom
 let endColor = 'white';   // צבע הטקסט: white / dark / gold
 let endShade = 'auto';    // הצללה: none / auto / strong
 let endSize = 'medium';   // גודל טקסט: small / medium / large
 
 /* שקופית פתיחה — חדשה */
-let introTitle = '', introText = '', introBg = 'none';  // introBg: 'none' / 'gradient' / 'photo' / 'upload'
+let introTitle = '', introText = '', introBg = 'none';  // introBg: 'none' / 'gradient' / 'upload'
+let introGrad = 'rainbow';
 let introImage = '';      // dataURL תמונה ייעודית
-let introPicIdx = 0;      // אינדקס תמונה מהמצגת; 0 = הראשונה
+let introPicIdx = 0;      // (לא בשימוש כרגע)
 let introPos = 'center';
 let introColor = 'white';
 let introShade = 'auto';
 let introSize = 'medium';
+/* בורר רקע משותף לשקופית פתיחה/סיום.
+   מקבל ערכים נוכחיים, מחזיר { element, getValues }.
+   כולל: בחירת רקע gradient מוכן, או העלאת תמונה ייעודית.
+   באג ההחלפה תוקן — לחיצה על "תמונה משלי" תמיד פותחת בורר. */
+function buildSlideBgChooser(initBg, initGrad, initImage){
+  const wrap = document.createElement('div');
+
+  // מצב פנימי
+  let bg = (initBg === 'upload') ? 'upload' : 'gradient';   // 'gradient' או 'upload'
+  let grad = initGrad || SLIDE_GRADIENTS[0].id;
+  let img = initImage || '';
+
+  // כותרת
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-size:13px; color:var(--ink-dim); margin:16px 0 8px;';
+  lbl.textContent = 'רקע השקופית';
+  wrap.appendChild(lbl);
+
+  // קלט קובץ נסתר
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.style.display = 'none';
+  fileInput.onchange = async () => {
+    const f = fileInput.files && fileInput.files[0];
+    fileInput.value = '';
+    if (!f) return;
+    try {
+      img = await fileToDataURLForSlide(f);
+      bg = 'upload';
+      paint();
+    } catch(e){ alert('לא הצלחתי לטעון את התמונה. נסו תמונה אחרת.'); }
+  };
+  wrap.appendChild(fileInput);
+
+  // שורת בחירת gradient-ים מוכנים
+  const gradRow = document.createElement('div');
+  gradRow.style.cssText = 'display:flex; gap:7px; flex-wrap:wrap; margin-bottom:10px;';
+  SLIDE_GRADIENTS.forEach(g => {
+    const sw = document.createElement('button');
+    sw.className = 'grad-swatch';
+    sw.dataset.grad = g.id;
+    sw.title = g.name;
+    sw.style.background = g.css;
+    sw.style.backgroundSize = '300% 300%';
+    sw.onclick = () => { bg = 'gradient'; grad = g.id; paint(); };
+    gradRow.appendChild(sw);
+  });
+  wrap.appendChild(gradRow);
+
+  // כפתור העלאת תמונה
+  const upBtn = document.createElement('button');
+  upBtn.className = 'btn ghost';
+  upBtn.style.cssText = 'width:100%; font-size:14px; padding:10px;';
+  upBtn.onclick = () => { fileInput.click(); };   // תמיד פותח בורר — מאפשר החלפה
+  wrap.appendChild(upBtn);
+
+  // חיווי
+  const info = document.createElement('div');
+  info.style.cssText = 'font-size:12px; color:var(--teal); margin-top:8px; min-height:16px; text-align:center;';
+  wrap.appendChild(info);
+
+  function paint(){
+    // הדגשת ה-gradient הנבחר (רק אם הרקע הוא gradient)
+    [...gradRow.children].forEach(c => {
+      const on = (bg === 'gradient' && c.dataset.grad === grad);
+      c.style.outline = on ? '3px solid var(--gold)' : '2px solid rgba(255,255,255,.15)';
+      c.style.transform = on ? 'scale(1.08)' : 'scale(1)';
+    });
+    // מצב כפתור התמונה
+    if (bg === 'upload' && img){
+      upBtn.textContent = '📤 תמונה משלי ✓ (החלפה)';
+      upBtn.style.background = 'rgba(255,209,102,.15)';
+      upBtn.style.borderColor = 'rgba(255,209,102,.5)';
+      info.textContent = '✓ תמונה נבחרה כרקע';
+    } else {
+      upBtn.textContent = '📤 העלאת תמונה משלי';
+      upBtn.style.background = '';
+      upBtn.style.borderColor = '';
+      info.textContent = '';
+    }
+  }
+  paint();
+
+  return {
+    element: wrap,
+    getValues: () => ({ bg, grad, img })
+  };
+}
+
 function openEndPanel(){
   if ($('mon-modal')){ closeModal(); return; }
   const box = openModal('שקופית סיום');
@@ -1457,72 +1565,9 @@ function openEndPanel(){
 
   // בחירת רקע לשקופית הסיום
   const lbl3 = document.createElement('div');
-  lbl3.style.cssText = 'font-size:13px; color:var(--ink-dim); margin:16px 0 8px;';
-  lbl3.textContent = 'רקע השקופית';
-  box.appendChild(lbl3);
-
-  let chosenBg = endBg;
-  let chosenImg = endImage;   // dataURL התמונה הייעודית (אם הועלתה)
-
-  const bgRow = document.createElement('div');
-  bgRow.style.cssText = 'display:flex; gap:8px; flex-wrap:wrap;';
-  const bgOptions = [
-    { val: 'gradient', label: '🌈 רקע צבעוני' },
-    { val: 'photo', label: '🖼️ תמונה מהמצגת' },
-    { val: 'upload', label: '📤 תמונה משלי' }
-  ];
-  // חיווי שם הקובץ שהועלה
-  const uploadInfo = document.createElement('div');
-  uploadInfo.style.cssText = 'font-size:12px; color:var(--teal); margin-top:8px; min-height:16px; text-align:center;';
-  const refreshUploadInfo = () => {
-    uploadInfo.textContent = (chosenBg === 'upload' && chosenImg) ? '✓ תמונה נבחרה' : '';
-  };
-  // קלט קובץ נסתר לתמונת הסיום
-  const endImgInput = document.createElement('input');
-  endImgInput.type = 'file'; endImgInput.accept = 'image/*'; endImgInput.style.display = 'none';
-  endImgInput.onchange = async () => {
-    const f = endImgInput.files && endImgInput.files[0];
-    endImgInput.value = '';
-    if (!f) return;
-    try {
-      const dataUrl = await fileToDataURLForSlide(f);
-      chosenImg = dataUrl;
-      chosenBg = 'upload';
-      paintBgButtons();
-      refreshUploadInfo();
-    } catch(e){ alert('לא הצלחתי לטעון את התמונה. נסו תמונה אחרת.'); }
-  };
-  box.appendChild(endImgInput);
-
-  const paintBgButtons = () => {
-    [...bgRow.children].forEach(c => {
-      if (c.dataset.bg === chosenBg){ c.style.background = 'var(--gold)'; c.style.color = '#1a2342'; }
-      else { c.style.background = ''; c.style.color = ''; }
-    });
-  };
-  bgOptions.forEach(opt => {
-    const b = document.createElement('button');
-    b.className = 'btn ghost';
-    b.textContent = opt.label;
-    b.dataset.bg = opt.val;
-    b.style.cssText = 'flex:1 1 30%; min-width:110px; font-size:14px; padding:10px;';
-    b.onclick = () => {
-      if (opt.val === 'upload'){
-        // אם אין עדיין תמונה — פותחים בורר; אם יש — רק בוחרים את האפשרות
-        if (!chosenImg){ endImgInput.click(); return; }
-        chosenBg = 'upload';
-      } else {
-        chosenBg = opt.val;
-      }
-      paintBgButtons();
-      refreshUploadInfo();
-    };
-    bgRow.appendChild(b);
-  });
-  box.appendChild(bgRow);
-  box.appendChild(uploadInfo);
-  paintBgButtons();
-  refreshUploadInfo();
+  // בורר רקע (gradient-ים מוכנים או תמונה ייעודית) — פונקציה משותפת
+  const bgChooser = buildSlideBgChooser(endBg, endGrad, endImage);
+  box.appendChild(bgChooser.element);
 
   // אזור בנק משפטי הסיום השמורים
   const endBankWrap = document.createElement('div');
@@ -1535,8 +1580,10 @@ function openEndPanel(){
   close.onclick = () => {
     endTitle = inp1.value.trim();
     endText = inp2.value.trim();
-    endBg = chosenBg;
-    endImage = (chosenBg === 'upload') ? chosenImg : endImage;
+    const v = bgChooser.getValues();
+    endBg = v.bg;
+    endGrad = v.grad;
+    if (v.bg === 'upload') endImage = v.img;
     updateEndBtn();
     closeModal();
   };
@@ -1598,76 +1645,22 @@ function openIntroPanel(){
   inp2.style.cssText = "width:100%; box-sizing:border-box; font-family:'Heebo'; font-size:16px; padding:10px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); text-align:center; resize:vertical;";
   box.appendChild(inp2);
 
-  // רקע
-  const lbl3 = document.createElement('div');
-  lbl3.style.cssText = 'font-size:13px; color:var(--ink-dim); margin:16px 0 8px;';
-  lbl3.textContent = 'רקע השקופית';
-  box.appendChild(lbl3);
-
-  let chosenBg = (introBg === 'none') ? 'gradient' : introBg;
-  let chosenImg = introImage;
-
-  const bgRow = document.createElement('div');
-  bgRow.style.cssText = 'display:flex; gap:8px; flex-wrap:wrap;';
-  const bgOptions = [
-    { val: 'gradient', label: '🌈 רקע צבעוני' },
-    { val: 'photo', label: '🖼️ תמונה מהמצגת' },
-    { val: 'upload', label: '📤 תמונה משלי' }
-  ];
-  const uploadInfo = document.createElement('div');
-  uploadInfo.style.cssText = 'font-size:12px; color:var(--teal); margin-top:8px; min-height:16px; text-align:center;';
-  const refreshUploadInfo = () => {
-    uploadInfo.textContent = (chosenBg === 'upload' && chosenImg) ? '✓ תמונה נבחרה' : '';
-  };
-  const introImgInput = document.createElement('input');
-  introImgInput.type = 'file'; introImgInput.accept = 'image/*'; introImgInput.style.display = 'none';
-  introImgInput.onchange = async () => {
-    const f = introImgInput.files && introImgInput.files[0];
-    introImgInput.value = '';
-    if (!f) return;
-    try {
-      const dataUrl = await fileToDataURLForSlide(f);
-      chosenImg = dataUrl; chosenBg = 'upload';
-      paintBgButtons(); refreshUploadInfo();
-    } catch(e){ alert('לא הצלחתי לטעון את התמונה. נסו תמונה אחרת.'); }
-  };
-  box.appendChild(introImgInput);
-
-  const paintBgButtons = () => {
-    [...bgRow.children].forEach(c => {
-      if (c.dataset.bg === chosenBg){ c.style.background = 'var(--gold)'; c.style.color = '#1a2342'; }
-      else { c.style.background = ''; c.style.color = ''; }
-    });
-  };
-  bgOptions.forEach(opt => {
-    const b = document.createElement('button');
-    b.className = 'btn ghost';
-    b.textContent = opt.label;
-    b.dataset.bg = opt.val;
-    b.style.cssText = 'flex:1 1 30%; min-width:110px; font-size:14px; padding:10px;';
-    b.onclick = () => {
-      if (opt.val === 'upload'){
-        if (!chosenImg){ introImgInput.click(); return; }
-        chosenBg = 'upload';
-      } else { chosenBg = opt.val; }
-      paintBgButtons(); refreshUploadInfo();
-    };
-    bgRow.appendChild(b);
-  });
-  box.appendChild(bgRow);
-  box.appendChild(uploadInfo);
-  paintBgButtons();
-  refreshUploadInfo();
+  // בורר רקע (gradient-ים מוכנים או תמונה ייעודית) — פונקציה משותפת
+  const bgChooser = buildSlideBgChooser(introBg, introGrad, introImage);
+  box.appendChild(bgChooser.element);
 
   const close = document.createElement('button');
   close.className = 'btn'; close.textContent = '✓ אישור'; close.style.cssText += 'margin-top:16px; width:100%;';
   close.onclick = () => {
     introTitle = inp1.value.trim();
     introText = inp2.value.trim();
-    // אם אין טקסט וגם אין תמונה — אין שקופית פתיחה
-    const hasAny = introTitle || introText || (chosenBg === 'upload' && chosenImg) || (chosenBg === 'photo');
-    introBg = hasAny ? chosenBg : 'none';
-    introImage = (chosenBg === 'upload') ? chosenImg : introImage;
+    const v = bgChooser.getValues();
+    introGrad = v.grad;
+    if (v.bg === 'upload') introImage = v.img;
+    // אם אין טקסט, אין כותרת, ואין תמונה — אין שקופית פתיחה
+    const hasImg = (v.bg === 'upload' && v.img);
+    const hasAny = introTitle || introText || hasImg;
+    introBg = hasAny ? v.bg : 'none';
     updateIntroBtn();
     closeModal();
   };
@@ -1681,7 +1674,7 @@ function updateIntroBtn(){
   btn.textContent = '🎬 שקופית פתיחה';
   refreshStageBadges();
 }
-function hasIntroSlide(){ return !!(introTitle || introText || (introBg === 'upload' && introImage) || introBg === 'photo'); }
+function hasIntroSlide(){ return !!(introTitle || introText || (introBg === 'upload' && introImage)); }
 
 /* מסמן ✓ על תגית השלב כשהשלב מולא (אינפורמטיבי בלבד — לא חוסם סדר עבודה) */
 function refreshStageBadges(){
@@ -2372,40 +2365,34 @@ function showEnd(){
   document.getElementById('etitle').textContent=DATA.endTitle||'';
   document.getElementById('etext').textContent=DATA.endText||'';
   const ph=document.getElementById('ephoto');
-  let src='';
-  if(DATA.endBg==='upload' && DATA.endImage){ src=DATA.endImage; }
-  else if(DATA.endBg==='photo'){
-    if(typeof DATA.endPicIdx==='number' && DATA.endPicIdx>=0 && DATA.endPicIdx<DATA.images.length){
-      src=DATA.images[DATA.endPicIdx];
-    } else {
-      // ברירת מחדל: התמונה המוצגת כרגע (התנהגות ישנה)
-      if(imgA&&imgA.classList.contains('vis')) src=imgA.src;
-      else if(imgB&&imgB.classList.contains('vis')) src=imgB.src;
-    }
+  if(DATA.endBg==='upload' && DATA.endImage){
+    ph.style.backgroundImage='url("'+DATA.endImage+'")'; el.classList.add('photo-bg');
+  } else {
+    el.classList.remove('photo-bg'); ph.style.backgroundImage='';
+    const css=(DATA.gradients&&DATA.gradients[DATA.endGrad])||'';
+    if(css){ el.style.background=css; el.style.backgroundSize='400% 400%'; }
   }
-  if(src){ ph.style.backgroundImage='url("'+src+'")'; el.classList.add('photo-bg'); }
-  else { el.classList.remove('photo-bg'); ph.style.backgroundImage=''; }
   const cap=document.getElementById('cap'); if(cap) cap.style.opacity='0';
   el.classList.add('vis');
 }
 function hideEnd(){ document.getElementById('endslide').classList.remove('vis'); }
 
 function hasIntro(){
-  return !!((DATA.introTitle&&DATA.introTitle.length) || (DATA.introText&&DATA.introText.length) || (DATA.introBg==='upload'&&DATA.introImage) || DATA.introBg==='photo');
+  return !!((DATA.introTitle&&DATA.introTitle.length) || (DATA.introText&&DATA.introText.length) || (DATA.introBg==='upload'&&DATA.introImage));
 }
 function showIntro(){
   const el=document.getElementById('introslide');
   document.getElementById('i-etitle').textContent=DATA.introTitle||'';
   document.getElementById('i-etext').textContent=DATA.introText||'';
   const ph=document.getElementById('i-ephoto');
-  let src='';
-  if(DATA.introBg==='upload' && DATA.introImage){ src=DATA.introImage; }
-  else if(DATA.introBg==='photo'){
-    const i=(typeof DATA.introPicIdx==='number' && DATA.introPicIdx>=0 && DATA.introPicIdx<DATA.images.length) ? DATA.introPicIdx : 0;
-    src=DATA.images[i]||'';
+  if(DATA.introBg==='upload' && DATA.introImage){
+    ph.style.backgroundImage='url("'+DATA.introImage+'")'; el.classList.add('photo-bg');
+  } else {
+    // רקע gradient נבחר
+    el.classList.remove('photo-bg'); ph.style.backgroundImage='';
+    const css=(DATA.gradients&&DATA.gradients[DATA.introGrad])||'';
+    if(css){ el.style.background=css; el.style.backgroundSize='400% 400%'; }
   }
-  if(src){ ph.style.backgroundImage='url("'+src+'")'; el.classList.add('photo-bg'); }
-  else { el.classList.remove('photo-bg'); ph.style.backgroundImage=''; }
   el.classList.add('vis');
 }
 function hideIntro(){ document.getElementById('introslide').classList.remove('vis'); }
@@ -2679,19 +2666,21 @@ function buildStandaloneHTML(opts){
     introTitle: opts.introTitle || '',
     introText: opts.introText || '',
     introBg: opts.introBg || 'none',
+    introGrad: opts.introGrad || 'rainbow',
     introImage: opts.introImage || '',
-    introPicIdx: (typeof opts.introPicIdx === 'number') ? opts.introPicIdx : 0,
     introPos: opts.introPos || 'center',
     introColor: opts.introColor || 'white',
     introShade: opts.introShade || 'auto',
     introSize: opts.introSize || 'medium',
     // שקופית סיום — שדות מורחבים (חדש)
+    endGrad: opts.endGrad || 'rainbow',
     endImage: opts.endImage || '',
-    endPicIdx: (typeof opts.endPicIdx === 'number') ? opts.endPicIdx : -1,
     endPos: opts.endPos || 'center',
     endColor: opts.endColor || 'white',
     endShade: opts.endShade || 'auto',
-    endSize: opts.endSize || 'medium'
+    endSize: opts.endSize || 'medium',
+    // מילון ה-gradient-ים (כדי שהקובץ המיוצא ידע לרנדר)
+    gradients: SLIDE_GRADIENTS.reduce((acc,g)=>{ acc[g.id]=g.css; return acc; }, {})
   };
   const json = JSON.stringify(data);
   const safeTitle = (opts.title || 'מצגת').replace(/</g, '').replace(/>/g, '');
@@ -2793,7 +2782,7 @@ async function exportMontage(){
     // 6. בניית הקובץ והורדה
     if (btn) btn.textContent = '⏳ יוצר קובץ...';
     const title = (document.getElementById('mon-title') && document.getElementById('mon-title').value.trim()) || 'מצגת';
-    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects, intensity: fxIntensity, endTitle, endText, endBg, picsOrder: picsOrderMode, introTitle, introText, introBg, introImage, introPicIdx, introPos, introColor, introShade, introSize, endImage, endPicIdx, endPos, endColor, endShade, endSize });
+    const html = buildStandaloneHTML({ title, images, music, captions, transitions, effects, intensity: fxIntensity, endTitle, endText, endBg, picsOrder: picsOrderMode, introTitle, introText, introBg, introGrad, introImage, introPos, introColor, introShade, introSize, endGrad, endImage, endPos, endColor, endShade, endSize });
     const fname = (title.replace(/[\\/:*?"<>|]/g, '') || 'מצגת') + '.html';
     downloadHTMLFile(html, fname);
 
@@ -2876,9 +2865,9 @@ function restoreFromHTML(html){
   // שקופית סיום (כולל שדות מורחבים — עם תאימות לאחור לקבצים ישנים)
   endTitle = data.endTitle || '';
   endText = data.endText || '';
-  endBg = ['gradient','photo','upload'].includes(data.endBg) ? data.endBg : 'gradient';
+  endBg = ['gradient','upload'].includes(data.endBg) ? data.endBg : 'gradient';
+  endGrad = data.endGrad || 'rainbow';
   endImage = data.endImage || '';
-  endPicIdx = (typeof data.endPicIdx === 'number') ? data.endPicIdx : -1;
   endPos = data.endPos || 'center';
   endColor = data.endColor || 'white';
   endShade = data.endShade || 'auto';
@@ -2888,9 +2877,9 @@ function restoreFromHTML(html){
   // שקופית פתיחה (חדש — בקבצים ישנים פשוט יישאר ריק)
   introTitle = data.introTitle || '';
   introText = data.introText || '';
-  introBg = ['none','gradient','photo','upload'].includes(data.introBg) ? data.introBg : 'none';
+  introBg = ['none','gradient','upload'].includes(data.introBg) ? data.introBg : 'none';
+  introGrad = data.introGrad || 'rainbow';
   introImage = data.introImage || '';
-  introPicIdx = (typeof data.introPicIdx === 'number') ? data.introPicIdx : 0;
   introPos = data.introPos || 'center';
   introColor = data.introColor || 'white';
   introShade = data.introShade || 'auto';
@@ -2950,9 +2939,9 @@ function resetWorkspace(){
   updateFxBtn();
 
   // שקופית סיום
-  endTitle = ''; endText = ''; endBg = 'gradient';
+  endTitle = ''; endText = ''; endBg = 'gradient'; endGrad = 'rainbow';
   endImage = ''; endPicIdx = -1; endPos = 'center'; endColor = 'white'; endShade = 'auto'; endSize = 'medium';
-  introTitle = ''; introText = ''; introBg = 'none';
+  introTitle = ''; introText = ''; introBg = 'none'; introGrad = 'rainbow';
   introImage = ''; introPicIdx = 0; introPos = 'center'; introColor = 'white'; introShade = 'auto'; introSize = 'medium';
   if (typeof updateIntroBtn === 'function') updateIntroBtn();
   updateEndBtn();
