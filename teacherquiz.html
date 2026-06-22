@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v108 - שישה שיפורים סביב הספרייה, הטיוטות והעותקים: (1) שם הספרייה אוחד ל"ספרייה ציבורית" בכל המחרוזות הגלויות (18+ מקומות) — קודם "ספריית חידונים" התבלבל עם "החידונים שלי" (שתיהן "חידונים", וההבדל שלי/ציבורי לא היה בשם). נבחר "ספרייה ציבורית" קצר ולא "ספריית חידונים ציבורית" כי "ציבורית" כבר מבדיל ו"חידונים" מחזיר את הבלבול. (2) תפריט ⋯ בלשונית טיוטות — הוסרו "שיתוף" ו"הוספה לספרייה" (אין טעם לשתף/לפרסם משהו שזנחת); נשארים הצמדה/העברה-לחידון/מחיקה. בחידונים הכל נשאר. (3) מסך הבנייה — שיתוף/ספרייה על חידון מסומן-טיוטה נחסמים עם דיאלוג שמציע *להעביר לחידון ולהמשיך* (לא חסימה יבשה — confirm שמוביל לפתרון, setDraft(false) אם מאשרים). (4) שכפול חדש בתפריט ⋯ (duplicateQuiz) — רק לחידונים (לא טיוטה), ממוקם לפני מחיקה (שנשארת אחרונה — פעולה הרסנית בקצה). יוצר עותק עצמאי "[שם] - עותק" עם קוד פנימי + קוד-תצוגה חדשים, בלי שיתוף (עותק טרי לא יורש קישור/ספרייה), isDraft:false. (5) חידון שמתקבל בשיתוף — קודם קיבל "(עותק)", עכשיו שם *נקי* בלי סיומת (התגית "📩 שותף על ידי X" על הכרטיס כבר מבדילה — אין צורך ברעש בשם). נוסף isDraft:false לעותק המתקבל. רק גרסה *מעודכנת* (isUpdate) מקבלת סיומת, ועכשיו עם *תאריך* "(עודכן 22.6)" במקום "(מעודכן)" — תאריך ייחודי שמבדיל בין עדכונים חוזרים מאותו מקור (קודם שני עדכונים נתנו "(מעודכן)" פעמיים, שמות זהים). לא מציעים למחוק את הגרסה הקודמת (אובדן-מידע: אולי המקבל ערך אותה). (6) שורת "🕒 עודכן [זמן יחסי]" מתחת לכל כרטיס (qlcard-updated, מבוסס updated דרך relativeTime הקיימת). נבחר זמן-יחסי ("אתמול"/"לפני 3 ימים") ולא תאריך-ושעה גולמי (רעש, דורש חישוב), ונבחר updated ("מתי עבדתי") ולא "נפתח" (מטעה — מתעדכן בכל הצצה, ואין לו בכלל מעקב בקוד). אומת בבדיקות-לוגיקה (הרכבת תפריט, שמות עותק/מתקבל/מעודכן). עדיין דורש אימות על מסך חי
   v107 - שלושה תיקונים לפי משוב מסך-חי: (1) באג שדווח — שאלות שבורות לא נחסמו בהוספה-לספרייה (שיתוף כבר עבד אחרי v106). הסיבה: openLibraryPublishFromCard קראה shareLibValidationError עם deep=false, שמדלג בכוונה על בדיקת-העומק (תשובה אחת/בלי תשובה נכונה/שאלה ריקה). הנימוק המקורי ל-false ("מהרשימה אי אפשר לתקן ממילא") היה שגוי — חידון שבור פשוט לא צריך להתפרסם לספרייה הציבורית. תוקן ל-deep=true, זהה לשיתוף. (2) המתג התחתון "מצב החידון" הועלה — קודם היה *מתחת* לאזור הפעולות (משחק/שיתוף/ספרייה), עכשיו *מתחת ל"הוספת שאלה" ומעל הפעולות*, לבקשת המשתמש (היפוך ההחלטה הקודמת על "המתג בתחתית" — המיקום נבחן על מסך אמיתי). (3) המתג העליון "סימון כטיוטה" הוגדל והובהר: פונט 13→15, מתג 34×19→42×24, נוסף רקע-pill עדין (rgba .06) + מסגרת שמסמנים אינטראקטיביות, ובמצב דלוק רקע זהוב-עדין — בולט יותר אך בלי "צבע זועק" (נשמר העיקרון "אסתטי, בלי קרקס")
   v106 - תיקון באג אמיתי שדווח: בדיקת-התקינות בשיתוף *לא* רצה בפועל, וניתן היה לשתף חידון שבור (רק כותרת / שאלה עם תשובה אחת / בלי תשובה נכונה). הסיבה: ב-v104/v105 הבדיקה (shareLibValidationError) הוצמדה לכפתור הפנימי shareToEveryone *בתוך* ה-overlay — אבל openShareOverlayFromEditor פתחה את ה-overlay בלי בדיקה, ואם החידון כבר שותף (sh.mode==='public') renderSharePanel הציגה את הקוד/קישור הקיימים מיד בלי לעבור דרך הכפתור בכלל. כלומר התיקון "היה בקוד" אך ישב במקום הלא-נכון בזרימה — בדיוק כפי שהמשתמש זיהה ("בשיתוף לא יישמת כלום"). לעומת זאת בספרייה זה כן עבד כי openLibraryPublishFromCard מריצה את הבדיקה בתחילתה ("בספרייה חלק"). התיקון: (1) הבדיקה הועברה ל-*פתיחת* ה-overlay בשלוש נקודות — openShareOverlayFromEditor (שיתוף מהעורך), openShareModal (שיתוף מהרשימה — לא היה מוגן כלל), ו-openLibraryPublishFromCard (כבר היה). חידון שבור לא פותח את חלון השיתוף בכלל ומציג הודעה מיד. (2) באג שני: quizReady היה חסר-פרמטר וקרא את quiz הגלובלי תמיד; shareLibValidationError(q,...) העבירה q אך quizReady התעלמה ממנו (עבד מהעורך במקרה, שביר מהרשימה). תוקן — quizReady(qz) מקבל פרמטר, ברירת-מחדל ל-quiz הגלובלי (תאימות לאחור), ו-shareLibValidationError קוראת quizReady(q). אומת בבדיקת-לוגיקה: כל ארבעת המקרים (רק כותרת / תשובה אחת / שאלה ריקה / תקין) מחזירים את ההודעה הנכונה. הערה: נתיבי המשחק (prePlay) והבדיקה (previewQuiz) כבר בדקו quizReady ולא היו שבורים — רק השיתוף היה. עדיין דורש אימות על מסך חי (Firebase חסום בסביבת-הפיתוח)
   v105 - שלב ב': מודל הטיוטות (היפוך ברירת-המחדל) + לשוניות ומחיקה-קבוצתית ב"החידונים שלי". העיקרון: עד כה ברירת-המחדל הייתה "טיוטה" (isConfirmed כבוי) והמשתמש סימן אקטיבית "אני רוצה" דרך פעולה. עכשיו הפוך — ברירת-המחדל היא "חידון", והמשתמש מדליק תגית "טיוטה" רק אם *לא* רוצה. הנימוק (של המשתמש): אובדן-מידע גרוע מעודף-מידע — "חידון נעלם לי" חמור מ"יש לי חידונים מיותרים", והסימון האקטיבי מונע טענות. מימוש: (1) שדה חדש isDraft (ברירת מחדל false=חידון), נבחר על-פני היפוך isConfirmed עצמו כדי לא לגעת ב-7 נקודות-הסנכרון הרגישות — isConfirmed נשאר בקוד אך מת (לא נקרא יותר לסינון/תצוגה). isDraft מתווסף ל-3 אובייקטי-הטעינה (openExisting/playExisting/testExisting) ול-newQuiz. (2) שני מתגים מסונכרנים בעורך על דגל-אמת אחד: עליון (pill-switch "סימון כטיוטה" ליד הכותרת) + תחתון (שורת-מצב "מצב החידון: חידון/טיוטה · [העברה]" באזור הפעולות, ניסוח שונה להקשר "לפני יציאה"). שניהם קוראים setDraft(), ש-syncDraftToggles מעדכן את *שניהם* יחד (סנכרון דו-כיווני). renderEditor קורא syncDraftToggles. (3) שתי לשוניות ב"החידונים שלי" (list-tabs, פס מפוצל, אקטיבית קדימה בכהה עם צל-עומק): "חידונים"=ברירת-מחדל, "טיוטות". מונה על כל לשונית (updateTabCounts → "(N)"). codesForActiveTab מסנן לפי isDraft + חיפוש + מיון-נעוצים. switchTab מחליף ומאפס מצב-בחירה. (4) התגית הישנה "● שמירה אוטומטית בלבד" (qlcard-draft) הוסרה מהכרטיסים + ה-CSS שלה — הלשונית נותנת את ההקשר. (5) מעבר דו-כיווני טיוטה↔חידון בתפריט ⋯ (toggleDraftFromList — כותב רק את isDraft, set על שדה בודד, בלי לגעת בשאר). (6) מחיקה קבוצתית בסגנון Gmail בשתי הלשוניות (enterSelectMode/exitSelectMode/toggleSelect/bulkSelectAll/bulkDelete + checkbox לכל כרטיס): מתחיל *ריק* (כלום לא מסומן — הגנה מפני מחיקה בשוגג, בניגוד מפורש לדיאלוג-החילוץ הישן שסימן הכל), "סימון הכל" כפתור-בחירה, אייקון פח עם אזהרה "המחיקה סופית ואי אפשר לשחזר", פועל בלשונית הפעילה בלבד. (7) cleanupDrafts + cleanup-drafts-wrap + cleanup-overlay (דיאלוג-החילוץ הישן) הוסרו לגמרי — הלשוניות + bulk-select מחליפים אותם. relativeTime נשמר (עדיין שימושי). חידונים קיימים: אין מיגרציה (לא מופץ — שלך ושל הבן + אולי 2 ישנים) — בלי isDraft נחשבים חידונים, וזה המקום הנכון. הערה: לא אומת על מסך אמיתי (סביבת-הבדיקה חוסמת את Firebase-auth ולכן לא ניתן להריץ את אתחול-האפליקציה) — node --check עבר, איזון-תגיות עבר, בדיקות-לוגיקה מבודדות עברו, אך הזרימה החיה דורשת בדיקה ידנית
@@ -16,7 +17,7 @@
   v95 - מערכת ניווט חדשה (ניווט A) — "חזרה" ליניארית + תפריט ניווט קבוע, וניקוי כפתורים מיותרים: עד כה כפתורי ה"חזרה" היו לא-עקביים — אותו מושג ("חזרה") הוביל ליעדים שונים ממסכים שונים (חזרה-לרשימה / חזרה-לעריכה), והסדר היה לקוי (מהלובי קפצו לעורך ודילגו על מסך המוזיקה/רקע; ל-pregame לא הייתה גישה מהעורך כלל). בנוסף, כל מסך המציא לעצמו סט כפתורי-ניווט בתחתית, מעורבב עם פעולות. עכשיו:
   • מחסנית-היסטוריה (navStack): מעבר למסך-ניווט דוחף את הקודם, ו"חזרה" (goBack) שולפת — תמיד צעד-אחד-אחורה אמיתי, צפוי, לא משנה מאיזה נתיב הגעת. רק 6 מסכי-המארח הניווטיים (home/mylist/editor/pregame/lobby/preview) נכנסים למחסנית; מסכי-משחק חיים (hq/hr/hint/hfin) ומסכי-תלמיד משתמשים ב-show() הרגיל ולא נכנסים — כדי ש"חזרה" לא תזרוק לאמצע משחק. nav() דוחף בלי כפילויות; goBack() נופל ל-mylist אם המחסנית ריקה. refreshMyList מאפס את המחסנית (הרשימה היא בסיס הזרימה).
   • כל כפתורי ה"חזרה" אוחדו לטקסט "→ חזרה" בלבד, בלי ציון שם-המסך — כי היעד נקבע דינמית מההיסטוריה.
-  • תפריט ניווט קבוע (nav-menu) בפינה ימנית-עליונה (הצד הנגדי ל-conn בשמאל): ✏️ עריכת החידון (רק כשיש חידון פתוח ולא כשכבר בעורך) · 🗂️ החידונים שלי · 📚 ספריית חידונים · 🎬 יציאה לבניית מצגת (מובחן בזהב — זו יציאה מהאפליקציה, לא ניווט פנימי). מופיע בכל מסכי-הניווט, מוסתר במסך-הבית (התחברות) ובמסכי-משחק חיים. updateNavMenu נקרא מ-show() ומעדכן נראות+כפתור-עריכה לפי המסך (עטוף ב-try נגד TDZ של editCode/quiz בטעינה).
+  • תפריט ניווט קבוע (nav-menu) בפינה ימנית-עליונה (הצד הנגדי ל-conn בשמאל): ✏️ עריכת החידון (רק כשיש חידון פתוח ולא כשכבר בעורך) · 🗂️ החידונים שלי · 📚 ספרייה ציבורית · 🎬 יציאה לבניית מצגת (מובחן בזהב — זו יציאה מהאפליקציה, לא ניווט פנימי). מופיע בכל מסכי-הניווט, מוסתר במסך-הבית (התחברות) ובמסכי-משחק חיים. updateNavMenu נקרא מ-show() ומעדכן נראות+כפתור-עריכה לפי המסך (עטוף ב-try נגד TDZ של editCode/quiz בטעינה).
   • הפעלה מהעורך עוברת עכשיו דרך pregame (prePlay) במקום לדלג ישר ללובי — עקביות עם הפעלה-מהרשימה, וגישה למוזיקה/רקע. prePlay קיבל בדיקות שם+מוכנות (נקודת-כניסה משני מקומות).
   • goPlay שומר קוד-משחק קיים בחזרה ללובי (firstEntry): חזרה מהלובי ל-pregame לשנות רקע/מוזיקה כבר לא יוצרת קוד חדש ולא זורקת מצטרפים. endGameSession (playCode=null + ניקוי מחסנית) ביציאה אמיתית (backToEditor/finishToList/newQuizFromGame); restartGame מאפס playCode לקוד חדש.
   • ניקוי: הקישור הכפול "→ לתפריט הראשי" הוסר מתחתית העורך (עכשיו בתפריט). בקומבו (embed=1) גם פריט "יציאה לבניית מצגת" מוסתר.
@@ -35,7 +36,7 @@
   v82 - ארגון מחדש של מסך העריכה (היררכיה וזרימה): (א) הוסר כפתור ה-AI הכפול מאזור השאלות — נשאר רק הכרטיס העליון, שממילא נעלם כשיש תוכן (כפילות שיצרה רעש). גם הקוד המת שעדכן את תוויתו הוסר. (ב) אזור השאלות עולה גבוה יותר: הסרת כפתור ה-AI + צמצום הרווח מעל כותרת "השאלות" (24→14px). (ג) כפתורי הפעולה אורגנו לשלושה בלוקים מופרדים בקווים: הפעלה (משחק/בדיקה) · ניהול (שמירה/חזרה) · שיתוף. השמירה נשארת כפתור פעיל (היא מאשרת חידון — isConfirmed) ולא הפכה לתווית-סטטוס. השיתוף קורב מתחת לבלוק הניהול אך נשאר בלוק עצמאי (לא מעורבב עם משחק/בדיקה — הזרימה היא עריכה→אישור→שיתוף/משחק). (ד) "מספר הקבוצות המשתתפות בחידון" שונה ל"מבנה המשחק", והאפשרות "בלי קבוצות (כל אחד לעצמו)" ל"כל משתתף לעצמו" — המשתמש בוחר מבנה, לא רק מספר. (ה) כותרת "אפשרויות נוספות" הוחלשה (פונט/משקל/רקע קטנים יותר). (ו) חצי ▲▼ בכרטיס השאלה הובהרו: תווית "סדר:" לידם, חצים גדולים יותר ואזור-לחיצה גדול יותר (כבר היו להם טולטיפים)
   v81 - כפתורי הקשר ב"אודות" בשורה אחת בנייד: כפתור המייל קוצר מ"✉️ yanivhpro@gmail.com" ל"✉️ מייל" (הלחיצה עדיין פותחת מייל לאותה כתובת), וה-flex שונה ל-nowrap + white-space:nowrap לכל כפתור — כך שלושת הכפתורים (מייל/וואטסאפ/חיוג) נשארים בשורה אחת גם בטלפון צר במקום להישבר לשתי שורות
   v80 - מירכוז שורת ההסבר מתחת לשדה הקוד במסך הבית ("תקבלו עותק...") — הייתה מיושרת לימין, עכשיו ממורכזת בהתאם לשדה ולכפתור הממורכזים
-  v79 - עיצוב מחדש של מסך הבית (היררכיה ברורה): סדר חדש המשקף שימוש בפועל (מסך עבודה, לא שיווק). (א) אזור המשתמש כווץ מכרטיס גדול לשורה דקה: "🟢 מחוברים כ־[שם] | התנתקות" + שורת-משנה "החידונים נשמרים בחשבון זה". (ב) שלוש פעולות ראשיות באותו גודל, היררכיה לפי צבע בלבד: ➕ בניית חידון חדש (טורקיז) → 🗂️ החידונים שלי (צהוב) → 📚 ספריית חידונים מוכנים (כחול/navy חדש). "החידונים שלי" מעל הספרייה — הפעולה היומיומית של מורה קיים קודמת לגילוי-ספרייה החד-פעמי. (ג) פתיחה-לפי-קוד כווצה לכרטיס משני מתחת לקו מפריד. (ד) אזור היוצר הועבר ל-details "אודות ▾" מתקפל בתחתית, סגור כברירת מחדל (במקום credit-box גלוי גדול). כל מזהי ההתחברות (auth-out/auth-in/guest-badge/auth-name/auth-email/email-block) נשמרו — שונה רק ה-layout, לא לוגיקת ה-sign-in. נוסף .btn.navy ל-CSS
+  v79 - עיצוב מחדש של מסך הבית (היררכיה ברורה): סדר חדש המשקף שימוש בפועל (מסך עבודה, לא שיווק). (א) אזור המשתמש כווץ מכרטיס גדול לשורה דקה: "🟢 מחוברים כ־[שם] | התנתקות" + שורת-משנה "החידונים נשמרים בחשבון זה". (ב) שלוש פעולות ראשיות באותו גודל, היררכיה לפי צבע בלבד: ➕ בניית חידון חדש (טורקיז) → 🗂️ החידונים שלי (צהוב) → 📚 ספרייה ציבורית (כחול/navy חדש). "החידונים שלי" מעל הספרייה — הפעולה היומיומית של מורה קיים קודמת לגילוי-ספרייה החד-פעמי. (ג) פתיחה-לפי-קוד כווצה לכרטיס משני מתחת לקו מפריד. (ד) אזור היוצר הועבר ל-details "אודות ▾" מתקפל בתחתית, סגור כברירת מחדל (במקום credit-box גלוי גדול). כל מזהי ההתחברות (auth-out/auth-in/guest-badge/auth-name/auth-email/email-block) נשמרו — שונה רק ה-layout, לא לוגיקת ה-sign-in. נוסף .btn.navy ל-CSS
   v78 - חובת שם בפעולות אקטיביות: כל פעולה אקטיבית — שמירה ידנית (saveNow), שיתוף (shareToEveryone + startSpecificShare), משחק (goPlay), בדיקה (previewQuiz) — דורשת עכשיו שם לחידון. בלי שם: הודעה "תנו שם לחידון לפני שתמשיכו" והפעולה נעצרת. בדיקת השם (quizNameMissing) רצה לפני בדיקת המוכנות (quizReady), כדי שההודעה הראשונה תהיה הרלוונטית. השמירה האוטומטית לא נוגעת בזה — היא ממשיכה לעבוד גם בלי שם, כדי לא לאבד עבודה תוך כדי כתיבה. כך חידון בלי שם נשמר אוטומטית (כטיוטה, "שמירה אוטומטית בלבד") אבל אי אפשר "לסגור" אותו כגמור עד שנותנים לו שם
   v77 - תיקוני זבל ושיפור הניקוי: (א) חידון ריק לגמרי (בלי כותרת ובלי תוכן בשאלות) לא נשמר עוד — newQuiz לא שומר ביצירה, ו-saveQuiz חוסם כתיבה של חידון ריק שאינו מאושר. מונע הצטברות חידוני-זבל. (ב) חסימת שיתוף של חידון לא-מוכן — shareToEveryone ו-startSpecificShare בודקים quizReady לפני, כמו שמירה/משחק. (ג) "בדיקה" (previewQuiz) נוספה לפעולות שמאשרות חידון (isConfirmed=true) — פעולה אקטיבית שמעידה על רצינות, ודורשת ממילא quizReady. כעת מאשרים: שמירה ידנית, שיתוף, משחק, בדיקה. (ד) תווית הכרטיס שונתה מ"לא נשמר ידנית" ל"● שמירה אוטומטית בלבד" — מדויק יותר (החידון כן נשמר, רק לא במכוון) ומסביר למה הוא ברשימה. (ה) כפתור הניקוי הפך לדיאלוג "הצלה": מציג את כל החידונים-בשמירה-אוטומטית-בלבד ממוינים לפי עדכון אחרון (חדש למעלה, עם "עודכן לפני..."), כולם מסומנים למחיקה כברירת מחדל, והמשתמש מסיר סימון כדי להשאיר חידון. מונה חי (יימחקו/יישארו), כפתור מחיקה מושבת אם לא נשאר מה למחוק, ואישור סופי. מטפל בתרחיש "מלא זבל ואחד טוב" בלי בחירה-מרובה כבדה. relativeTime — עזר ל"עודכן לפני..."
   v76 - תווית "לא נשמר ידנית" + ניקוי טיוטות: שדה חדש isConfirmed על רשומת החידון מבדיל בין חידון שבוצעה עליו פעולה משמעותית לבין חידון שנשמר רק אוטומטית תוך כדי עבודה (ואולי נזנח). חידון חדש נוצר ללא הדגל (isConfirmed=false). מסירים את הדגל (מציבים true ושומרים): saveNow (שמירה ידנית), shareToEveryone + startSpecificShare (שיתוף), goPlay (התחלת משחק). לא נוגעים: previewQuiz (בדיקה), שמירה אוטומטית (touch/saveQuiz), צפייה. הנימוק: שיתוף/משחק = אישור מפורש שהחידון אמיתי, גם בלי לחיצת "שמור". כרטיס לא-מאושר מציג תווית "● לא נשמר ידנית" (ענבר). כפתור "🗑 ניקוי חידונים שלא נשמרו ידנית" בראש הרשימה (cleanupDrafts) — מופיע רק כשיש כאלה, מוחק רק לא-מאושרים (כולל ניקוי הצמדה), עם דיאלוג אישור שמציין כמה יימחקו. אפס מיגרציה לאחור — חידון ישן בלי השדה מוצג כלא-מאושר (לא מנחשים). isConfirmed מסונכרן דרך openExisting/playExisting/testExisting; עותק שהתקבל (confirmAddShared) מתחיל false. שם השדה isConfirmed (ולא keepInList) כי הוא מתאר "אושר ע"י פעולה" ולא "המשתמש ביקש להשאיר ברשימה"
@@ -150,6 +151,7 @@ input:focus{border-color:var(--gold); outline:none;}
 .qlcard-title{font-weight:800; font-size:18px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .qlcard-meta{font-size:13px; color:var(--ink-dim); margin-top:2px;}
 .qlcard-shared{font-size:12px; color:var(--teal); margin-top:2px;}
+.qlcard-updated{font-size:12px; color:var(--ink-dim); margin-top:2px; opacity:.85;}
 .qlcard-menuwrap{position:relative; flex:0 0 auto;}
 .qlcard-dots{background:none; border:none; color:var(--ink-dim); font-size:26px; line-height:1; cursor:pointer; padding:0 6px; border-radius:8px;}
 .qlcard-dots:hover{background:rgba(255,255,255,.08); color:var(--ink);}
@@ -329,7 +331,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v107</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v108</span></div>
 
 <!-- תפריט ניווט — נבנה דינמית לכל מסך (updateNavMenu): מציג רק את היעדים שאינם המסך הנוכחי -->
 <div id="nav-menu">
@@ -389,7 +391,7 @@ input:focus{border-color:var(--gold); outline:none;}
     <div style="max-width:420px; margin:0 auto; display:flex; flex-direction:column; gap:10px;">
       <button class="btn teal" onclick="goNewQuiz()" style="width:100%;">➕ בניית חידון חדש</button>
       <button class="btn" onclick="goShowList()" style="width:100%;">🗂️ החידונים שלי</button>
-      <a href="teacher-library.html" class="btn navy" style="width:100%; display:block; text-align:center; text-decoration:none; box-sizing:border-box;">📚 ספריית חידונים מוכנים</a>
+      <a href="teacher-library.html" class="btn navy" style="width:100%; display:block; text-align:center; text-decoration:none; box-sizing:border-box;">📚 ספרייה ציבורית</a>
     </div>
     <p id="home-msg" style="color:var(--coral); min-height:20px; margin-top:12px;"></p>
 
@@ -542,7 +544,7 @@ input:focus{border-color:var(--gold); outline:none;}
     <!-- ───── שורה 2: שיתוף וספרייה (פותחים חלון צף) ───── -->
     <div class="action-grid">
       <div class="action-box" onclick="openShareOverlayFromEditor()"><span class="ab-ico">🔗</span><span>שיתוף עם מורים</span></div>
-      <div class="action-box" onclick="openLibraryOverlayFromEditor()"><span class="ab-ico">📚</span><span>הוספה לספרייה</span></div>
+      <div class="action-box" onclick="openLibraryOverlayFromEditor()"><span class="ab-ico">📚</span><span>הוספה לספרייה הציבורית</span></div>
     </div>
 
     <!-- ───── ניקוי: קישור מאופק, נפרד ───── -->
@@ -931,7 +933,7 @@ function updateNavMenu(){
   if (hasQuiz && cur !== 'editor') items.push({ kind:'btn', label:'✏️ עריכת החידון', act:"navTo('editor')" });
   if (cur !== 'mylist') items.push({ kind:'btn', label:'🗂️ החידונים שלי', act:"navTo('mylist')" });
   // ספרייה — קובץ נפרד, תמיד יעד רלוונטי (אין "מסך ספרייה" פנימי להחריג)
-  items.push({ kind:'link', label:'📚 ספריית חידונים', href:'teacher-library.html' });
+  items.push({ kind:'link', label:'📚 ספרייה ציבורית', href:'teacher-library.html' });
 
   let html = items.map(it =>
     it.kind === 'btn'
@@ -1387,6 +1389,33 @@ function toggleDraftFromList(code, q){
     .catch(()=>alert('תקלה בעדכון. נסו שוב.'));
 }
 
+// v108: שכפול חידון — יוצר עותק עצמאי חדש "[שם] - עותק". קוד פנימי + קוד-תצוגה חדשים,
+// בלי שיתוף (עותק טרי לא יורש קישור/ספרייה), isDraft:false. נכנס ל"החידונים שלי".
+async function duplicateQuiz(code, q){
+  if (!myStoreKey){ alert('צריך להתחבר עם Google כדי לשכפל.'); return; }
+  try{
+    const newCode = await genUniqueCode();
+    const newDisplay = await genDisplayCode();
+    const copy = {
+      title: (q.title || 'חידון') + ' - עותק',
+      time: q.time || 20,
+      teamCount: q.teamCount || 0,
+      teamNames: Array.isArray(q.teamNames) ? q.teamNames.slice() : [],
+      questions: Array.isArray(q.questions) ? JSON.parse(JSON.stringify(q.questions)) : [],
+      displayCode: newDisplay,
+      originalAuthor: q.originalAuthor || (myAuthName || myEmail || ''),
+      isDraft: false,                                  // עותק חדש = חידון, לא טיוטה
+      share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },  // בלי שיתוף
+      updated: Date.now(),
+      ownerEmail: myEmail
+    };
+    await fdb.ref('teachers/'+myStoreKey+'/'+newCode).set(copy);
+    refreshMyList();
+  }catch(e){
+    alert('תקלה בשכפול. נסו שוב.');
+  }
+}
+
 // "עודכן לפני..." בעברית פשוטה
 function relativeTime(ts){
   if (!ts) return 'לא ידוע';
@@ -1446,8 +1475,13 @@ function buildQuizCard(code, q){
   const sharedLine = (q.copiedFrom && q.copiedFrom.ownerName)
     ? '<div class="qlcard-shared">📩 שותף על ידי ' + escapeHtml(q.copiedFrom.ownerName) + '</div>'
     : '';
+  // v108: שורת "עודכן [זמן יחסי]" מתחת לכל כרטיס — מבוסס updated (מתי נשמר/נגעת לאחרונה)
+  const updatedLine = q.updated
+    ? '<div class="qlcard-updated">🕒 עודכן ' + escapeHtml(relativeTime(q.updated)) + '</div>'
+    : '';
   titleWrap.innerHTML = '<div class="qlcard-title">' + pinMark + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
                         '<div class="qlcard-meta">קוד ' + escapeHtml(q.displayCode || '——') + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
+                        updatedLine +
                         sharedLine;
 
   // כפתור ⋯ + תפריט נפתח
@@ -1466,16 +1500,28 @@ function buildQuizCard(code, q){
   moveItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); toggleDraftFromList(code, q); };
   const libItem = document.createElement('button'); libItem.className='qlcard-menu-item';
   if (q.share && q.share.inLibrary){
-    libItem.textContent = '✕ הסרה מהספרייה';
+    libItem.textContent = '✕ הסרה מהספרייה הציבורית';
     libItem.classList.add('danger');
     libItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); removeFromLibraryCard(code, q); };
   } else {
-    libItem.textContent = '📚 הוספה לספרייה';
+    libItem.textContent = '📚 הוספה לספרייה הציבורית';
     libItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); openLibraryPublishFromCard(code, q); };
   }
   const delItem = document.createElement('button'); delItem.className='qlcard-menu-item danger'; delItem.textContent='🗑 מחיקה';
   delItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); if(confirm('למחוק את החידון "'+(q.title||'')+'"? אי אפשר לבטל.')){ fdb.ref('teachers/'+myStoreKey+'/'+code).remove().then(()=>refreshMyList()); } };
-  menu.appendChild(pinItem); menu.appendChild(moveItem); menu.appendChild(shareItem); menu.appendChild(libItem); menu.appendChild(delItem);
+  // v108: שכפול — רק לחידונים (לא לטיוטה). יוצר עותק חדש "[שם] - עותק".
+  const dupItem = document.createElement('button'); dupItem.className='qlcard-menu-item'; dupItem.textContent='📄 שכפול';
+  dupItem.onclick=(e)=>{ e.stopPropagation(); closeAllCardMenus(); duplicateQuiz(code, q); };
+  // הרכבת התפריט: שיתוף/ספרייה/שכפול רק בחידונים (בטיוטה אין טעם לשתף/לפרסם/לשכפל משהו שזנחת).
+  // מחיקה תמיד אחרונה (פעולה הרסנית בקצה, הגנה מלחיצה בטעות). שכפול צמוד למחיקה אך לפניה.
+  menu.appendChild(pinItem);
+  menu.appendChild(moveItem);
+  if (!q.isDraft){
+    menu.appendChild(shareItem);
+    menu.appendChild(libItem);
+  }
+  if (!q.isDraft) menu.appendChild(dupItem);
+  menu.appendChild(delItem);
   dots.onclick=(e)=>{ e.stopPropagation(); const wasOpen = menu.classList.contains('on'); closeAllCardMenus(); if(!wasOpen) menu.classList.add('on'); };
   menuWrap.appendChild(dots); menuWrap.appendChild(menu);
 
@@ -1556,6 +1602,12 @@ function closeShareModal(){
 // בלי לטעון מחדש את quiz — בעורך quiz כבר הוא האובייקט החי שנערך (אסור לדרוס אותו).
 function openShareOverlayFromEditor(){
   if (!myUid){ alert('צריך להתחבר עם Google כדי לשתף.'); return; }
+  // v108: חידון מסומן כטיוטה — לא משתפים משהו שזנחת. מציעים להעביר לחידון ולשתף.
+  if (quiz && quiz.isDraft){
+    if (confirm('החידון מסומן כטיוטה, ולכן אי אפשר לשתף אותו.\n\nלהעביר אותו לחידונים ולשתף?')){
+      setDraft(false);
+    } else { return; }
+  }
   // v105 תיקון: בדיקת-תקינות *לפני* פתיחת ה-overlay (כמו בספרייה). חידון שבור (בלי שם/שאלה/תשובות)
   // לא יפתח את חלון השיתוף בכלל — קודם נסגרה הבעיה שהבדיקה ישבה רק על כפתור פנימי שלעיתים לא נלחץ.
   const verr = shareLibValidationError(quiz, 'השיתוף', true);
@@ -1575,7 +1627,13 @@ function openShareOverlayFromEditor(){
 // פתיחת חלון הספרייה מתוך העורך (v104): אם כבר בספרייה — חלון קטן עם הסרה;
 // אחרת — חלון הפרסום הקיים (openLibraryPublishFromCard) שכבר פותח overlay צף.
 function openLibraryOverlayFromEditor(){
-  if (!myUid){ alert('צריך להתחבר עם Google כדי להוסיף לספרייה.'); return; }
+  if (!myUid){ alert('צריך להתחבר עם Google כדי להוסיף לספרייה הציבורית.'); return; }
+  // v108: חידון מסומן כטיוטה — לא מפרסמים לספרייה הציבורית משהו שזנחת. מציעים להעביר לחידון.
+  if (quiz && quiz.isDraft && !(quiz.share && quiz.share.inLibrary)){
+    if (confirm('החידון מסומן כטיוטה, ולכן אי אפשר להוסיף אותו לספרייה הציבורית.\n\nלהעביר אותו לחידונים ולהמשיך?')){
+      setDraft(false);
+    } else { return; }
+  }
   const sh = ensureShareObj();
   if (sh.inLibrary){
     const old = $('lib-status-overlay'); if (old) old.remove();
@@ -1585,13 +1643,13 @@ function openLibraryOverlayFromEditor(){
     box.style.cssText='background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:22px 20px; max-width:420px; width:100%; box-shadow:0 12px 40px rgba(0,0,0,.5); text-align:center;';
     const head = document.createElement('div');
     head.style.cssText="font-family:'Secular One'; font-size:20px; color:var(--gold); margin-bottom:10px;";
-    head.textContent='📚 מופיע בספרייה';
+    head.textContent='📚 מופיע בספרייה הציבורית';
     const msg = document.createElement('div');
     msg.style.cssText='font-size:14px; color:var(--teal); font-weight:600; margin-bottom:18px;';
     msg.textContent='✓ החידון הזה מופיע בספרייה הציבורית.';
     const btnRow = document.createElement('div'); btnRow.style.cssText='display:flex; gap:8px;';
     const closeBtn = document.createElement('button'); closeBtn.className='btn ghost sm'; closeBtn.style.flex='1'; closeBtn.textContent='סגירה'; closeBtn.onclick=()=>ov.remove();
-    const remBtn = document.createElement('button'); remBtn.className='btn ghost sm'; remBtn.style.cssText='flex:1; color:var(--coral);'; remBtn.textContent='✕ הסרה מהספרייה';
+    const remBtn = document.createElement('button'); remBtn.className='btn ghost sm'; remBtn.style.cssText='flex:1; color:var(--coral);'; remBtn.textContent='✕ הסרה מהספרייה הציבורית';
     remBtn.onclick=()=>{ ov.remove(); removeFromLibrary(); };
     btnRow.appendChild(closeBtn); btnRow.appendChild(remBtn);
     box.appendChild(head); box.appendChild(msg); box.appendChild(btnRow);
@@ -2630,7 +2688,7 @@ function renderLibraryPanel(){
   const panel = $('library-panel');
   if (!panel) return;
   if (!myUid){
-    panel.innerHTML = '<div style="font-size:13px; color:var(--ink-dim); text-align:center;">התחברו עם Google כדי להוסיף לספרייה.</div>';
+    panel.innerHTML = '<div style="font-size:13px; color:var(--ink-dim); text-align:center;">התחברו עם Google כדי להוסיף לספרייה הציבורית.</div>';
     return;
   }
   const sh = ensureShareObj();
@@ -2638,7 +2696,7 @@ function renderLibraryPanel(){
   if (sh.inLibrary){
     const r = document.createElement('div'); r.style.cssText='display:flex; justify-content:space-between; align-items:center; gap:8px;';
     const s = document.createElement('span'); s.style.cssText='font-size:14px; color:var(--teal); font-weight:600;'; s.textContent='✓ מופיע בספרייה הציבורית';
-    const x = document.createElement('button'); x.textContent='✕ הסרה מהספרייה'; x.style.cssText='background:none; border:1px solid rgba(255,255,255,.3); color:var(--coral); border-radius:8px; padding:5px 12px; cursor:pointer; font-family:Heebo; font-size:13px; white-space:nowrap;';
+    const x = document.createElement('button'); x.textContent='✕ הסרה מהספרייה הציבורית'; x.style.cssText='background:none; border:1px solid rgba(255,255,255,.3); color:var(--coral); border-radius:8px; padding:5px 12px; cursor:pointer; font-family:Heebo; font-size:13px; white-space:nowrap;';
     x.onclick=removeFromLibrary;
     r.appendChild(s); r.appendChild(x); panel.appendChild(r);
   } else {
@@ -2788,7 +2846,7 @@ function doCopyText(text){
   } catch(e){ return false; }
 }
 function unshareEveryone(){
-  if (!confirm('לבטל את השיתוף לכולם? (אם החידון בספרייה — הוא יוסר גם משם)')) return;
+  if (!confirm('לבטל את השיתוף לכולם? (אם החידון בספרייה הציבורית — הוא יוסר גם משם)')) return;
   const sh = ensureShareObj();
   if (sh.shareId) fdb.ref('shared/'+sh.shareId).remove().catch(()=>{});
   if (sh.libraryId) fdb.ref('library/'+sh.libraryId).remove().catch(()=>{});
@@ -2800,7 +2858,7 @@ function unshareEveryone(){
 // הוספה לספרייה ישירות מכרטיס ברשימה — חלון מעוצב עם תיאור (לפחות 30 תווים).
 // פועל על רשומת החידון מהרשימה (q) וכותב בחזרה ל-teachers/{key}/{code}, בלי לגעת בעורך.
 function openLibraryPublishFromCard(code, q, onDone){
-  if (!myUid){ alert('צריך להתחבר עם Google כדי להוסיף לספרייה.'); return; }
+  if (!myUid){ alert('צריך להתחבר עם Google כדי להוסיף לספרייה הציבורית.'); return; }
   // v107: deep=true — חידון שבור (תשובה אחת/בלי תשובה נכונה/שאלה ריקה) לא ייכנס לספרייה הציבורית.
   // קודם היה false ("מהרשימה אי אפשר לתקן ממילא") — אבל זה היה שיקול שגוי: שבור פשוט לא צריך להתפרסם.
   const verr = shareLibValidationError(q, 'ההוספה לספרייה', true);
@@ -2818,7 +2876,7 @@ function openLibraryPublishFromCard(code, q, onDone){
   box.appendChild(head);
   const sub = document.createElement('div');
   sub.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:8px; text-align:center; line-height:1.5;';
-  sub.textContent='החידון "' + (q.title||'') + '" יתפרסם לכל המורים בספרייה. כתבו תיאור קצר — על מה החידון, לאיזה גיל, ולמה הוא טוב.';
+  sub.textContent='החידון "' + (q.title||'') + '" יתפרסם לכל המורים בספרייה הציבורית. כתבו תיאור קצר — על מה החידון, לאיזה גיל, ולמה הוא טוב.';
   box.appendChild(sub);
 
   const ta = document.createElement('textarea');
@@ -2843,7 +2901,7 @@ function openLibraryPublishFromCard(code, q, onDone){
   pubBtn.onclick=async ()=>{
     const desc = ta.value.trim();
     if (desc.length < MINLEN){
-      alert('יש לכתוב תיאור של לפחות ' + MINLEN + ' תווים לפני ההוספה לספרייה.\nכתבתם עד כה ' + desc.length + ' תווים.');
+      alert('יש לכתוב תיאור של לפחות ' + MINLEN + ' תווים לפני ההוספה לספרייה הציבורית.\nכתבתם עד כה ' + desc.length + ' תווים.');
       ta.style.borderColor = '#d9a441';
       ta.focus();
       return;
@@ -2874,11 +2932,11 @@ function openLibraryPublishFromCard(code, q, onDone){
       q.share = share;
       await fdb.ref('teachers/'+myStoreKey+'/'+code+'/share').set(share);
       ov.remove();
-      alert('החידון נוסף לספרייה! תודה ששיתפתם 📚');
+      alert('החידון נוסף לספרייה הציבורית! תודה ששיתפתם 📚');
       if (typeof onDone === 'function') onDone(); else refreshMyList();
     }catch(e){
       pubBtn.disabled=false; pubBtn.textContent='📚 הוספה';
-      alert('תקלה בהוספה לספרייה. נסו שוב.');
+      alert('תקלה בהוספה לספרייה הציבורית. נסו שוב.');
     }
   };
   btnRow.appendChild(cancelBtn); btnRow.appendChild(pubBtn);
@@ -2907,7 +2965,7 @@ function removeFromLibraryCard(code, q){
   q.share = share;
   fdb.ref('teachers/'+myStoreKey+'/'+code+'/share').set(share)
     .then(()=>refreshMyList())
-    .catch(()=>{ alert('תקלה בהסרה מהספרייה. נסו שוב.'); });
+    .catch(()=>{ alert('תקלה בהסרה מהספרייה הציבורית. נסו שוב.'); });
 }
 
 // --- העתקת קישור ---
@@ -3147,7 +3205,11 @@ function showSharedDialog(shareId, data){
 // isUpdate=true: שמירת גרסה מעודכנת כעותק נוסף (מדלג על בדיקת הכפילות, שם "(מעודכן)").
 function confirmAddShared(shareId, data, ov, isUpdate){
   const src = data.quiz || {};
-  const suffix = isUpdate ? ' (מעודכן)' : ' (עותק)';
+  // v108: חידון שמתקבל לראשונה — שם נקי בלי סיומת (התגית "שותף על ידי" על הכרטיס כבר מבדילה).
+  // רק גרסה מעודכנת מקבלת סיומת עם *תאריך* (לא "מעודכן" סתם — תאריך ייחודי שמבדיל בין עדכונים חוזרים).
+  const dnow = new Date();
+  const dstr = dnow.getDate() + '.' + (dnow.getMonth()+1);
+  const suffix = isUpdate ? (' (עודכן ' + dstr + ')') : '';
   const errLabel = isUpdate ? '✓ שמירת הגרסה המעודכנת' : '✓ הוספה לחידונים שלי';
 
   const createCopy = () => {
@@ -3162,6 +3224,7 @@ function confirmAddShared(shareId, data, ov, isUpdate){
         displayCode: newDisplayCode,
         originalAuthor: data.originalAuthor || null,   // יורש את היוצר המקורי מהמקור — נישא הלאה בשרשרת
         isConfirmed: false,                            // עותק חדש שהתקבל — טרם אושר ע"י המקבל
+        isDraft: false,                                // v108: חידון שמתקבל = חידון, לא טיוטה
         updated: Date.now(),
         ownerEmail: myEmail,
         share: { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
