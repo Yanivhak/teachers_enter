@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v118 - מקבץ ניקוי באגים (10 פריטים, אחרי סריקה עמוקה): (א.2) ניתוק אפקטי-הקול מהשתקת-המוזיקה — sfxAllowed מחזיר תמיד true; השתקה נוגעת רק בלולאת-הרקע, האפקטים (שיא/רצף/ניצחון) תמיד מנגנים (החלטת המשתמש: מעולם לא רצה השתקת אפקטים; היה צימוד מכוון שגוי מבניית מנוע-הקול). (א.3) איפוס מצב-קול בין משחקים — hostStart/previewQuiz מאפסים musicMuted=false ו-musicIdx=0 ומשחזרים את תוויות מתגי המוזיקה/רקע (קודם משחק חוזר נשאר מושתק בשקט והתווית נתקעה מהמשחק הקודם). (ב.5) playExisting/testExisting טוענים עכשיו aiMeta כמו openExisting — קודם שיחקת→חזרה-לעריכה→שמירה מחק את קדם-מילוי ה-AI כי saveQuiz עושה set שמחליף את כל הצומת. (ד.1) ניקוי מאזיני Firebase — נוספו detachGameListeners ו-detachPresence (off ספציפי לכל handler, לא נוגע במאזין ה-conn הגלובלי של שורת-החיבור), נקראים מ-endGameSession ובראש listenGame/setupPresence — מונע הצטברות מאזינים כשמריצים כמה משחקים באותה טעינת-דף. (ב.2) soloFinish — אחרי בדיקת-סולו מוצגים רק כפתורי-בדיקה (חזרה-לעריכה/בדיקה-שוב) ולא כפתורי משחק-אמיתי; קודם "התחלה מחדש" הפעילה בטעות משחק עם קהל. כפתורי הסיום נעטפו ב-hfin-host-actions, נוסף hfin-solo-actions, ו-hostFinish משחזר את הרגילים. (ב.3) parseImport מגביל את העודף לתקרת הבורר (impQCount) — קודם אם ה-AI החזיר יותר שאלות מהמבוקש, כולן נכנסו. (ב.4) buildImportPrompt — בעריכת חידון קיים, אם לא נדרשות שאלות חדשות (לא סומנו החלפות והבורר לא גדל), מחזיר הודעת-הכוונה במקום פרומפט "0 שאלות". (ד.2) unshareEveryone/unshareSpecificAll מוחקים עכשיו גם את codes/{displayCode} — syncShareCopies יוצא מוקדם ב-mode=none ולא ניקה אותו, אז נשארה רשומה יתומה והקוד האנושי החזיר "לא נמצא" עד שיתוף-חוזר. (ד.4) ניקוי ה-pinned ב-bulkDelete נכלל עכשיו ב-Promise.all (קודם fire-and-forget). (ב.1) הוסרה restorePendingGuestQuiz — רשת-ביטחון מתה (שום מקום לא כתב ל-sessionStorage מאז מעבר ל-popup ב-v99). לא נכלל: ד.3 (אימות-אייפון) — דורש מכשיר אמיתי, לא תיקון-קוד. אומת: node --check + איזון-תגיות + grep ללא שאריות
   v117 - תיקון באג ניווט-אורח (השלמה ל-v116): רצף "אורח → סיום-משחק → התחברות → goBack" נחת ב"חידונים שלי" במקום בבית-עם-האופציות. השורש: refreshMyList (שנקרא מ-finishToList ועוד) שלח *אורח* ל-home — מסך שבור עבורו (אין כפתורים, כי auth-out מוסתר ו-logged-in-home מוסתר; רק תגית-אורח) — ואיפס את navStack ל-[]. אחרי התחברות, goBack עם מחסנית ריקה נפל ל-refreshMyList→mylist. התיקון: refreshMyList לאורח → חזרה לעורך (שם הוא בונה), לא ל-home. כך האורח נשאר בזרימת-הבנייה, לא נוחת על מסך שבור, ולא נוצר מצב-המחסנית-הריקה. מחובר — ללא שינוי (refreshMyList→mylist כרגיל). בנוסף goBack עם מחסנית ריקה נופל עכשיו לבית (המרכז) ולא ל-mylist — זו הייתה הנפילה האחרונה שהשאירה את האורח-שהתחבר על הרשימה
   v117 - תיקון z-index: החלון-הצף (i) של כפתור "יציאה מהחשבון" בתפריט הופיע *מאחורי* התפריט — .info-pop היה z-index:50 בעוד #nav-menu הוא z-index:60. הועלה ל-210. אותו תיקון גם ב-teacher-library.html (v8)
   v116 - תיקון באג: אחרי שאורח מתחבר דרך כפתור הבאנר בעורך (guestSaveWithGoogle), העורך נשאר "תקוע" במצב-אורח — שורת-הסטטוס "מצב אורח — לא נשמר", שני מתגי-הטיוטה מוסתרים, ושיתוף/ספרייה נעולים — למרות שכבר מחובר. הסיבה: הפונקציה סימנה isGuest=false ושמרה את החידון, אך *לא* רעננה את ה-UI (renderEditor) ולא את התפריט. התיקון: אחרי שמירה מוצלחת קוראים renderEditor()+updateNavMenu(), מעדכנים את הסטטוס ל"נשמר אוטומטית", ומציגים flashSaved() כמשוב גלוי. הערה: באג ה"התחברות מהמסך הראשי מקפיצה לחידונים שלי" שדווח — לא שוחזר ב-v115 (ההקפצה מותנית ב-?list=1 מאז v111; התחברות כללית נוחתת על הבית עם כל האופציות)
@@ -345,7 +346,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v117</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v118</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -708,13 +709,20 @@ input:focus{border-color:var(--gold); outline:none;}
     <div class="podium" id="podium"></div>
     <div id="team-final" style="margin:14px 0; font-size:clamp(18px,2.4vw,26px); color:var(--gold); font-weight:700;"></div>
     <div id="fun-cards" style="display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin:18px 0;"></div>
-    <div class="row">
-      <button class="btn teal sm" onclick="restartGame()">🔄 התחלה מחדש</button>
-      <button class="btn ghost sm" onclick="backToEditor()">→ חזרה לעריכה</button>
+    <div id="hfin-host-actions">
+      <div class="row">
+        <button class="btn teal sm" onclick="restartGame()">🔄 התחלה מחדש</button>
+        <button class="btn ghost sm" onclick="backToEditor()">→ חזרה לעריכה</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <button class="btn sm" onclick="newQuizFromGame()" style="background:var(--violet); color:#0b0b2a;">➕ חידון חדש</button>
+        <button class="btn ghost sm" onclick="finishToList()">📂 החידונים שלי</button>
+      </div>
     </div>
-    <div class="row" style="margin-top:10px;">
-      <button class="btn sm" onclick="newQuizFromGame()" style="background:var(--violet); color:#0b0b2a;">➕ חידון חדש</button>
-      <button class="btn ghost sm" onclick="finishToList()">📂 החידונים שלי</button>
+    <!-- v118: כפתורי סיום-בדיקה (סולו) — מוצגים רק אחרי בדיקה, לא אחרי משחק אמיתי -->
+    <div id="hfin-solo-actions" class="row" style="display:none;">
+      <button class="btn ghost sm" onclick="backToEditor()">→ חזרה לעריכה</button>
+      <button class="btn teal sm" onclick="previewQuiz()">🔁 בדיקה שוב</button>
     </div>
     <div id="guest-save-box" style="display:none; margin-top:20px; background:var(--card); border-radius:14px; padding:16px 20px; max-width:420px; margin-inline:auto;">
       <div style="font-size:15px; margin-bottom:10px;">בנית את החידון כאורח, אז הוא לא נשמר. רוצה לשמור אותו? התחבר עם Google והחידון יישמר לחשבון שלך.</div>
@@ -1136,8 +1144,7 @@ function signOutToHome(){
 
 // אורח שמסיים משחק ורוצה לשמור — מתחבר ואז שומר את החידון הנוכחי.
 // עכשיו גם באייפון זה popup (לא redirect) — הדף לא נטען מחדש, אז החידון בזיכרון נשמר ישירות
-// בכל הפלטפורמות, בלי צורך ב-sessionStorage. (restorePendingGuestQuiz נשאר כרשת-ביטחון.)
-const PENDING_GUEST_KEY = 'pendingGuestQuiz';
+// בכל הפלטפורמות, בלי צורך ב-sessionStorage. (v118: רשת-הביטחון הישנה דרך sessionStorage הוסרה — לא נכתב אליה דבר.)
 function guestSaveWithGoogle(){
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });   // בחירת חשבון תמיד (כמו ב-signInGoogle)
@@ -1178,18 +1185,7 @@ function guestSaveWithGoogle(){
 }
 
 // משחזר חידון-אורח שנשמר לפני redirect (אחרי שהמשתמש חזר מההתחברות ומחובר)
-function restorePendingGuestQuiz(){
-  let raw = null;
-  try { raw = sessionStorage.getItem(PENDING_GUEST_KEY); } catch(e){ return; }
-  if (!raw) return;
-  try { sessionStorage.removeItem(PENDING_GUEST_KEY); } catch(e){}
-  if (!myStoreKey) return;   // עוד לא מחובר — לא אמור לקרות, אבל הגנה
-  let pending;
-  try { pending = JSON.parse(raw); } catch(e){ return; }
-  if (!pending || !pending.code || !pending.quiz) return;
-  const payload = Object.assign({}, pending.quiz, { updated: Date.now(), ownerEmail: myEmail });
-  fdb.ref('teachers/'+myStoreKey+'/'+pending.code).set(payload).catch(()=>{});
-}
+// (v118: הפונקציה לשחזור חידון-אורח מ-sessionStorage הוסרה — רשת מתה)
 // אם חזרנו מהתחברות בהפניה — מטפלים בתוצאה (שגיאה מוצגת למשתמש במקום לשונית עירומה).
 // ההתחברות עצמה נתפסת ב-onAuthStateChanged; כאן בעיקר טיפול שגיאות.
 fauth.getRedirectResult().then(result => {
@@ -1219,8 +1215,6 @@ fauth.onAuthStateChanged(user => {
     fdb.ref('teacher_emails/'+myStoreKey).set({ email: myEmail, name: myAuthName, uid: myUid, last: Date.now() }).catch(()=>{});
     // הגירה חד-פעמית: אם אין עדיין חידונים תחת ה-UID אבל יש ישנים תחת המייל — מעבירים אותם
     migrateOldQuizzes();
-    // אם אורח שמר חידון לפני redirect (באייפון) — משחזרים ושומרים אותו עכשיו
-    restorePendingGuestQuiz();
     // אם נכנסו דרך קישור שיתוף — מטפלים בו עכשיו
     handlePendingShare();
     // אם נכנסו מהספרייה עם ?new=1 — פותחים חידון חדש עכשיו (אחרי שההתחברות נפתרה)
@@ -1434,9 +1428,11 @@ function bulkDelete(){
   const what = activeTab === 'drafts' ? 'טיוטות' : 'חידונים';
   if (!confirm('למחוק ' + codes.length + ' ' + what + ' לצמיתות?\n\nהמחיקה סופית ואי אפשר לשחזר.')) return;
   const tb = $('bulk-trash'); if (tb){ tb.disabled = true; tb.textContent = 'מוחק...'; }
-  const ops = codes.map(c => {
-    fdb.ref('teachers_meta/'+myStoreKey+'/pinned/'+c).remove().catch(()=>{});
-    return fdb.ref('teachers/'+myStoreKey+'/'+c).remove().catch(()=>{});
+  const ops = [];
+  codes.forEach(c => {
+    // v118: ניקוי ה-pinned נכלל עכשיו ב-Promise.all (קודם היה fire-and-forget)
+    ops.push(fdb.ref('teachers_meta/'+myStoreKey+'/pinned/'+c).remove().catch(()=>{}));
+    ops.push(fdb.ref('teachers/'+myStoreKey+'/'+c).remove().catch(()=>{}));
   });
   Promise.all(ops).then(()=>{ exitSelectMode(); refreshMyList(); });
 }
@@ -1786,6 +1782,7 @@ function playExisting(code, data){
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
+  if (data.aiMeta){ quiz.aiMeta = data.aiMeta; loadAiMeta(data.aiMeta); }   // v118: שימור קדם-מילוי ה-AI גם בנתיב משחק/בדיקה
   renderEditor();   // מכין את העורך ברקע (כדי שחזרה לעריכה תעבוד)
   prePlay();        // עוברים למסך הכנה (מוזיקה ורקע) לפני הלובי
 }
@@ -1819,6 +1816,7 @@ function testExisting(code, data){
     share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
+  if (data.aiMeta){ quiz.aiMeta = data.aiMeta; loadAiMeta(data.aiMeta); }   // v118: שימור קדם-מילוי ה-AI גם בנתיב משחק/בדיקה
   renderEditor();   // מכין את העורך ברקע (כדי שחזרה לעריכה תעבוד)
   previewQuiz();    // עוברים ישר לבדיקה (ללא תלמידים)
 }
@@ -2034,6 +2032,10 @@ function buildImportPrompt(){
   // בחידון חדש (ריק) — פשוט מספר הבורר.
   const editingExisting = quizHasRealContent();
   const askCount = editingExisting ? impNewQuestionsNeeded() : impQCount;
+  // v118: בעריכת חידון קיים, אם לא נדרשות שאלות חדשות — אין טעם בפרומפט "0 שאלות".
+  if (editingExisting && askCount <= 0){
+    return 'לא נבחרו שאלות חדשות לבקש מה-AI.\n• כדי להחליף שאלות — סמנו אותן ברשימה שלמעלה.\n• כדי להקטין את מספר השאלות — מחקו אותן ישירות בעורך (מסך ה-AI מוסיף שאלות, לא מקטין).';
+  }
   p += '. ' + askCount + ' שאלות, ולכל שאלה ' + impACount + ' תשובות.';
   if (age) p += (impTrack==='fun' ? ' קהל היעד: ' : ' שכבת הגיל: ') + age + '.';
   if (traits.length) p += ' מאפייני המשתתפים: ' + traits.join(', ') + '. התאם את רמת השאלות, אורך הניסוח ומורכבות התשובות בהתאם.';
@@ -2447,8 +2449,8 @@ function parseImport(){
       }
       return q;                // נשאר כפי שהיה
     });
-    // עודף (תוספות מהגדלת הבורר, או חדשות שנותרו) — בסוף
-    while (pool.length) result.push(pool.shift());
+    // עודף (תוספות מהגדלת הבורר, או חדשות שנותרו) — בסוף, עד תקרת הבורר (v118: לא יותר ממה שנבחר)
+    while (pool.length && result.length < impQCount) result.push(pool.shift());
     quiz.questions = result;
   }
   quiz.aiMeta = collectAiMeta();   // שומרים את בחירות ה-AI עם החידון (פריט 1)
@@ -2870,6 +2872,7 @@ function unshareSpecificAll(){
   if (!confirm('לבטל את השיתוף? המורים שקיבלו עותק ישמרו אותו, אבל הקישור יפסיק לעבוד.')) return;
   const sh = ensureShareObj();
   if (sh.shareId) fdb.ref('shared/'+sh.shareId).remove().catch(()=>{});
+  if (quiz.displayCode) fdb.ref('codes/'+quiz.displayCode).remove().catch(()=>{});   // v118: מחיקת רשומת codes/ היתומה אחרי ביטול-שיתוף
   sh.mode = 'none'; sh.emails = []; sh.shareId = null;
   saveQuiz(); renderSharePanel();
 }
@@ -2927,6 +2930,7 @@ function unshareEveryone(){
   const sh = ensureShareObj();
   if (sh.shareId) fdb.ref('shared/'+sh.shareId).remove().catch(()=>{});
   if (sh.libraryId) fdb.ref('library/'+sh.libraryId).remove().catch(()=>{});
+  if (quiz.displayCode) fdb.ref('codes/'+quiz.displayCode).remove().catch(()=>{});   // v118: מחיקת רשומת codes/ היתומה אחרי ביטול-שיתוף
   sh.mode = 'none'; sh.inLibrary = false; sh.shareId = null; sh.libraryId = null;
   saveQuiz(); renderSharePanel();
 }
@@ -3420,11 +3424,18 @@ function getStablePlayerId(gameCode){
 // בכל חיבור חוזר (כולל אחרי כיבוי-מסך) — כותב presence מחדש ורושם onDisconnect מחדש.
 // זה מתקן את המקרה שבו onDisconnect כבר ירה ומחק את הנוכחות, והדף חוזר לחיים בלי לטעון מחדש.
 let _presenceRef = null;
+let _presenceConnRef = null, _presenceConnHandler = null;   // v118: למעקב/ניתוק המאזין הזה בלבד
+// v118: מנתק את מאזין-הנוכחות של setupPresence בלבד — לא נוגע במאזין ה-conn הגלובלי של שורת-החיבור
+function detachPresence(){
+  try { if (_presenceConnRef && _presenceConnHandler) _presenceConnRef.off('value', _presenceConnHandler); } catch(e){}
+  _presenceConnHandler = null;
+}
 function setupPresence(code, pid){
+  detachPresence();   // v118: ניתוק מאזין קודם לפני רישום חדש (מונע הצטברות)
   try {
     _presenceRef = fdb.ref('games/'+code+'/presence/'+pid);
-    const connRef = fdb.ref('.info/connected');
-    connRef.on('value', snap => {
+    _presenceConnRef = fdb.ref('.info/connected');
+    _presenceConnHandler = _presenceConnRef.on('value', snap => {
       if (snap.val() === true){
         // החיבור פעיל (או שב לפעול) — רושמים מחדש את המחיקה-בניתוק, ואז מסמנים נוכחות
         _presenceRef.onDisconnect().remove().then(()=>{
@@ -3500,16 +3511,27 @@ async function goPlay(){
   nav('lobby');
 }
 
+let _gameMsgQuery = null, _gameMsgHandler = null;            // v118
+let _presenceCountRef = null, _presenceCountHandler = null;  // v118
+// v118: ניתוק מאזיני-המשחק (off ספציפי לכל handler — לא נוגע במאזינים אחרים)
+function detachGameListeners(){
+  try { if (_gameMsgQuery && _gameMsgHandler) _gameMsgQuery.off('child_added', _gameMsgHandler); } catch(e){}
+  try { if (_presenceCountRef && _presenceCountHandler) _presenceCountRef.off('value', _presenceCountHandler); } catch(e){}
+  _gameMsgHandler = null; _presenceCountHandler = null;
+}
 function listenGame(code, onReady){
+  detachGameListeners();   // v118: ניקוי מאזיני-משחק קודמים לפני רישום חדש
   topic = code;
   gameRef = fdb.ref('games/'+code+'/messages');
-  gameRef.limitToLast(80).on('child_added', snap => {
+  _gameMsgQuery = gameRef.limitToLast(80);
+  _gameMsgHandler = _gameMsgQuery.on('child_added', snap => {
     const m = snap.val(); if (!m || m.from === myId) return;
     if (role === 'host') hostMsg(m); else playerMsg(m);
   });
   // המנחה מאזין לנוכחות — סופר כמה מחוברים כעת (פריט 6)
   if (role === 'host'){
-    fdb.ref('games/'+code+'/presence').on('value', snap => {
+    _presenceCountRef = fdb.ref('games/'+code+'/presence');
+    _presenceCountHandler = _presenceCountRef.on('value', snap => {
       const pres = snap.val() || {};
       const connectedNow = Object.keys(pres).length;
       updatePresenceCounter(connectedNow);
@@ -3591,6 +3613,10 @@ function hostStart(){
   applyGameBg(true);
   bestMs = Infinity; bestName = ''; maxStreak = 0; streakKing = '';
   intermissionDone = new Set();
+  // v118: איפוס מצב-קול בין משחקים (אחרת משחק חוזר נשאר מושתק והתווית נתקעת)
+  musicMuted = false; musicIdx = 0;
+  if ($('music-toggle')) $('music-toggle').textContent = '🔇 השתקת מוזיקה';
+  if ($('bg-toggle')) $('bg-toggle').textContent = '🙈 הסתרת רקע';
   playGameMusic();
   qIndex = -1;
   nextQ();
@@ -4276,8 +4302,8 @@ function sfxTone(freq, startT, dur, type, gainPeak){
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   osc.start(t); osc.stop(t + dur + 0.05);
 }
-// משתיקים אפקטים יחד עם המוזיקה (אם המורה השתיק)
-function sfxAllowed(){ return !musicMuted; }
+// v118: האפקטים תמיד מנגנים — השתקת המוזיקה נוגעת רק בלולאת-הרקע, לא בצלילי החגיגה (שיא/רצף/ניצחון)
+function sfxAllowed(){ return true; }
 // שיא מהירות — "דינג" עולה זריז
 function sfxRecord(){
   if (!sfxAllowed()) return;
@@ -4388,6 +4414,8 @@ function hostFinish(){
 
   send({ t:'end', scores: board });
   $('guest-save-box').style.display = isGuest ? 'block' : 'none';
+  if ($('hfin-host-actions')) $('hfin-host-actions').style.display = '';   // v118: שחזור כפתורי משחק-אמיתי (אם בדיקת-סולו קודמת הסתירה)
+  if ($('hfin-solo-actions')) $('hfin-solo-actions').style.display = 'none';
   show('hfin');
   confetti();
   sfxWin();
@@ -4409,7 +4437,7 @@ function hostSkip(){
 }
 function hostJumpFinish(){ clearInterval(hostTimer); hostFinish(); }
 // סוף סשן משחק — מאפס את קוד המשחק והמחסנית, כך שהמשחק הבא יקבל קוד חדש. נקרא ביציאה אמיתית מהזרימה.
-function endGameSession(){ playCode = null; navStack = []; }
+function endGameSession(){ playCode = null; navStack = []; detachGameListeners(); detachPresence(); }   // v118: ניקוי מאזינים ביציאה ממשחק
 function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); renderEditor(); show('editor'); }
 function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); playCode=null; goPlay(); }
 function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); refreshMyList(); }
@@ -4479,6 +4507,10 @@ function previewQuiz(){
   players = { _me:{ name:'אתם (בדיקה)', team:(quiz.teamCount>0?0:-1), score:0, streak:0, correct:0 } };
   bestMs = Infinity; bestName=''; maxStreak=0; streakKing='';
   intermissionDone = new Set();
+  // v118: איפוס מצב-קול בין בדיקות (סולו)
+  musicMuted = false; musicIdx = 0;
+  if ($('solo-music-toggle')) $('solo-music-toggle').textContent = '🔇 השתקת מוזיקה';
+  if ($('solo-bg-toggle')) $('solo-bg-toggle').textContent = '🙈 הסתרת רקע';
   $('host-menu').style.display='none';
   // סרגל בדיקה + תג בדיקה + מוזיקה — כדי שהבדיקה תרגיש כמו המשחק האמיתי
   $('solo-bar').style.display='flex';
@@ -4595,8 +4627,10 @@ function soloFinish(){
   $('podium').innerHTML='';
   $('team-final').innerHTML='<div style="font-size:clamp(20px,3vw,30px);">✅ סיימתם את הבדיקה!</div>';
   $('fun-cards').innerHTML='<div style="color:var(--ink-dim); max-width:420px;">ככה החידון ייראה למשתתפים. כשתרצו לשחק עם הקהל, חזרו ולחצו "התחלת משחק עם הקהל".</div>';
-  // נחליף את כפתורי הסיום הרגילים בכפתור חזרה לעריכה בלבד (זמני)
+  // v118: בסולו מציגים רק כפתורי-בדיקה (חזרה/בדיקה-שוב), לא כפתורי משחק-אמיתי (שמפעילים קהל)
   $('guest-save-box').style.display = 'none';
+  if ($('hfin-host-actions')) $('hfin-host-actions').style.display = 'none';
+  if ($('hfin-solo-actions')) $('hfin-solo-actions').style.display = 'flex';
   show('hfin');
   confetti();
 }
