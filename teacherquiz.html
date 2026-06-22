@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v98 - מקבץ תיקוני UI (9 פריטים) — תפריט ניווט, פעולות בעורך, ומסך ההכנה: (1) כפתור התפריט מציג "סגירה" כשפתוח, "ניווט" כשסגור (nav-toggle-label מתעדכן ב-toggleNavMenu). (2) "יציאה לבניית מצגת" הפך לקונטקסט בהיר וחצי-כבוי (ללא רקע/מסגרת, opacity .55, פונט דק) — לא בולט. (3) תפריט הניווט מוסתר לגמרי במסך "החידונים שלי" (updateNavMenu מחריג גם mylist) — לכל חידון יש תפריט-אפשרויות משלו, והפעולה היחידה ("בניית חידון חדש") בולטת ממילא. (4) שלושת פריטי-הניווט (עריכה/חידונים שלי/ספרייה) באותו צבע אחיד (nav-item-link זהה ל-nav-list button); רק היציאה-למצגת מובחנת. (5) שמירה·שיתוף·ספרייה אוחדו לשורה אחת עם הסבר קצר מעל (במקום שלושה בלוקים עם כותרות); המילה "ציבורית" הוסרה מהכפתור (בהסבר); הכפתורים (renderSharePanel/renderLibraryPanel) הוקטנו ל-ghost sm לא-מתוחים. (6) המרת HEIC בבחירת רקע — קודם בחירת תמונת-אייפון כרקע נתנה מסך שחור; עכשיו bgChosen מזהה HEIC/HEIF (isHeicFile), טוען את heic-to.js (אותה ספרייה כמו במונטאז') וממיר ל-JPEG לפני ההצגה, עם הודעת התקדמות/שגיאה בשורת-הסטטוס; נוסף .heic,.heif ל-accept של bg-input. (7) כפתור פתיחת/סגירת אזור הרקע-ומוזיקה במסך ההכנה הוגדל (summary 18px/800, padding גדול). (8) במסך ההכנה: בחירת רקע ובחירת מוזיקה — כל אחת בשורה אחת עם שני כפתורים זה-לצד-זה (display:grid 1fr 1fr — flex-wrap לא עבד בגלל cascade של .row); "מחשב"→"מכשיר" בכל המקומות (5 הופעות) כי המורה עשוי להיות בטלפון/טאבלט. (9) הכפתורים פושטו ל"🎨 מהגלריה"/"📁 מהמכשיר", ומתחת כל זוג שורת-סטטוס (pg-bg-status/pg-music-status) שמראה מה נבחר ("✓ נבחר: X · הסרה") או "לא נבחר" — נוהל ע"י updatePgMediaStatus (עטוף ב-try נגד TDZ); נוסף bgLabel ו-clearAllMusic
   v97 - ניקוי וסידור כפתורים ב"חידונים שלי" ובעורך (המשך הפרדת ניווט/פעולה): (א) "חידונים שלי" — כפתור "→ חזרה" הוסר לגמרי (הוביל ל-home שהוא מסך-התחברות שאף אחד לא חוזר אליו; הרשימה היא בסיס הזרימה, אין לאן לחזור ממנה). "➕ בניית חידון חדש" נשאר בולט בראש — הוא פעולה ראשית, לא ניווט, ולכן לא נכנס לתפריט. (ב) עורך — "→ חזרה" התחתון הוסר (ניווט, כבר קיים בתפריט-הניווט מ-v95). (ג) עורך — הכפתורים "🔗 יצירת קישור שיתוף" ו"📚 הוספה לספרייה הציבורית" היו btn teal sm עם width:100% (מתוחים לרוחב מלא, נראו ענקיים); הוקטנו ל-btn ghost sm קומפקטיים וממורכזים, אחידים עם "💾 שמירה". "🗑️ ניקוי" נשאר כפי שהיה (דק ומאופק). הפעולות הראשיות (▶️ התחלת משחק, 👁️ בדיקה) נשארו בולטות. (ד) כפתור התפריט (nav-toggle) הוגדל מעט (15px/800, padding גדול יותר). עיקרון מנחה: תפריט-הניווט נשאר רזה (ניווט בלבד) — פעולות לא נדחסות אליו; הן נשארות במסך אך מסודרות וקומפקטיות. מיזוג פעולות-לתפריט נדחה במכוון כי היה מחזיר את ערבוב ניווט/פעולה
   v96 - תצוגת רקע חיה במסך ההכנה (pregame) — המורה רואה את הרקע לפני המשחק, לא מגלה אותו תוך-כדי: הבעיה — המורה בחר רקע ב-pregame לפי *שם* בלבד ("🌌 חלל"), בלי לראות אותו, וראה את הבחירה לראשונה רק כשהמשחק כבר רץ מול הכיתה. אם לא מצא חן — היה תקוע. עכשיו: ברגע שבוחרים רקע ב-pregame, אלמנט game-bg (אותו אלמנט מסך-מלא z-index:0 ששימש במשחק, כולל אותו overlay כהה rgba(5,8,15,.70)) נדלק *מיד* מאחורי כרטיסי-ההכנה — תצוגה מקדימה באותם תנאים בדיוק כמו במשחק. המורה רואה, ואם לא מתאים — מחליף *שם*, לפני שהתחיל ולפני שתלמיד מסתכל. previewBgIfPregame() מדליק/מכבה את התצוגה לפי הרקע הפעיל, נקרא מ-bgChosen/setGalleryBg/clearBg/prePlay. תווית "👁️ זו תצוגה מקדימה — ככה הרקע ייראה במשחק" (pg-preview-note) מופיעה רק כשיש רקע פעיל. show() מכבה את game-bg במעבר למסך שאינו pregame/משחק (bgScreens) — כדי שהרקע לא ידלוף לעורך/רשימה; hostStart מדליק שוב למשחק האמיתי. אומת: נדלק בבחירה, כבה ביציאה לעורך/רשימה, נשאר במשחק. הנימוק — זה פותר את "התחרטתי על הרקע" *לפני* המשחק (בטוח), במקום להוסיף החלפת-רקע תוך-כדי-משחק חי (שהיה זורק מצטרפים / יוצר שני-מצבים-פעילים — סיכון גדול לתרחיש שכמעט לא קורה). בלובי אפשר לחזור צעד אחד ל-pregame (v95, בלי לזרוק מצטרפים) ולהחליף שם
   v95 - מערכת ניווט חדשה (ניווט A) — "חזרה" ליניארית + תפריט ניווט קבוע, וניקוי כפתורים מיותרים: עד כה כפתורי ה"חזרה" היו לא-עקביים — אותו מושג ("חזרה") הוביל ליעדים שונים ממסכים שונים (חזרה-לרשימה / חזרה-לעריכה), והסדר היה לקוי (מהלובי קפצו לעורך ודילגו על מסך המוזיקה/רקע; ל-pregame לא הייתה גישה מהעורך כלל). בנוסף, כל מסך המציא לעצמו סט כפתורי-ניווט בתחתית, מעורבב עם פעולות. עכשיו:
@@ -110,10 +111,11 @@ input:focus{border-color:var(--gold); outline:none;}
 #nav-menu.open #nav-toggle .chev{transform:rotate(180deg);}
 #nav-list{display:none; flex-direction:column; align-items:stretch; gap:6px; background:rgba(10,16,32,.97); padding:8px; border-radius:14px; box-shadow:0 6px 22px rgba(0,0,0,.55); min-width:190px;}
 #nav-menu.open #nav-list{display:flex;}
-#nav-list button{font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:10px 16px; cursor:pointer; text-align:right;}
-#nav-list button:active{transform:translateY(1px);}
-/* "יציאה לבניית מצגת" — מובחן: זו יציאה מהאפליקציה, לא ניווט פנימי */
-#nav-list a.nav-exit{font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--gold); background:transparent; border:1px solid var(--gold); border-radius:10px; padding:10px 16px; cursor:pointer; text-align:right; text-decoration:none; display:block; margin-top:2px;}
+#nav-list button, #nav-list a.nav-item-link{font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:10px 16px; cursor:pointer; text-align:right; text-decoration:none; display:block;}
+#nav-list button:active, #nav-list a.nav-item-link:active{transform:translateY(1px);}
+/* "יציאה לבניית מצגת" — קונטקסט, לא פעולה: בהיר, חצי-כבוי, ממש לא בולט (ללא רקע/מסגרת) */
+#nav-list a.nav-exit{font-family:'Heebo'; font-size:13px; font-weight:400; color:var(--ink-dim); background:transparent; border:none; border-radius:10px; padding:9px 16px; cursor:pointer; text-align:right; text-decoration:none; display:block; opacity:.55; margin-top:4px;}
+#nav-list a.nav-exit:hover{opacity:.85;}
 #nav-list a.nav-exit:active{transform:translateY(1px);}
 .savetoast{position:fixed; top:18px; left:50%; transform:translateX(-50%) translateY(-20px); background:#1a7a4a; color:#fff; padding:10px 22px; border-radius:30px; font-family:'Heebo'; font-weight:700; font-size:15px; box-shadow:0 8px 26px rgba(0,0,0,.45); z-index:200; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;}
 .savetoast.on{opacity:1; transform:translateX(-50%) translateY(0);}
@@ -268,17 +270,17 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v97</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v98</span></div>
 
 <!-- תפריט ניווט קבוע (ניווט A) — מופיע בכל מסכי-הניווט, מוסתר במסכי-משחק חיים -->
 <div id="nav-menu">
   <div id="nav-list">
     <button id="nav-edit" onclick="navTo('editor')" style="display:none;">✏️ עריכת החידון</button>
     <button onclick="navTo('mylist')">🗂️ החידונים שלי</button>
-    <a href="teacher-library.html" class="nav-exit" style="border-color:rgba(255,255,255,.22); color:var(--ink);">📚 ספריית חידונים</a>
+    <a href="teacher-library.html" class="nav-item-link">📚 ספריית חידונים</a>
     <a href="index.html" target="_top" class="nav-exit">🎬 יציאה לבניית מצגת</a>
   </div>
-  <button id="nav-toggle" onclick="toggleNavMenu()" title="ניווט מהיר">☰ ניווט <span class="chev">▾</span></button>
+  <button id="nav-toggle" onclick="toggleNavMenu()" title="פתיחה/סגירה של תפריט הניווט">☰ <span id="nav-toggle-label">ניווט</span> <span class="chev">▾</span></button>
 </div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
@@ -443,18 +445,18 @@ input:focus{border-color:var(--gold); outline:none;}
 
 
         <div class="field">
-          <label>רקע למסך החידון <span class="info-i" onclick="showInfo(event, 'אפשר לבחור רקע מוכן מהגלריה (נטען מיד), או להעלות תמונה מהמחשב (לא נשמרת, צריך לבחור מחדש בכל פעם). בזמן המשחק יש כפתור רקע שמאפשר להוריד את הרקע אם הוא מפריע לקריאה.')">i</span></label>
+          <label>רקע למסך החידון <span class="info-i" onclick="showInfo(event, 'אפשר לבחור רקע מוכן מהגלריה (נטען מיד), או להעלות תמונה מהמכשיר (לא נשמרת, צריך לבחור מחדש בכל פעם). בזמן המשחק יש כפתור רקע שמאפשר להוריד את הרקע אם הוא מפריע לקריאה.')">i</span></label>
           <button class="btn ghost sm" onclick="openBgGallery()" id="bg-gallery-btn" style="width:100%;">🎨 בחירת רקע מהגלריה</button>
-          <button class="btn ghost sm" onclick="$('bg-input').click()" id="bg-btn" style="width:100%; margin-top:8px;">🖼️ בחירת תמונת רקע מהמחשב</button>
-          <input type="file" id="bg-input" accept="image/*" style="display:none" onchange="bgChosen(this.files)">
+          <button class="btn ghost sm" onclick="$('bg-input').click()" id="bg-btn" style="width:100%; margin-top:8px;">🖼️ בחירת תמונת רקע מהמכשיר</button>
+          <input type="file" id="bg-input" accept="image/*,.heic,.heif" style="display:none" onchange="bgChosen(this.files)">
           <div id="bg-chip" style="display:none; align-items:center; gap:10px; justify-content:center; margin-top:10px;"></div>
           <button class="btn ghost sm" onclick="clearBg()" id="bg-clear" style="width:100%; margin-top:8px; display:none;">↩️ חזרה לרקע הכחול</button>
         </div>
 
         <div class="field">
-          <label>מוזיקת רקע <span class="info-i" onclick="showInfo(event, 'אפשר לבחור מוזיקה מהגלריה המובנית, או להעלות קובץ מהמחשב (לא נשמר, צריך לבחור מחדש בכל פעם). המוזיקה מתנגנת בשקט בזמן החידון, ויש כפתור להשתקה בזמן המשחק.')">i</span></label>
+          <label>מוזיקת רקע <span class="info-i" onclick="showInfo(event, 'אפשר לבחור מוזיקה מהגלריה המובנית, או להעלות קובץ מהמכשיר (לא נשמר, צריך לבחור מחדש בכל פעם). המוזיקה מתנגנת בשקט בזמן החידון, ויש כפתור להשתקה בזמן המשחק.')">i</span></label>
           <button class="btn ghost sm" onclick="openMusicGallery()" style="width:100%;">🎼 בחירת מוזיקה מהגלריה</button>
-          <button class="btn ghost sm" onclick="$('music-input').click()" id="music-btn" style="width:100%; margin-top:8px;">🎵 בחירת מוזיקה מהמחשב</button>
+          <button class="btn ghost sm" onclick="$('music-input').click()" id="music-btn" style="width:100%; margin-top:8px;">🎵 בחירת מוזיקה מהמכשיר</button>
           <input type="file" id="music-input" accept="audio/*" multiple style="display:none" onchange="musicChosen(this.files)">
           <div id="music-list" style="display:flex; flex-direction:column; gap:6px; margin-top:8px; font-size:14px;"></div>
         </div>
@@ -470,22 +472,16 @@ input:focus{border-color:var(--gold); outline:none;}
       <button class="btn" onclick="previewQuiz()" style="background:var(--violet); color:#0b0b2a;">👁️ בדיקה (ללא משתתפים)</button>
     </div>
 
-    <!-- בלוק ניהול -->
-    <div class="row" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
-      <button class="btn ghost sm" onclick="saveNow()">💾 שמירה</button>
-    </div>
-
-    <!-- בלוק שיתוף -->
-    <div id="share-card" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
-      <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">🔗 שיתוף החידון <span class="info-i" onclick="showInfo(event, 'יצירת קישור שיתוף נותנת לכם קישור שאפשר לשלוח למי שתרצו. כל מי שמקבל את הקישור פותח אותו ומקבל עותק עצמאי משלו לעריכה ולמשחק. החידון המקורי שלכם לא משתנה ולא נמחק.')">i</span></div>
-      <div style="font-size:13px; color:var(--ink-dim); margin-bottom:12px; text-align:center;">שלחו את החידון למישהו אחר — הוא יקבל עותק עצמאי משלו לעריכה ולמשחק.</div>
-      <div id="share-panel" style="max-width:460px; margin:0 auto;"></div>
-    </div>
-
-    <div id="library-card" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
-      <div style="font-size:15px; font-weight:700; color:var(--ink); margin-bottom:6px; text-align:center;">📚 ספריית החידונים הציבורית <span class="info-i" onclick="showInfo(event, 'הוספה לספרייה הציבורית הופכת את החידון לזמין לכל המורים במערכת. הם יוכלו למצוא אותו, להעתיק לעצמם ולשחק. כך הספרייה גדלה ומורים נעזרים זה בזה. אפשר להסיר את החידון מהספרייה בכל עת.')">i</span></div>
-      <div style="font-size:13px; color:var(--ink-dim); margin-bottom:12px; text-align:center;">שתפו את החידון עם כל המורים — הוא יתווסף לספרייה הציבורית שכולם נעזרים בה.</div>
-      <div id="library-panel" style="max-width:460px; margin:0 auto;"></div>
+    <!-- בלוק פעולות-משנה: שמירה · שיתוף · ספרייה — שורה אחת, הסבר קצר מעל -->
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
+      <div style="font-size:13px; color:var(--ink-dim); line-height:1.5; text-align:center; margin-bottom:12px; max-width:440px; margin-inline:auto;">
+        שמירה נעשית אוטומטית. שיתוף — קישור לעותק עצמאי למורה אחר. ספרייה — חשיפה לכל המורים. <span class="info-i" onclick="showInfo(event, 'שיתוף: קישור שאפשר לשלוח למי שתרצו — המקבל מקבל עותק עצמאי משלו לעריכה ולמשחק, והחידון שלכם לא משתנה. ספרייה: הוספה לספרייה הציבורית הופכת את החידון לזמין לכל המורים במערכת — הם ימצאו, יעתיקו לעצמם וישחקו. אפשר להסיר בכל עת.')">i</span>
+      </div>
+      <div class="row" style="gap:8px;">
+        <button class="btn ghost sm" onclick="saveNow()">💾 שמירה</button>
+        <span id="share-panel"></span>
+        <span id="library-panel"></span>
+      </div>
     </div>
 
     <div id="clear-all-wrap" style="text-align:center; margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); display:none;">
@@ -514,22 +510,27 @@ input:focus{border-color:var(--gold); outline:none;}
 
     <!-- רקע ומוזיקה — לא חובה, מקופל, סגור כברירת מחדל. אותם handlers כמו בעורך -->
     <details class="adv-box" style="margin-top:18px; text-align:right;">
-      <summary style="cursor:pointer; font-size:16px; font-weight:700; color:var(--ink); padding:14px 18px; background:rgba(255,255,255,.06); border-radius:12px; list-style:none; display:flex; align-items:center; gap:8px;">🎨 הוספת רקע ומוזיקה <span style="font-size:13px; font-weight:400; color:var(--ink-dim); opacity:.8;">(לא חובה)</span></summary>
+      <summary style="cursor:pointer; font-size:18px; font-weight:800; color:var(--ink); padding:16px 20px; background:rgba(255,255,255,.08); border-radius:12px; list-style:none; display:flex; align-items:center; gap:10px;">🎨 הוספת רקע ומוזיקה <span style="font-size:13px; font-weight:400; color:var(--ink-dim); opacity:.8;">(לא חובה)</span></summary>
       <div style="padding-top:18px;">
         <p style="font-size:14px; color:var(--ink-dim); line-height:1.6; margin:0 0 18px;">רקע ומוזיקה מוסיפים אווירה למשחק. הם לא נשמרים עם החידון, אז בוחרים אותם כאן לפני כל הפעלה. בזמן המשחק יהיה כפתור להשתקת המוזיקה או הסתרת הרקע אם הם מפריעים.</p>
 
         <div class="field">
           <label style="font-size:16px;">תמונת רקע</label>
-          <button class="btn ghost" onclick="openBgGallery()" style="width:100%;">🎨 בחירת רקע מהגלריה</button>
-          <button class="btn ghost" onclick="$('bg-input').click()" id="pg-bg-btn" style="width:100%; margin-top:10px;">🖼️ בחירת תמונת רקע מהמחשב</button>
-          <button class="btn ghost sm" onclick="clearBg(); $('pg-bg-btn').textContent='🖼️ בחירת תמונת רקע מהמחשב';" style="width:100%; margin-top:10px;">↩️ בלי תמונת רקע</button>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <button class="btn ghost sm" onclick="openBgGallery()" style="white-space:nowrap;">🎨 מהגלריה</button>
+            <button class="btn ghost sm" onclick="$('bg-input').click()" id="pg-bg-btn" style="white-space:nowrap;">📁 מהמכשיר</button>
+          </div>
+          <div id="pg-bg-status" style="font-size:13px; color:var(--ink-dim); margin-top:8px; text-align:center;">לא נבחר רקע</div>
         </div>
 
         <div class="field" style="margin-top:20px;">
           <label style="font-size:16px;">מוזיקת רקע</label>
-          <button class="btn ghost" onclick="openMusicGallery()" style="width:100%;">🎼 בחירת מוזיקה מהגלריה</button>
-          <button class="btn ghost" onclick="$('music-input').click()" id="pg-music-btn" style="width:100%; margin-top:10px;">🎵 בחירת מוזיקה מהמחשב</button>
-          <div id="pg-music-list" style="font-size:14px; color:var(--ink-dim); margin-top:10px;"></div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <button class="btn ghost sm" onclick="openMusicGallery()" style="white-space:nowrap;">🎼 מהגלריה</button>
+            <button class="btn ghost sm" onclick="$('music-input').click()" id="pg-music-btn" style="white-space:nowrap;">📁 מהמכשיר</button>
+          </div>
+          <div id="pg-music-status" style="font-size:13px; color:var(--ink-dim); margin-top:8px; text-align:center;">לא נבחרה מוזיקה</div>
+          <div id="pg-music-list" style="font-size:13px; color:var(--ink-dim); margin-top:4px;"></div>
         </div>
       </div>
     </details>
@@ -827,7 +828,12 @@ function goBack(){
 }
 
 /* ----- תפריט הניווט הקבוע ----- */
-function toggleNavMenu(){ const m=$('nav-menu'); if(m) m.classList.toggle('open'); }
+function toggleNavMenu(){
+  const m=$('nav-menu'); if(!m) return;
+  m.classList.toggle('open');
+  const lbl = $('nav-toggle-label');
+  if (lbl) lbl.textContent = m.classList.contains('open') ? 'סגירה' : 'ניווט';
+}
 // ניווט דרך התפריט: קפיצה ישירה ליעד. מאפס את התפריט הפתוח, ומשתמש ב-nav (שומר היסטוריה)
 function navTo(id){
   $('nav-menu').classList.remove('open');
@@ -839,11 +845,12 @@ function navTo(id){
 function updateNavMenu(){
   const m = $('nav-menu'); if (!m) return;
   const cur = currentNavScreen();
-  // מציגים את התפריט רק במסכי-ניווט של המארח. במסכי-משחק חיים, מסכי-תלמיד, ומסך הבית — מוסתר.
-  // (מסך הבית הוא התחברות; הרשימה/עורך/הכנה/לובי/בדיקה — שם הניווט רלוונטי.)
-  const showOn = cur && cur !== 'home';
+  // מציגים את התפריט רק במסכי-ניווט שבהם הוא באמת נחוץ. מוסתר ב:
+  // - home (התחברות), מסכי-משחק חיים, מסכי-תלמיד
+  // - mylist (רשימה): לכל חידון יש כבר תפריט-אפשרויות משלו, והפעולה היחידה ("בניית חידון") בולטת ממילא
+  const showOn = cur && cur !== 'home' && cur !== 'mylist';
   m.classList.toggle('show', !!showOn);
-  if (!showOn) m.classList.remove('open');   // סגירת הרשימה כשעוזבים
+  if (!showOn){ m.classList.remove('open'); const lbl=$('nav-toggle-label'); if(lbl) lbl.textContent='ניווט'; }   // סגירת הרשימה ואיפוס התווית כשעוזבים
   // כפתור "עריכת החידון" — רק כשיש חידון פתוח ולא כשכבר בעורך.
   // עטוף ב-try כי show() עשוי לרוץ לפני שהמשתנים editCode/quiz אותחלו (TDZ) בטעינת הדף.
   const editBtn = $('nav-edit');
@@ -1487,10 +1494,8 @@ function prePlay(){
   // מספר השאלות — שורת מידע קטנה שמאשרת שהחידון מוכן
   const qc = $('pregame-qcount');
   if (qc){ const n = quiz.questions ? quiz.questions.length : 0; qc.textContent = n ? (' · ' + n + (n===1 ? ' שאלה' : ' שאלות')) : ''; }
-  // עדכון תצוגת כפתורים לפי מה שכבר נבחר
-  $('pg-bg-btn').textContent = bgUrl ? '🖼️ תמונת רקע נבחרה ✓ (לחיצה מחליפה)' : '🖼️ בחירת תמונת רקע מהמחשב';
-  $('pg-music-list').textContent = musicList.length ? ('נבחרו ' + musicList.length + ' שירים') : '';
-  $('pg-music-btn').textContent = musicList.length ? '🎵 הוספת שיר' : '🎵 בחירת מוזיקה מהמחשב';
+  // עדכון שורות-הסטטוס של רקע/מוזיקה לפי מה שכבר נבחר
+  updatePgMediaStatus();
   nav('pregame');
   previewBgIfPregame();   // אם כבר נבחר רקע — מדליק תצוגה מקדימה חיה מאחורי הכרטיסים
 }
@@ -3203,6 +3208,22 @@ function hostStart(){
 
 /* רקע למסך החידון (בצד המארח, לא נשמר) */
 let bgUrl = null;
+let bgLabel = '';   // תיאור קצר של הרקע שנבחר (לשורת-הסטטוס במסך ההכנה)
+// מעדכן את שורות-הסטטוס של רקע/מוזיקה במסך ההכנה — מציג מה נבחר, או "לא נבחר", עם אפשרות הסרה
+function updatePgMediaStatus(){
+  let _bg, _music;
+  try { _bg = bgUrl; _music = musicList; } catch(e){ return; }   // הגנה מפני TDZ אם נקרא מוקדם בטעינה
+  const bs = $('pg-bg-status');
+  if (bs){
+    if (_bg){ bs.innerHTML = '✓ נבחר: ' + (bgLabel || 'רקע') + ' · <a href="javascript:void(0)" onclick="clearBg()" style="color:var(--coral); text-decoration:underline;">הסרה</a>'; bs.style.color='var(--teal)'; }
+    else { bs.textContent = 'לא נבחר רקע'; bs.style.color='var(--ink-dim)'; }
+  }
+  const ms = $('pg-music-status');
+  if (ms){
+    if (_music && _music.length){ ms.innerHTML = '✓ נבחרו ' + _music.length + (_music.length===1?' שיר':' שירים') + ' · <a href="javascript:void(0)" onclick="clearAllMusic()" style="color:var(--coral); text-decoration:underline;">הסרה</a>'; ms.style.color='var(--teal)'; }
+    else { ms.textContent = 'לא נבחרה מוזיקה'; ms.style.color='var(--ink-dim)'; }
+  }
+}
 // תצוגה מקדימה חיה: כשנמצאים במסך ההכנה (pregame), הרקע הנבחר נדלק מיד מאחורי הכרטיסים
 // — אותו אלמנט game-bg ואותו overlay כהה כמו במשחק, כך שהמורה רואה בדיוק מה יקרה לפני שהתחיל.
 function previewBgIfPregame(){
@@ -3211,20 +3232,58 @@ function previewBgIfPregame(){
   // עדכון תווית התצוגה-המקדימה (מופיעה רק כשיש רקע פעיל)
   const note = $('pg-preview-note');
   if (note) note.style.display = (onPregame && bgUrl) ? 'block' : 'none';
+  updatePgMediaStatus();
 }
-function bgChosen(files){
+// זיהוי קובץ HEIC/HEIF (תמונות אייפון) — דורש המרה ל-JPEG לפני הצגה (אחרת הדפדפן מציג שחור)
+function isHeicFile(f){
+  return /\.(heic|heif)$/i.test(f.name) || f.type === 'image/heic' || f.type === 'image/heif';
+}
+// טוען את ספריית heic-to מהריפו (מקומי), פעם אחת — אותה ספרייה כמו במונטאז'
+let heicLibPromise = null;
+function loadHeicLib(){
+  if (window.HeicTo) return Promise.resolve(true);
+  if (heicLibPromise) return heicLibPromise;
+  heicLibPromise = new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = 'heic-to.js';   // קובץ מקומי בשורש הריפו
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.head.appendChild(s);
+  });
+  return heicLibPromise;
+}
+async function bgChosen(files){
   if (!files || !files.length) return;
-  if (bgUrl) URL.revokeObjectURL(bgUrl);
-  bgUrl = URL.createObjectURL(files[0]);
+  let f = files[0];
+  $('bg-input').value = '';
+  // ===== המרת HEIC ל-JPEG (תמונות אייפון) — אחרת מסך הרקע יוצא שחור =====
+  if (isHeicFile(f)){
+    if ($('pg-bg-status')){ $('pg-bg-status').textContent = '⏳ ממיר תמונת אייפון...'; $('pg-bg-status').style.color='var(--gold)'; }
+    const ok = await loadHeicLib();
+    if (ok && window.HeicTo){
+      try {
+        const jpgBlob = await window.HeicTo({ blob: f, type: 'image/jpeg', quality: 0.9 });
+        f = new File([jpgBlob], f.name.replace(/\.(heic|heif)$/i, '.jpg'), { type: 'image/jpeg' });
+      } catch(e){
+        console.error('HEIC conversion failed:', e);
+        if ($('pg-bg-status')){ $('pg-bg-status').textContent = '⚠️ לא ניתן להמיר את התמונה — נסו תמונה אחרת'; $('pg-bg-status').style.color='var(--coral)'; }
+        return;
+      }
+    } else {
+      if ($('pg-bg-status')){ $('pg-bg-status').textContent = '⚠️ המרת תמונות אייפון נכשלה — נסו תמונה אחרת'; $('pg-bg-status').style.color='var(--coral)'; }
+      return;
+    }
+  }
+  if (bgUrl && bgUrl !== 'gallery') URL.revokeObjectURL(bgUrl);
+  bgUrl = URL.createObjectURL(f);
+  bgLabel = 'תמונה מהמכשיר';
   $('game-bg').style.background = '';
   $('game-bg').style.backgroundImage = 'url(' + bgUrl + ')';
   $('game-bg').style.backgroundSize = 'cover';
   $('game-bg').style.backgroundPosition = 'center';
-  $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
-  $('bg-clear').style.display = 'block';
-  renderBgChip('תמונה מהמחשב');
-  if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ תמונת רקע נבחרה ✓ (לחיצה מחליפה)';
-  $('bg-input').value = '';
+  if ($('bg-btn')) $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמכשיר';
+  if ($('bg-clear')) $('bg-clear').style.display = 'block';
+  renderBgChip('תמונה מהמכשיר');
   previewBgIfPregame();
 }
 // מציג "צ'יפ" של הרקע שנבחר (כמו ברשימת המוזיקה), עם כפתור ביטול
@@ -3239,26 +3298,26 @@ function renderBgChip(name){
   chip.style.display='flex';
 }
 function setGalleryBg(css, name){
-  if (bgUrl){ URL.revokeObjectURL(bgUrl); bgUrl = null; }
+  if (bgUrl && bgUrl !== 'gallery'){ URL.revokeObjectURL(bgUrl); }
   bgUrl = 'gallery'; // סימון שיש רקע פעיל
+  bgLabel = name || 'רקע מהגלריה';
   $('game-bg').style.backgroundImage = '';
   $('game-bg').style.background = css;
-  $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
-  $('bg-clear').style.display = 'block';
+  if ($('bg-btn')) $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמכשיר';
+  if ($('bg-clear')) $('bg-clear').style.display = 'block';
   renderBgChip('רקע נבחר: ' + (name || 'מהגלריה'));
-  if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ נבחר רקע מהגלריה';
   previewBgIfPregame();
 }
 function clearBg(){
   if (bgUrl && bgUrl !== 'gallery'){ URL.revokeObjectURL(bgUrl); }
   bgUrl = null;
+  bgLabel = '';
   $('game-bg').style.backgroundImage = '';
   $('game-bg').style.background = '';
   $('game-bg').classList.remove('on');
-  $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
-  $('bg-clear').style.display = 'none';
+  if ($('bg-btn')) $('bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמכשיר';
+  if ($('bg-clear')) $('bg-clear').style.display = 'none';
   renderBgChip(null);
-  if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
   previewBgIfPregame();
 }
 function applyGameBg(on){
@@ -3350,13 +3409,13 @@ function openMusicGallery(){
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:480px; width:100%; margin:auto; text-align:right;';
   box.innerHTML='<div style="font-family:\'Secular One\'; font-size:22px; color:var(--gold); margin-bottom:14px;">בחירת מוזיקה מהגלריה</div>';
   if (!MUSIC_GALLERY.length){
-    box.innerHTML += '<div style="font-size:14px; color:var(--ink-dim); line-height:1.6;">הגלריה עדיין ריקה. בקרוב יתווספו כאן קטעי מוזיקה מוכנים.<br>בינתיים אפשר להעלות מוזיקה מהמחשב.</div>';
+    box.innerHTML += '<div style="font-size:14px; color:var(--ink-dim); line-height:1.6;">הגלריה עדיין ריקה. בקרוב יתווספו כאן קטעי מוזיקה מוכנים.<br>בינתיים אפשר להעלות מוזיקה מהמכשיר.</div>';
   } else {
     const grid=document.createElement('div'); grid.style.cssText='display:flex; flex-direction:column; gap:8px;';
     MUSIC_GALLERY.forEach(m=>{
       const row=document.createElement('div'); row.style.cssText='display:flex; gap:8px; align-items:center;';
       const b=document.createElement('button'); b.className='btn ghost sm'; b.style.flex='1'; b.style.textAlign='right'; b.textContent='🎵 '+m.name;
-      b.onclick=()=>{ stopPreviewAudio(); musicList.push({ name:m.name, url:m.url }); renderMusicList(); if($('pg-music-list')){ $('pg-music-list').textContent='נבחרו '+musicList.length+' שירים'; } ov.remove(); };
+      b.onclick=()=>{ stopPreviewAudio(); musicList.push({ name:m.name, url:m.url }); renderMusicList(); updatePgMediaStatus(); ov.remove(); };
       const play=document.createElement('button'); play.className='btn ghost sm'; play.textContent='▶️'; play.title='האזנה';
       play.onclick=(e)=>{ e.stopPropagation(); togglePreviewAudio(m.url, play); };
       row.appendChild(b); row.appendChild(play);
@@ -3394,12 +3453,16 @@ function musicChosen(files){
   [...files].forEach(f => musicList.push({ name:f.name, url:URL.createObjectURL(f) }));
   $('music-input').value = '';
   renderMusicList();
-  if ($('pg-music-list')){
-    $('pg-music-list').textContent = musicList.length ? ('נבחרו ' + musicList.length + ' שירים') : '';
-    $('pg-music-btn').textContent = musicList.length ? '🎵 הוספת שיר' : '🎵 בחירת מוזיקה מהמחשב';
-  }
+  updatePgMediaStatus();
 }
-function removeMusic(i){ URL.revokeObjectURL(musicList[i].url); musicList.splice(i,1); renderMusicList(); }
+function removeMusic(i){ URL.revokeObjectURL(musicList[i].url); musicList.splice(i,1); renderMusicList(); updatePgMediaStatus(); }
+// הסרת כל המוזיקה שנבחרה (מקישור "הסרה" בשורת-הסטטוס במסך ההכנה)
+function clearAllMusic(){
+  musicList.forEach(s => { try{ URL.revokeObjectURL(s.url); }catch(e){} });
+  musicList = [];
+  renderMusicList();
+  updatePgMediaStatus();
+}
 function renderMusicList(){
   const box = $('music-list'); box.innerHTML='';
   musicList.forEach((s,i)=>{
