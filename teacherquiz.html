@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v96 - תצוגת רקע חיה במסך ההכנה (pregame) — המורה רואה את הרקע לפני המשחק, לא מגלה אותו תוך-כדי: הבעיה — המורה בחר רקע ב-pregame לפי *שם* בלבד ("🌌 חלל"), בלי לראות אותו, וראה את הבחירה לראשונה רק כשהמשחק כבר רץ מול הכיתה. אם לא מצא חן — היה תקוע. עכשיו: ברגע שבוחרים רקע ב-pregame, אלמנט game-bg (אותו אלמנט מסך-מלא z-index:0 ששימש במשחק, כולל אותו overlay כהה rgba(5,8,15,.70)) נדלק *מיד* מאחורי כרטיסי-ההכנה — תצוגה מקדימה באותם תנאים בדיוק כמו במשחק. המורה רואה, ואם לא מתאים — מחליף *שם*, לפני שהתחיל ולפני שתלמיד מסתכל. previewBgIfPregame() מדליק/מכבה את התצוגה לפי הרקע הפעיל, נקרא מ-bgChosen/setGalleryBg/clearBg/prePlay. תווית "👁️ זו תצוגה מקדימה — ככה הרקע ייראה במשחק" (pg-preview-note) מופיעה רק כשיש רקע פעיל. show() מכבה את game-bg במעבר למסך שאינו pregame/משחק (bgScreens) — כדי שהרקע לא ידלוף לעורך/רשימה; hostStart מדליק שוב למשחק האמיתי. אומת: נדלק בבחירה, כבה ביציאה לעורך/רשימה, נשאר במשחק. הנימוק — זה פותר את "התחרטתי על הרקע" *לפני* המשחק (בטוח), במקום להוסיף החלפת-רקע תוך-כדי-משחק חי (שהיה זורק מצטרפים / יוצר שני-מצבים-פעילים — סיכון גדול לתרחיש שכמעט לא קורה). בלובי אפשר לחזור צעד אחד ל-pregame (v95, בלי לזרוק מצטרפים) ולהחליף שם
+  v95 - מערכת ניווט חדשה (ניווט A) — "חזרה" ליניארית + תפריט ניווט קבוע, וניקוי כפתורים מיותרים: עד כה כפתורי ה"חזרה" היו לא-עקביים — אותו מושג ("חזרה") הוביל ליעדים שונים ממסכים שונים (חזרה-לרשימה / חזרה-לעריכה), והסדר היה לקוי (מהלובי קפצו לעורך ודילגו על מסך המוזיקה/רקע; ל-pregame לא הייתה גישה מהעורך כלל). בנוסף, כל מסך המציא לעצמו סט כפתורי-ניווט בתחתית, מעורבב עם פעולות. עכשיו:
+  • מחסנית-היסטוריה (navStack): מעבר למסך-ניווט דוחף את הקודם, ו"חזרה" (goBack) שולפת — תמיד צעד-אחד-אחורה אמיתי, צפוי, לא משנה מאיזה נתיב הגעת. רק 6 מסכי-המארח הניווטיים (home/mylist/editor/pregame/lobby/preview) נכנסים למחסנית; מסכי-משחק חיים (hq/hr/hint/hfin) ומסכי-תלמיד משתמשים ב-show() הרגיל ולא נכנסים — כדי ש"חזרה" לא תזרוק לאמצע משחק. nav() דוחף בלי כפילויות; goBack() נופל ל-mylist אם המחסנית ריקה. refreshMyList מאפס את המחסנית (הרשימה היא בסיס הזרימה).
+  • כל כפתורי ה"חזרה" אוחדו לטקסט "→ חזרה" בלבד, בלי ציון שם-המסך — כי היעד נקבע דינמית מההיסטוריה.
+  • תפריט ניווט קבוע (nav-menu) בפינה ימנית-עליונה (הצד הנגדי ל-conn בשמאל): ✏️ עריכת החידון (רק כשיש חידון פתוח ולא כשכבר בעורך) · 🗂️ החידונים שלי · 📚 ספריית חידונים · 🎬 יציאה לבניית מצגת (מובחן בזהב — זו יציאה מהאפליקציה, לא ניווט פנימי). מופיע בכל מסכי-הניווט, מוסתר במסך-הבית (התחברות) ובמסכי-משחק חיים. updateNavMenu נקרא מ-show() ומעדכן נראות+כפתור-עריכה לפי המסך (עטוף ב-try נגד TDZ של editCode/quiz בטעינה).
+  • הפעלה מהעורך עוברת עכשיו דרך pregame (prePlay) במקום לדלג ישר ללובי — עקביות עם הפעלה-מהרשימה, וגישה למוזיקה/רקע. prePlay קיבל בדיקות שם+מוכנות (נקודת-כניסה משני מקומות).
+  • goPlay שומר קוד-משחק קיים בחזרה ללובי (firstEntry): חזרה מהלובי ל-pregame לשנות רקע/מוזיקה כבר לא יוצרת קוד חדש ולא זורקת מצטרפים. endGameSession (playCode=null + ניקוי מחסנית) ביציאה אמיתית (backToEditor/finishToList/newQuizFromGame); restartGame מאפס playCode לקוד חדש.
+  • ניקוי: הקישור הכפול "→ לתפריט הראשי" הוסר מתחתית העורך (עכשיו בתפריט). בקומבו (embed=1) גם פריט "יציאה לבניית מצגת" מוסתר.
   v94 - כפתורי רקע/מוזיקה במשחק — תוויות פעולה במקום שמות-עצם + הופעה מותנית, ושיפורי מסך-הכנה: (א) הבעיה המרכזית — במשחק הכפתורים נקראו "🔊 מוזיקה" ו"🖼️ רקע" (שמות-עצם), ולא היה ברור שלחיצה *מנטרלת* אותם (השתקה/הסתרה). עכשיו תוויות-פעולה שמתארות מה הלחיצה עושה: "🔇 השתקת מוזיקה" / "🙈 הסתרת רקע", ומתהפכות בהתאם למצב ("🔊 הפעלת מוזיקה" / "🖼️ הצגת רקע"). hostToggleMusic ו-hostToggleBg עודכנו לעדכן את התווית (גם בסרגל הבדיקה solo, שקודם לא התעדכן כלל — באג ישן). hostToggleBg קורא את מצב ה-DOM בפועל (game-bg.on) במקום מצב מקומי, כך שהתווית תמיד נכונה. (ב) כפתור המוזיקה הפך מותנה — מופיע רק אם נבחרה מוזיקה (musicList.length), בדיוק כמו כפתור הרקע שכבר היה מותנה (bgUrl). שני הכפתורים מתחילים display:none ומופעלים ב-hostStart/מצב-בדיקה לפי מה שנבחר. (ג) במסך ההכנה: כפתור "חזרה לרשימה" עלה מתחתית המסך לראשו (קישור דק מאופק מעל הכותרת) — קודם הוא ישב *מתחת* ל-details הפתוח ונראה כמו חלק ממנו (כאילו לחיצה תסגור את הקטע, אבל בפועל שלחה לרשימה — מלכודת). עכשיו ה-details הוא האלמנט האחרון, אין אחריו כפתור שמתבלבל איתו. (ד) אזור הרקע/מוזיקה הוגדל (btn מלא במקום sm, תוויות 16px, summary "🎨 הוספת רקע ומוזיקה") + נוסף בהסבר משפט שבמשחק יהיה כפתור להשתקה/הסתרה — כדי שהמורה ידע מראש שזה הפיך. הסבר זה *לא* נוסף ככפתור/אזהרה נפרדת — הוא חלק מטקסט-העזר הקיים, וההבהרה האמיתית יושבת על הכפתור עצמו במשחק (סעיף א)
   v93 - מסך הלובי (ברקוד/הצטרפות) — כפתור העתקת קישור + הוראות שמזכירות שליחת קישור: עד כה הקישור להצטרפות הוצג כטקסט פשוט (join-addr, כתובת ארוכה "קישור: yanivhak.github.io/...?game=XXXX") שאי אפשר היה להעתיק אלא בסימון ידני — לא נוח, רעש ויזואלי. כפתור ההעתקה (copy-join-link) היה קיים אבל מוסתר (display:none) ומשני (ghost sm). וההוראות "איך מצטרפים" הזכירו רק ברקוד+קוד, לא את האפשרות *לשלוח* את הקישור לתלמידים. עכשיו: (א) טקסט הכתובת הארוכה (join-addr) הוסר לגמרי — היה רעש. (ב) כפתור ההעתקה הפך מרכזי ובולט (btn teal sm), טקסט "🔗 העתקת קישור לשליחה לתלמידים", בלחיצה מעתיק את הקישור המלא ומציג "✓ הקישור הועתק! אפשר להדביק בוואטסאפ". (ג) ההוראות נכתבו מחדש כשלוש דרכים מקבילות שקולות: 📷 סריקת ברקוד / 🔗 שליחת הקישור בוואטסאפ הכיתה / ⌨️ כניסה לכתובת + הקלדת קוד — ובכל דרך בסוף כותבים שם ולוחצים כניסה. הלוגיקה של ההעתקה (navigator.clipboard עם נפילה ל-legacyCopy) הייתה תקינה — שונה רק החשיפה והניסוח. הוסרה השורה $('join-addr') מ-goPlay (האלמנט נמחק)
   v92 - מסך ההכנה לפני משחק (pregame) עוצב מחדש — התחלה קודם, עיצוב מקופל: עד כה המסך הציג כותרת עם שם החידון (שנראתה כמו מסך *יצירה*) ומעליה 6 כפתורי רקע/מוזיקה גדולים *לפני* כפתור ההמשך — מה שגרם למורה לעצור ולתהות "אני חייב לבחור משהו? אם לא אבחר מוזיקה זה יישמע מוזר?". המסך ערבב שתי החלטות (התחל משחק / עצב משחק) כשרוב המורים הגיעו רק כדי להתחיל. עכשיו: (א) כותרת "מוכנים להתחיל?" (שאלה שמובילה לפעולה, לא שם החידון). (ב) שורת מידע קטנה "החידון [שם] מוכן · N שאלות. אפשר להתחיל מיד" — מאשרת מוכנות. (ג) כפתור "▶️ התחלת המשחק" גדול (20px) — הפעולה היחידה הבולטת. (ד) הרקע והמוזיקה קופלו ל-details "🎨 רקע ומוזיקה (לא חובה)", סגור כברירת מחדל, מתחת לכפתור ההתחלה. ברירת המחדל היא עכשיו התחלה; העיצוב הוא בחירה אופציונלית מודעת. הנימוק לאי-העברה לעורך: הרקע/מוזיקה הם blob מקומי (URL.createObjectURL) שחי רק בסשן הנוכחי ולא נשמר ב-Firebase — לכן הבחירה *חייבת* לקרות סמוך להפעלה ולא יכולה לשבת בעריכה (שנפתחת מחדש בכל פעם). אותם handlers בדיוק (openBgGallery/bg-input/music-input המשותפים עם העורך) — שונה רק ה-layout. prePlay מאכלס pregame-title (שם החידון, עכשיו תת-כותרת זהובה) + pregame-qcount (מספר שאלות)
@@ -92,6 +100,20 @@ input:focus{border-color:var(--gold); outline:none;}
 .field{margin:0 0 16px; text-align:right;}
 .field label{display:block; font-size:15px; color:var(--ink-dim); margin-bottom:6px; font-weight:700;}
 .conn{position:fixed; top:12px; left:14px; font-size:12px; color:var(--ink-dim); display:flex; align-items:center; gap:6px; z-index:50;}
+/* ===== תפריט ניווט קבוע (ניווט A) — פינה ימנית-עליונה, מתקפל. נפרד מכפתור ה"חזרה" ===== */
+#nav-menu{position:fixed; top:12px; right:14px; z-index:60; display:none; flex-direction:column; align-items:flex-end; gap:8px;}
+#nav-menu.show{display:flex;}
+#nav-toggle{display:flex; align-items:center; gap:7px; font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:8px 14px; cursor:pointer;}
+#nav-toggle:active{transform:translateY(1px);}
+#nav-toggle .chev{font-size:11px; transition:transform .2s ease;}
+#nav-menu.open #nav-toggle .chev{transform:rotate(180deg);}
+#nav-list{display:none; flex-direction:column; align-items:stretch; gap:6px; background:rgba(10,16,32,.97); padding:8px; border-radius:14px; box-shadow:0 6px 22px rgba(0,0,0,.55); min-width:190px;}
+#nav-menu.open #nav-list{display:flex;}
+#nav-list button{font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:10px 16px; cursor:pointer; text-align:right;}
+#nav-list button:active{transform:translateY(1px);}
+/* "יציאה לבניית מצגת" — מובחן: זו יציאה מהאפליקציה, לא ניווט פנימי */
+#nav-list a.nav-exit{font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--gold); background:transparent; border:1px solid var(--gold); border-radius:10px; padding:10px 16px; cursor:pointer; text-align:right; text-decoration:none; display:block; margin-top:2px;}
+#nav-list a.nav-exit:active{transform:translateY(1px);}
 .savetoast{position:fixed; top:18px; left:50%; transform:translateX(-50%) translateY(-20px); background:#1a7a4a; color:#fff; padding:10px 22px; border-radius:30px; font-family:'Heebo'; font-weight:700; font-size:15px; box-shadow:0 8px 26px rgba(0,0,0,.45); z-index:200; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;}
 .savetoast.on{opacity:1; transform:translateX(-50%) translateY(0);}
 .rtoast{position:fixed; top:0; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:center; z-index:240; opacity:0; pointer-events:none; transition:opacity .3s;}
@@ -245,7 +267,18 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v94</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v96</span></div>
+
+<!-- תפריט ניווט קבוע (ניווט A) — מופיע בכל מסכי-הניווט, מוסתר במסכי-משחק חיים -->
+<div id="nav-menu">
+  <div id="nav-list">
+    <button id="nav-edit" onclick="navTo('editor')" style="display:none;">✏️ עריכת החידון</button>
+    <button onclick="navTo('mylist')">🗂️ החידונים שלי</button>
+    <a href="teacher-library.html" class="nav-exit" style="border-color:rgba(255,255,255,.22); color:var(--ink);">📚 ספריית חידונים</a>
+    <a href="index.html" target="_top" class="nav-exit">🎬 יציאה לבניית מצגת</a>
+  </div>
+  <button id="nav-toggle" onclick="toggleNavMenu()" title="ניווט מהיר">☰ ניווט <span class="chev">▾</span></button>
+</div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -433,14 +466,14 @@ input:focus{border-color:var(--gold); outline:none;}
 
     <!-- בלוק הפעלה -->
     <div class="row" style="margin-top:14px;">
-      <button class="btn teal" onclick="goPlay()">▶️ התחלת משחק עם הקהל</button>
+      <button class="btn teal" onclick="prePlay()">▶️ התחלת משחק עם הקהל</button>
       <button class="btn" onclick="previewQuiz()" style="background:var(--violet); color:#0b0b2a;">👁️ בדיקה (ללא משתתפים)</button>
     </div>
 
     <!-- בלוק ניהול -->
     <div class="row" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
       <button class="btn ghost sm" onclick="saveNow()">💾 שמירה</button>
-      <button class="btn ghost sm" onclick="backHome()">→ חזרה לרשימה</button>
+      <button class="btn ghost sm" onclick="goBack()">→ חזרה</button>
     </div>
 
     <!-- בלוק שיתוף -->
@@ -459,10 +492,6 @@ input:focus{border-color:var(--gold); outline:none;}
     <div id="clear-all-wrap" style="text-align:center; margin-top:22px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); display:none;">
       <button class="btn ghost sm" onclick="clearAllQuiz()" style="color:var(--ink-dim); font-size:13px; opacity:.8;">🗑️ ניקוי החידון והתחלה מחדש</button>
     </div>
-
-    <div style="text-align:center; margin-top:18px; padding-top:14px; border-top:1px solid rgba(255,255,255,.08);">
-      <a href="index.html" id="editor-main-menu-link" style="color:var(--ink-dim); text-decoration:none; font-size:14px;">→ לתפריט הראשי (חידון · מצגת · מצגת+חידון)</a>
-    </div>
   </div>
 </div>
 
@@ -472,10 +501,12 @@ input:focus{border-color:var(--gold); outline:none;}
   <div class="wrap">
     <!-- ניווט-חזרה בראש המסך — קישור דק ומאופק, נפרד לגמרי מאזור הכפתורים למטה -->
     <div style="text-align:right; margin-bottom:6px;">
-      <button onclick="refreshMyList()" style="background:none; border:none; color:var(--ink-dim); font-family:'Heebo'; font-size:14px; cursor:pointer; padding:4px 0;">→ חזרה לרשימה</button>
+      <button onclick="goBack()" style="background:none; border:none; color:var(--ink-dim); font-family:'Heebo'; font-size:14px; cursor:pointer; padding:4px 0;">→ חזרה</button>
     </div>
     <h2>מוכנים להתחיל?</h2>
     <p class="sub" style="margin-bottom:8px;">החידון <b id="pregame-title" style="color:var(--gold);"></b> מוכן<span id="pregame-qcount"></span>. אפשר להתחיל מיד.</p>
+    <!-- תווית תצוגה מקדימה — מופיעה רק כשיש רקע פעיל (נשלט מ-previewBgIfPregame) -->
+    <div id="pg-preview-note" style="display:none; font-size:13px; color:var(--gold); background:rgba(255,209,102,.12); border:1px solid rgba(255,209,102,.4); border-radius:10px; padding:7px 14px; margin:0 auto 4px; max-width:340px;">👁️ זו תצוגה מקדימה — ככה הרקע ייראה במשחק</div>
 
     <!-- הפעולה הראשית — כפתור התחלה גדול ובולט -->
     <div class="row" style="margin-top:22px;">
@@ -527,7 +558,7 @@ input:focus{border-color:var(--gold); outline:none;}
     </div>
     <div class="row">
       <button class="btn teal" id="go-btn" onclick="hostStart()" disabled>🚀 מתחילים!</button>
-      <button class="btn ghost sm" onclick="backToEditor()">→ חזרה לעריכה</button>
+      <button class="btn ghost sm" onclick="goBack()">→ חזרה</button>
     </div>
   </div>
 </div>
@@ -762,7 +793,67 @@ function showInfo(ev, text){
 }
 function closeInfo(){ const p = $('active-info'); if (p) p.remove(); }
 document.addEventListener('click', closeInfo);
-function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on')); $(id).classList.add('on'); }
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  $(id).classList.add('on');
+  updateNavMenu();
+  // התצוגה-המקדימה של הרקע פעילה רק ב-pregame ובמסכי-משחק. במעבר למסך אחר (עורך/רשימה) — מכבים
+  // כדי שהרקע לא "ידלוף" לשם. (hostStart מדליק שוב למשחק האמיתי.)
+  const bgScreens = ['pregame','hq','hr','hint','plook','preview','hfin'];
+  if (!bgScreens.includes(id)){ const gb = $('game-bg'); if (gb) gb.classList.remove('on'); }
+}
+
+/* ===== ניווט A — מחסנית היסטוריה ל"חזרה" ליניארית =====
+   רק מסכי-ניווט של המארח נכנסים למחסנית. מסכי-משחק חיים (hq/hr/hint/hfin) ומסכי-תלמיד
+   משתמשים ב-show() הרגיל ולא נכנסים — כדי ש"חזרה" לא תזרוק לאמצע משחק.
+   הסדר במסלול: home → mylist → editor → pregame → lobby (preview הוא ענף-צד מהעורך). */
+const NAV_SCREENS = ['home','mylist','editor','pregame','lobby','preview'];
+let navStack = [];
+// המסך הניווטי הפעיל כרגע (אם יש)
+function currentNavScreen(){
+  for (const id of NAV_SCREENS){ const el = $(id); if (el && el.classList.contains('on')) return id; }
+  return null;
+}
+// מעבר למסך-ניווט חדש: דוחף את הנוכחי למחסנית (בלי כפילות), ואז מציג
+function nav(id){
+  const cur = currentNavScreen();
+  if (cur && cur !== id && navStack[navStack.length-1] !== cur) navStack.push(cur);
+  show(id);
+}
+// חזרה: שולף מהמחסנית. אם ריק — נופל לרשימה (ברירת מחדל בטוחה)
+function goBack(){
+  const prev = navStack.pop();
+  if (prev) show(prev);
+  else refreshMyList();
+}
+
+/* ----- תפריט הניווט הקבוע ----- */
+function toggleNavMenu(){ const m=$('nav-menu'); if(m) m.classList.toggle('open'); }
+// ניווט דרך התפריט: קפיצה ישירה ליעד. מאפס את התפריט הפתוח, ומשתמש ב-nav (שומר היסטוריה)
+function navTo(id){
+  $('nav-menu').classList.remove('open');
+  if (id === 'mylist'){ refreshMyList(); return; }   // הרשימה נטענת מ-Firebase דרך הפונקציה הייעודית
+  nav(id);
+}
+// מציג/מסתיר את תפריט הניווט לפי המסך, ומעדכן את כפתור "עריכה" (רק כשיש חידון פתוח).
+// נקרא מתוך show() בכל מעבר מסך.
+function updateNavMenu(){
+  const m = $('nav-menu'); if (!m) return;
+  const cur = currentNavScreen();
+  // מציגים את התפריט רק במסכי-ניווט של המארח. במסכי-משחק חיים, מסכי-תלמיד, ומסך הבית — מוסתר.
+  // (מסך הבית הוא התחברות; הרשימה/עורך/הכנה/לובי/בדיקה — שם הניווט רלוונטי.)
+  const showOn = cur && cur !== 'home';
+  m.classList.toggle('show', !!showOn);
+  if (!showOn) m.classList.remove('open');   // סגירת הרשימה כשעוזבים
+  // כפתור "עריכת החידון" — רק כשיש חידון פתוח ולא כשכבר בעורך.
+  // עטוף ב-try כי show() עשוי לרוץ לפני שהמשתנים editCode/quiz אותחלו (TDZ) בטעינת הדף.
+  const editBtn = $('nav-edit');
+  if (editBtn){
+    let hasQuiz = false;
+    try { hasQuiz = !!((editCode) || (quiz && quiz.questions && quiz.questions.length)); } catch(e){ hasQuiz = false; }
+    editBtn.style.display = (hasQuiz && cur !== 'editor') ? 'block' : 'none';
+  }
+}
 function setConn(on){ $('conn-dot').classList.toggle('on',on); $('conn-txt').textContent = on?'מחובר':'לא מחובר'; }
 fdb.ref('.info/connected').on('value', s => setConn(s.val()===true));
 
@@ -1327,7 +1418,7 @@ async function newQuiz(){
   aiCardDismissed = false;   // חידון חדש — הכרטיס יוצג שוב
   quiz.questions.push({ text:'', answers:['',''], correct:0 });  // שאלה ריקה ראשונה — לפני הרינדור, כדי לרנדר פעם אחת בלבד
   renderEditor();   // רינדור יחיד עם המצב הסופי (בלי רינדור כפול ובלי הבהוב)
-  show('editor');
+  nav('editor');
   // לא שומרים חידון ריק — השמירה האוטומטית תתפוס ברגע שייכתב תוכן אמיתי (touch).
   // כך חידון שנוצר ונזנח בלי כלום לא מזהם את הרשימה.
 }
@@ -1368,7 +1459,7 @@ function openExisting(code, data){
   aiCardDismissed = false;   // פתיחת חידון — מאפסים; אם יש בו תוכן הכרטיס ממילא לא יוצג
   ensureDisplayCode();       // חידון שאין לו עדיין קוד-תצוגה — מקבל אחד (רשת ביטחון, לא מיגרציה גורפת)
   renderEditor();
-  show('editor');
+  nav('editor');
 }
 
 function playExisting(code, data){
@@ -1388,6 +1479,11 @@ function playExisting(code, data){
 }
 
 function prePlay(){
+  // בדיקות מוכנות — prePlay היא עכשיו נקודת-כניסה גם מהעורך (לא רק מהרשימה)
+  const noName = quizNameMissing();
+  if (noName){ alert(noName); return; }
+  const err = quizReady();
+  if (err){ alert(err); return; }
   $('pregame-title').textContent = quiz.title || 'שלכם';
   // מספר השאלות — שורת מידע קטנה שמאשרת שהחידון מוכן
   const qc = $('pregame-qcount');
@@ -1396,7 +1492,8 @@ function prePlay(){
   $('pg-bg-btn').textContent = bgUrl ? '🖼️ תמונת רקע נבחרה ✓ (לחיצה מחליפה)' : '🖼️ בחירת תמונת רקע מהמחשב';
   $('pg-music-list').textContent = musicList.length ? ('נבחרו ' + musicList.length + ' שירים') : '';
   $('pg-music-btn').textContent = musicList.length ? '🎵 הוספת שיר' : '🎵 בחירת מוזיקה מהמחשב';
-  show('pregame');
+  nav('pregame');
+  previewBgIfPregame();   // אם כבר נבחר רקע — מדליק תצוגה מקדימה חיה מאחורי הכרטיסים
 }
 
 function testExisting(code, data){
@@ -2872,6 +2969,7 @@ function confirmAddShared(shareId, data, ov, isUpdate){
 }
 
 function refreshMyList(){
+  navStack = [];   // הרשימה היא בסיס זרימת-המארח — חזרה מתאפסת כאן
   if (!myStoreKey){ show('home'); return; }
   fdb.ref('teachers/'+myStoreKey).once('value').then(snap => {
     renderQuizList(snap.val() || {});
@@ -2961,7 +3059,10 @@ async function goPlay(){
   saveQuiz();
   flashSaved();   // הודעת ביטחון קצרה שהחידון נשמר
   role = 'host';
-  playCode = await genUniqueCode();
+  // אם כבר נוצר קוד משחק בסשן הזה (חזרה ללובי מ-pregame) — שומרים אותו ואת המצטרפים.
+  // קוד חדש + ניקוי חדר נעשים רק בכניסה ראשונה, כדי שחזרה לשנות רקע/מוזיקה לא תזרוק את מי שכבר הצטרף.
+  const firstEntry = !playCode;
+  if (firstEntry) playCode = await genUniqueCode();
   $('play-code').textContent = playCode;
   if ($('join-code-echo')) $('join-code-echo').textContent = playCode;
   $('lobby-title').textContent = quiz.title || 'החידון';
@@ -2990,12 +3091,18 @@ async function goPlay(){
   } else {
     $('qrbox').style.display = 'none';
   }
-  players = {}; $('joined-list').innerHTML=''; $('joined-n').textContent='0'; $('go-btn').disabled=true;
-  // ניקוי חדר קודם אם נשאר, ופרסום מטא של המשחק (שמות קבוצות) כדי שהשחקנים יוכלו לבחור קבוצה
-  fdb.ref('games/'+playCode).remove().catch(()=>{});
-  fdb.ref('games/'+playCode+'/meta').set({ teamCount: quiz.teamCount, teamNames: quiz.teamNames || [], title: quiz.title || '' });
-  listenGame(playCode);
-  show('lobby');
+  if (firstEntry){
+    // כניסה ראשונה בלבד — מאתחלים את החדר. בחזרה ללובי לא נוגעים במצטרפים הקיימים.
+    players = {}; $('joined-list').innerHTML=''; $('joined-n').textContent='0'; $('go-btn').disabled=true;
+    // ניקוי חדר קודם אם נשאר, ופרסום מטא של המשחק (שמות קבוצות) כדי שהשחקנים יוכלו לבחור קבוצה
+    fdb.ref('games/'+playCode).remove().catch(()=>{});
+    fdb.ref('games/'+playCode+'/meta').set({ teamCount: quiz.teamCount, teamNames: quiz.teamNames || [], title: quiz.title || '' });
+    listenGame(playCode);
+  } else {
+    // חזרה ללובי — מרעננים את תצוגת המצטרפים הקיימים (הם עדיין רשומים)
+    renderJoined();
+  }
+  nav('lobby');
 }
 
 function listenGame(code, onReady){
@@ -3096,6 +3203,15 @@ function hostStart(){
 
 /* רקע למסך החידון (בצד המארח, לא נשמר) */
 let bgUrl = null;
+// תצוגה מקדימה חיה: כשנמצאים במסך ההכנה (pregame), הרקע הנבחר נדלק מיד מאחורי הכרטיסים
+// — אותו אלמנט game-bg ואותו overlay כהה כמו במשחק, כך שהמורה רואה בדיוק מה יקרה לפני שהתחיל.
+function previewBgIfPregame(){
+  const onPregame = $('pregame') && $('pregame').classList.contains('on');
+  if (onPregame) applyGameBg(!!bgUrl);
+  // עדכון תווית התצוגה-המקדימה (מופיעה רק כשיש רקע פעיל)
+  const note = $('pg-preview-note');
+  if (note) note.style.display = (onPregame && bgUrl) ? 'block' : 'none';
+}
 function bgChosen(files){
   if (!files || !files.length) return;
   if (bgUrl) URL.revokeObjectURL(bgUrl);
@@ -3109,6 +3225,7 @@ function bgChosen(files){
   renderBgChip('תמונה מהמחשב');
   if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ תמונת רקע נבחרה ✓ (לחיצה מחליפה)';
   $('bg-input').value = '';
+  previewBgIfPregame();
 }
 // מציג "צ'יפ" של הרקע שנבחר (כמו ברשימת המוזיקה), עם כפתור ביטול
 function renderBgChip(name){
@@ -3130,6 +3247,7 @@ function setGalleryBg(css, name){
   $('bg-clear').style.display = 'block';
   renderBgChip('רקע נבחר: ' + (name || 'מהגלריה'));
   if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ נבחר רקע מהגלריה';
+  previewBgIfPregame();
 }
 function clearBg(){
   if (bgUrl && bgUrl !== 'gallery'){ URL.revokeObjectURL(bgUrl); }
@@ -3141,6 +3259,7 @@ function clearBg(){
   $('bg-clear').style.display = 'none';
   renderBgChip(null);
   if ($('pg-bg-btn')) $('pg-bg-btn').textContent = '🖼️ בחירת תמונת רקע מהמחשב';
+  previewBgIfPregame();
 }
 function applyGameBg(on){
   if (on && bgUrl) $('game-bg').classList.add('on');
@@ -3829,11 +3948,13 @@ function hostSkip(){
   if (!revealed && curQ){ revealQ(); } else { nextQ(); }
 }
 function hostJumpFinish(){ clearInterval(hostTimer); hostFinish(); }
-function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); renderEditor(); show('editor'); }
-function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); goPlay(); }
-function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); refreshMyList(); }
+// סוף סשן משחק — מאפס את קוד המשחק והמחסנית, כך שהמשחק הבא יקבל קוד חדש. נקרא ביציאה אמיתית מהזרימה.
+function endGameSession(){ playCode = null; navStack = []; }
+function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); renderEditor(); show('editor'); }
+function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); playCode=null; goPlay(); }
+function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); refreshMyList(); }
 // יצירת חידון חדש ישירות ממסך הסיום (אותו ניקוי מצב משחק, ואז newQuiz)
-function newQuizFromGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); newQuiz(); }
+function newQuizFromGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); newQuiz(); }
 
 // מסיר את פינת ה-QR אם פתוחה (בסיום/יציאה מהמשחק)
 function hideReturnQR(){ const c = $('return-qr-corner'); if (c) c.remove(); }
@@ -4031,6 +4152,8 @@ let myName='', myTeam=-1, joined=false, pTimer=null, sentThisQ=false, lastPick=-
     if (link) link.style.display = 'none';
     const editorLink = $('editor-main-menu-link');
     if (editorLink) editorLink.style.display = 'none';
+    // בתוך הקומבו — מסתירים גם את "יציאה לבניית מצגת" בתפריט הניווט (לקומבו יש סרגל משלו)
+    document.querySelectorAll('#nav-list a.nav-exit[href="index.html"]').forEach(a=>a.style.display='none');
   }
   const code = params.get('game');
   if (code && /^\d{4}$/.test(code)){
