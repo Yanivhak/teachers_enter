@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v101 - תפריט ניווט דינמי לכל מסך (במקום תפריט גלובלי עם הסתרה-מותנית): המשתמש זיהה שהתפריט "בנוי לא טוב" — אותו תפריט קבוע בכל הדפים, כש"החידונים שלי" מופיע גם במסך "החידונים שלי", ו"עריכה" מופיע בעורך. הבעיה: עד כה היה תפריט סטטי אחד עם תנאי-הסתרה (display:none) לכל פריט — שביר, וכל שינוי דרש עוד if. עכשיו: updateNavMenu בונה את הרשימה *מחדש* בכל מסך (nav-list מתרוקן ומתמלא דינמית), ומציג רק את היעדים שאינם המסך הנוכחי. הכללים: (א) "עריכת החידון" — רק כשיש חידון פתוח (hasQuiz) ולא כשכבר בעורך. (ב) "החידונים שלי" — בכל מסך חוץ מ-mylist. (ג) "ספרייה" — תמיד (קובץ נפרד, אין מסך-ספרייה פנימי להחריג). (ד) "יציאה למצגת" — תמיד אחרונה ומובחנת, אלא אם embed=1 (קומבו). התוצאה: בעורך התפריט מציג רק חידונים-שלי+ספרייה+יציאה (לא עריכה); ב-pregame/lobby עם חידון פתוח מציג גם עריכה; ב-mylist ו-home אין תפריט כלל. בחרתי בנייה-דינמית של תפריט-אחד ולא שכפול תפריט בכל מסך — כדי שלא יהיה צורך לעדכן 4 מקומות בכל שינוי עתידי (מקור-אמת אחד). ניקוי: קוד ה-embed הישן שהסתיר nav-exit ב-querySelector הוסר (updateNavMenu בודק embed בעצמו); הוסרו השאריות nav-edit הסטטי ו-editor-main-menu-link
   v100 - בחירת חשבון Google בכל התחברות: אחרי שתיקון ה-popup (v99) עבד, התברר ש-Google מדלג אוטומטית על מסך בחירת-החשבון ומחבר לחשבון הפעיל ("מסך לבן ואז מחובר בלי לבחור"). זה תקין אך בעייתי בבית ספר — מורים רבים מנהלים חשבון פרטי + חשבון מוסדי על אותו מכשיר, ובלי בחירה הם עלולים ליצור חידונים תחת החשבון הלא-נכון. התיקון: provider.setCustomParameters({ prompt: 'select_account' }) בשתי נקודות-ההתחברות (signInGoogle + guestSaveWithGoogle) — Google יציג תמיד את מסך בחירת-החשבון, גם אם המשתמש כבר מחובר. עלות: קליק נוסף; תועלת: מניעת בלבול "החידונים שלי נעלמו" (כי הם תחת חשבון אחר). העדפת שליטה על נוחות כי עלות הטעות גבוהה
   v99 - תיקון התחברות Google באייפון: redirect→popup (היפוך החלטת v71, אומת מול תיעוד Firebase יוני 2026): המשתמש דיווח שבאייפון ההתחברות נשברה — "דף לבן וחזרה לחידון בלי להתחבר", בלי שגיאה. מהמחשב עבד. אבחון: זו בעיית Safari ITP ידועה (firebase-js-sdk issues #6716, #7583 מתארים את הסימפטום מילה-במילה) — signInWithRedirect חוזר בלי session כי Safari חוסם את ה-third-party cookie בין yanivhak.github.io ל-teachers-6e0bb.firebaseapp.com. v71 בחר redirect *בגלל* ש-popup "לא אמין", אבל זה היה הפוך: ההמלצה הרשמית של Firebase לבעיה הזו היא דווקא signInWithPopup (לא תלוי third-party cookies — החלון הראשי לא עוזב את הדומיין). popup עובד באייפון כל עוד authDomain נשאר ברירת-המחדל firebaseapp.com (issue #7443) — וזה המצב כאן. השינוי: (א) signInGoogle — באייפון עכשיו signInWithPopup, בלי נפילה ל-redirect (redirect הוא מה ששבור שם); הודעות שגיאה ספציפיות (popup-blocked/closed/אחר) שכולן מפנות גם לכניסה עם מייל. מחשב/אנדרואיד — ללא שינוי (popup עם נפילה ל-redirect, ש*כן* עובד שם). (ב) guestSaveWithGoogle — אוחד: גם אייפון popup כמו מחשב; כיוון שאין יותר reload, ה-branch של sessionStorage לאייפון הוסר (restorePendingGuestQuiz נשאר כרשת-ביטחון). getRedirectResult ו-isIOS נשארו (נחוצים לנפילת-redirect במחשב). פתרון Custom Auth Domain (דומיין משלי) נשאר עתידי — אם popup ייכשל, הוא הצעד הבא; אך לפי המקורות popup הוא הפתרון הסביר והמיידי כאן, בלי דומיין
   v98 - מקבץ תיקוני UI (9 פריטים) — תפריט ניווט, פעולות בעורך, ומסך ההכנה: (1) כפתור התפריט מציג "סגירה" כשפתוח, "ניווט" כשסגור (nav-toggle-label מתעדכן ב-toggleNavMenu). (2) "יציאה לבניית מצגת" הפך לקונטקסט בהיר וחצי-כבוי (ללא רקע/מסגרת, opacity .55, פונט דק) — לא בולט. (3) תפריט הניווט מוסתר לגמרי במסך "החידונים שלי" (updateNavMenu מחריג גם mylist) — לכל חידון יש תפריט-אפשרויות משלו, והפעולה היחידה ("בניית חידון חדש") בולטת ממילא. (4) שלושת פריטי-הניווט (עריכה/חידונים שלי/ספרייה) באותו צבע אחיד (nav-item-link זהה ל-nav-list button); רק היציאה-למצגת מובחנת. (5) שמירה·שיתוף·ספרייה אוחדו לשורה אחת עם הסבר קצר מעל (במקום שלושה בלוקים עם כותרות); המילה "ציבורית" הוסרה מהכפתור (בהסבר); הכפתורים (renderSharePanel/renderLibraryPanel) הוקטנו ל-ghost sm לא-מתוחים. (6) המרת HEIC בבחירת רקע — קודם בחירת תמונת-אייפון כרקע נתנה מסך שחור; עכשיו bgChosen מזהה HEIC/HEIF (isHeicFile), טוען את heic-to.js (אותה ספרייה כמו במונטאז') וממיר ל-JPEG לפני ההצגה, עם הודעת התקדמות/שגיאה בשורת-הסטטוס; נוסף .heic,.heif ל-accept של bg-input. (7) כפתור פתיחת/סגירת אזור הרקע-ומוזיקה במסך ההכנה הוגדל (summary 18px/800, padding גדול). (8) במסך ההכנה: בחירת רקע ובחירת מוזיקה — כל אחת בשורה אחת עם שני כפתורים זה-לצד-זה (display:grid 1fr 1fr — flex-wrap לא עבד בגלל cascade של .row); "מחשב"→"מכשיר" בכל המקומות (5 הופעות) כי המורה עשוי להיות בטלפון/טאבלט. (9) הכפתורים פושטו ל"🎨 מהגלריה"/"📁 מהמכשיר", ומתחת כל זוג שורת-סטטוס (pg-bg-status/pg-music-status) שמראה מה נבחר ("✓ נבחר: X · הסרה") או "לא נבחר" — נוהל ע"י updatePgMediaStatus (עטוף ב-try נגד TDZ); נוסף bgLabel ו-clearAllMusic
@@ -272,16 +273,11 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v100</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v101</span></div>
 
-<!-- תפריט ניווט קבוע (ניווט A) — מופיע בכל מסכי-הניווט, מוסתר במסכי-משחק חיים -->
+<!-- תפריט ניווט — נבנה דינמית לכל מסך (updateNavMenu): מציג רק את היעדים שאינם המסך הנוכחי -->
 <div id="nav-menu">
-  <div id="nav-list">
-    <button id="nav-edit" onclick="navTo('editor')" style="display:none;">✏️ עריכת החידון</button>
-    <button onclick="navTo('mylist')">🗂️ החידונים שלי</button>
-    <a href="teacher-library.html" class="nav-item-link">📚 ספריית חידונים</a>
-    <a href="index.html" target="_top" class="nav-exit">🎬 יציאה לבניית מצגת</a>
-  </div>
+  <div id="nav-list"><!-- מתמלא ע"י updateNavMenu --></div>
   <button id="nav-toggle" onclick="toggleNavMenu()" title="פתיחה/סגירה של תפריט הניווט">☰ <span id="nav-toggle-label">ניווט</span> <span class="chev">▾</span></button>
 </div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
@@ -843,24 +839,40 @@ function navTo(id){
   nav(id);
 }
 // מציג/מסתיר את תפריט הניווט לפי המסך, ומעדכן את כפתור "עריכה" (רק כשיש חידון פתוח).
-// נקרא מתוך show() בכל מעבר מסך.
+// נקרא מתוך show() בכל מעבר מסך. בונה את תפריט הניווט מחדש לכל מסך:
+// מציג רק את היעדים שאינם המסך הנוכחי, כך שאין "אותו תפריט קבוע בכל הדפים".
 function updateNavMenu(){
   const m = $('nav-menu'); if (!m) return;
+  const list = $('nav-list'); if (!list) return;
   const cur = currentNavScreen();
-  // מציגים את התפריט רק במסכי-ניווט שבהם הוא באמת נחוץ. מוסתר ב:
-  // - home (התחברות), מסכי-משחק חיים, מסכי-תלמיד
-  // - mylist (רשימה): לכל חידון יש כבר תפריט-אפשרויות משלו, והפעולה היחידה ("בניית חידון") בולטת ממילא
+  // התפריט מוסתר לגמרי ב: home (התחברות), mylist (לכל חידון תפריט-אפשרויות משלו + "בניית חידון" בולטת),
+  // ובמסכי-משחק/תלמיד (cur=null כי הם לא ב-NAV_SCREENS).
   const showOn = cur && cur !== 'home' && cur !== 'mylist';
   m.classList.toggle('show', !!showOn);
-  if (!showOn){ m.classList.remove('open'); const lbl=$('nav-toggle-label'); if(lbl) lbl.textContent='ניווט'; }   // סגירת הרשימה ואיפוס התווית כשעוזבים
-  // כפתור "עריכת החידון" — רק כשיש חידון פתוח ולא כשכבר בעורך.
-  // עטוף ב-try כי show() עשוי לרוץ לפני שהמשתנים editCode/quiz אותחלו (TDZ) בטעינת הדף.
-  const editBtn = $('nav-edit');
-  if (editBtn){
-    let hasQuiz = false;
-    try { hasQuiz = !!((editCode) || (quiz && quiz.questions && quiz.questions.length)); } catch(e){ hasQuiz = false; }
-    editBtn.style.display = (hasQuiz && cur !== 'editor') ? 'block' : 'none';
-  }
+  if (!showOn){ m.classList.remove('open'); const lbl=$('nav-toggle-label'); if(lbl) lbl.textContent='ניווט'; list.innerHTML=''; return; }
+
+  // האם יש חידון פתוח? ("עריכה" רלוונטי רק אז). עטוף ב-try נגד TDZ של editCode/quiz בטעינה.
+  let hasQuiz = false;
+  try { hasQuiz = !!((editCode) || (quiz && quiz.questions && quiz.questions.length)); } catch(e){ hasQuiz = false; }
+  // בקומבו (embed=1) מסתירים את היציאה-למצגת — לקומבו יש סרגל ניווט משלו
+  let isEmbed = false;
+  try { isEmbed = new URLSearchParams(location.search).get('embed') === '1'; } catch(e){}
+
+  // בונים את רשימת היעדים — כל יעד שאינו המסך הנוכחי
+  const items = [];
+  if (hasQuiz && cur !== 'editor') items.push({ kind:'btn', label:'✏️ עריכת החידון', act:"navTo('editor')" });
+  if (cur !== 'mylist') items.push({ kind:'btn', label:'🗂️ החידונים שלי', act:"navTo('mylist')" });
+  // ספרייה — קובץ נפרד, תמיד יעד רלוונטי (אין "מסך ספרייה" פנימי להחריג)
+  items.push({ kind:'link', label:'📚 ספריית חידונים', href:'teacher-library.html' });
+
+  let html = items.map(it =>
+    it.kind === 'btn'
+      ? '<button onclick="' + it.act + '">' + it.label + '</button>'
+      : '<a href="' + it.href + '" class="nav-item-link">' + it.label + '</a>'
+  ).join('');
+  // יציאה למצגת — תמיד אחרונה ומובחנת (אלא אם בקומבו)
+  if (!isEmbed) html += '<a href="index.html" target="_top" class="nav-exit">🎬 יציאה לבניית מצגת</a>';
+  list.innerHTML = html;
 }
 function setConn(on){ $('conn-dot').classList.toggle('on',on); $('conn-txt').textContent = on?'מחובר':'לא מחובר'; }
 fdb.ref('.info/connected').on('value', s => setConn(s.val()===true));
@@ -4227,14 +4239,11 @@ let myName='', myTeam=-1, joined=false, pTimer=null, sentThisQ=false, lastPick=-
 
 (function initJoinFromURL(){
   const params = new URLSearchParams(location.search);
-  // בתוך הקומבו (embed=1) מסתירים את הקישור לתפריט הראשי, כי יש סרגל למעלה
+  // בתוך הקומבו (embed=1) מסתירים את הקישור לתפריט הראשי במסך הבית (לקומבו יש סרגל משלו).
+  // את היציאה-למצגת בתפריט הניווט מטפל updateNavMenu עצמו (בודק embed בעת בניית הרשימה).
   if (params.get('embed') === '1'){
     const link = $('main-menu-link');
     if (link) link.style.display = 'none';
-    const editorLink = $('editor-main-menu-link');
-    if (editorLink) editorLink.style.display = 'none';
-    // בתוך הקומבו — מסתירים גם את "יציאה לבניית מצגת" בתפריט הניווט (לקומבו יש סרגל משלו)
-    document.querySelectorAll('#nav-list a.nav-exit[href="index.html"]').forEach(a=>a.style.display='none');
   }
   const code = params.get('game');
   if (code && /^\d{4}$/.test(code)){
