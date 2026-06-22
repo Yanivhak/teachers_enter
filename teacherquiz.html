@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v94 - כפתורי רקע/מוזיקה במשחק — תוויות פעולה במקום שמות-עצם + הופעה מותנית, ושיפורי מסך-הכנה: (א) הבעיה המרכזית — במשחק הכפתורים נקראו "🔊 מוזיקה" ו"🖼️ רקע" (שמות-עצם), ולא היה ברור שלחיצה *מנטרלת* אותם (השתקה/הסתרה). עכשיו תוויות-פעולה שמתארות מה הלחיצה עושה: "🔇 השתקת מוזיקה" / "🙈 הסתרת רקע", ומתהפכות בהתאם למצב ("🔊 הפעלת מוזיקה" / "🖼️ הצגת רקע"). hostToggleMusic ו-hostToggleBg עודכנו לעדכן את התווית (גם בסרגל הבדיקה solo, שקודם לא התעדכן כלל — באג ישן). hostToggleBg קורא את מצב ה-DOM בפועל (game-bg.on) במקום מצב מקומי, כך שהתווית תמיד נכונה. (ב) כפתור המוזיקה הפך מותנה — מופיע רק אם נבחרה מוזיקה (musicList.length), בדיוק כמו כפתור הרקע שכבר היה מותנה (bgUrl). שני הכפתורים מתחילים display:none ומופעלים ב-hostStart/מצב-בדיקה לפי מה שנבחר. (ג) במסך ההכנה: כפתור "חזרה לרשימה" עלה מתחתית המסך לראשו (קישור דק מאופק מעל הכותרת) — קודם הוא ישב *מתחת* ל-details הפתוח ונראה כמו חלק ממנו (כאילו לחיצה תסגור את הקטע, אבל בפועל שלחה לרשימה — מלכודת). עכשיו ה-details הוא האלמנט האחרון, אין אחריו כפתור שמתבלבל איתו. (ד) אזור הרקע/מוזיקה הוגדל (btn מלא במקום sm, תוויות 16px, summary "🎨 הוספת רקע ומוזיקה") + נוסף בהסבר משפט שבמשחק יהיה כפתור להשתקה/הסתרה — כדי שהמורה ידע מראש שזה הפיך. הסבר זה *לא* נוסף ככפתור/אזהרה נפרדת — הוא חלק מטקסט-העזר הקיים, וההבהרה האמיתית יושבת על הכפתור עצמו במשחק (סעיף א)
+  v93 - מסך הלובי (ברקוד/הצטרפות) — כפתור העתקת קישור + הוראות שמזכירות שליחת קישור: עד כה הקישור להצטרפות הוצג כטקסט פשוט (join-addr, כתובת ארוכה "קישור: yanivhak.github.io/...?game=XXXX") שאי אפשר היה להעתיק אלא בסימון ידני — לא נוח, רעש ויזואלי. כפתור ההעתקה (copy-join-link) היה קיים אבל מוסתר (display:none) ומשני (ghost sm). וההוראות "איך מצטרפים" הזכירו רק ברקוד+קוד, לא את האפשרות *לשלוח* את הקישור לתלמידים. עכשיו: (א) טקסט הכתובת הארוכה (join-addr) הוסר לגמרי — היה רעש. (ב) כפתור ההעתקה הפך מרכזי ובולט (btn teal sm), טקסט "🔗 העתקת קישור לשליחה לתלמידים", בלחיצה מעתיק את הקישור המלא ומציג "✓ הקישור הועתק! אפשר להדביק בוואטסאפ". (ג) ההוראות נכתבו מחדש כשלוש דרכים מקבילות שקולות: 📷 סריקת ברקוד / 🔗 שליחת הקישור בוואטסאפ הכיתה / ⌨️ כניסה לכתובת + הקלדת קוד — ובכל דרך בסוף כותבים שם ולוחצים כניסה. הלוגיקה של ההעתקה (navigator.clipboard עם נפילה ל-legacyCopy) הייתה תקינה — שונה רק החשיפה והניסוח. הוסרה השורה $('join-addr') מ-goPlay (האלמנט נמחק)
   v92 - מסך ההכנה לפני משחק (pregame) עוצב מחדש — התחלה קודם, עיצוב מקופל: עד כה המסך הציג כותרת עם שם החידון (שנראתה כמו מסך *יצירה*) ומעליה 6 כפתורי רקע/מוזיקה גדולים *לפני* כפתור ההמשך — מה שגרם למורה לעצור ולתהות "אני חייב לבחור משהו? אם לא אבחר מוזיקה זה יישמע מוזר?". המסך ערבב שתי החלטות (התחל משחק / עצב משחק) כשרוב המורים הגיעו רק כדי להתחיל. עכשיו: (א) כותרת "מוכנים להתחיל?" (שאלה שמובילה לפעולה, לא שם החידון). (ב) שורת מידע קטנה "החידון [שם] מוכן · N שאלות. אפשר להתחיל מיד" — מאשרת מוכנות. (ג) כפתור "▶️ התחלת המשחק" גדול (20px) — הפעולה היחידה הבולטת. (ד) הרקע והמוזיקה קופלו ל-details "🎨 רקע ומוזיקה (לא חובה)", סגור כברירת מחדל, מתחת לכפתור ההתחלה. ברירת המחדל היא עכשיו התחלה; העיצוב הוא בחירה אופציונלית מודעת. הנימוק לאי-העברה לעורך: הרקע/מוזיקה הם blob מקומי (URL.createObjectURL) שחי רק בסשן הנוכחי ולא נשמר ב-Firebase — לכן הבחירה *חייבת* לקרות סמוך להפעלה ולא יכולה לשבת בעריכה (שנפתחת מחדש בכל פעם). אותם handlers בדיוק (openBgGallery/bg-input/music-input המשותפים עם העורך) — שונה רק ה-layout. prePlay מאכלס pregame-title (שם החידון, עכשיו תת-כותרת זהובה) + pregame-qcount (מספר שאלות)
   v91 - סרגל המנחה במשחק הומר לתפריט נגלל (כמו במונטאז'), לתיקון בעיית הטלפון: עד כה סרגל המנחה היה שורה אופקית אחת של 5-6 כפתורים (host-bar) שגלשה מעבר לרוחב הטלפון — מונה הנוכחות "👥 מחוברים: X/Y", שהיה הרכיב האחרון בשורה, נדחף החוצה והוסתר מאחורי הכפתורים. עכשיו מבנה חדש (host-menu) בפינה ימין-למטה: (א) שורה קבועה תמיד-גלויה — מונה הנוכחות (מקוצר ל"👥 X/Y") + כפתור "📲 קוד חזרה" + כפתור "☰ תפריט ▾". (ב) הרשימה הנגללת (host-controls) נפתחת מעל השורה בלחיצה על "תפריט", ומכילה: הבא / מוזיקה / רקע / חיזוקים / סיום. נפתחת סגורה כברירת מחדל (מסך נקי בזמן המשחק), נסגרת/נפתחת עם סיבוב החץ. החלטות עיצוב: (1) המונה נשאר תמיד-גלוי ולא נכנס לתפריט — זה מידע שהמנחה צריך לראות תמיד (אם תלמיד נפל), לא פעולה. (2) כפתור "קוד חזרה" נשאר גלוי וקבוע ליד המונה (לא קופץ לפי-צורך) — קפיצת כפתור באמצע שאלה היא בדיוק ההסחה ש-v88 בא לתקן; במקום זה *המונה* מצהיב (טקסט כהה + רקע/מסגרת זהובים) כשמישהו חסר, והכפתור היציב כבר שם. (3) כפתור התפריט כהה כברירת מחדל — זהוב שמור להתראת המונה בלבד. הטרייד-אוף המודע: מצב המתגים (מוזיקה דולקת/כבויה, חיזוקים פעיל/כבוי) מוסתר עד פתיחת התפריט — מקובל כי מגדירים אותם פעם אחת בתחילת המשחק. host-bar הישן נשמר רק למצב-בדיקה (solo-bar) שהוא קצר ולא גולש. כל קריאות $('host-bar') ב-JS עודכנו ל-$('host-menu'); נוספה toggleHostMenu()
   v90 - רציפות ויזואלית בין שתי נקודות-הכניסה ל-AI: עד כה כרטיס ה-AI (חידון ריק) היה טורקיז עם הטקסט "יצירת חידון באמצעות בינה מלאכותית", והכפתור (חידון עם תוכן) היה סגול עם "עריכת חידון באמצעות AI" — צבע שונה וניסוח שונה גרמו לכך שהמשתמש לא בהכרח הבין שזו אותה פעולה. עכשיו שניהם זהים: אותו אייקון (🤖), אותו צבע (טורקיז/teal), ואותו ניסוח "...באמצעות AI" — נבדלים רק בפועל (יצירת/עריכת) שמשקף את ההקשר. כותרת חלון ה-AI עצמו (openImport) נשארה עם "בינה מלאכותית" המלא (כותרת פורמלית, הקשר אחר)
@@ -243,7 +245,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v92</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v94</span></div>
 <div id="fw"><div class="fwtext" id="fw-text"></div></div>
 <div class="savetoast" id="save-toast">✓ החידון נשמר</div>
 <div id="game-bg"></div>
@@ -468,6 +470,10 @@ input:focus{border-color:var(--gold); outline:none;}
 <!-- ============ הכנה לפני משחק (מוזיקה ורקע) ============ -->
 <div class="screen" id="pregame">
   <div class="wrap">
+    <!-- ניווט-חזרה בראש המסך — קישור דק ומאופק, נפרד לגמרי מאזור הכפתורים למטה -->
+    <div style="text-align:right; margin-bottom:6px;">
+      <button onclick="refreshMyList()" style="background:none; border:none; color:var(--ink-dim); font-family:'Heebo'; font-size:14px; cursor:pointer; padding:4px 0;">→ חזרה לרשימה</button>
+    </div>
     <h2>מוכנים להתחיל?</h2>
     <p class="sub" style="margin-bottom:8px;">החידון <b id="pregame-title" style="color:var(--gold);"></b> מוכן<span id="pregame-qcount"></span>. אפשר להתחיל מיד.</p>
 
@@ -478,46 +484,42 @@ input:focus{border-color:var(--gold); outline:none;}
 
     <!-- רקע ומוזיקה — לא חובה, מקופל, סגור כברירת מחדל. אותם handlers כמו בעורך -->
     <details class="adv-box" style="margin-top:18px; text-align:right;">
-      <summary style="cursor:pointer; font-size:14px; font-weight:500; color:var(--ink-dim); padding:11px 16px; background:rgba(255,255,255,.04); border-radius:12px; list-style:none; display:flex; align-items:center; gap:8px;">🎨 רקע ומוזיקה <span style="font-size:12px; font-weight:400; opacity:.7;">(לא חובה)</span></summary>
-      <div style="padding-top:16px;">
-        <p style="font-size:13px; color:var(--ink-dim); line-height:1.5; margin:0 0 14px;">הרקע והמוזיקה מתאימים את אווירת המשחק. הם לא נשמרים עם החידון, אז בוחרים אותם כאן לפני כל הפעלה.</p>
+      <summary style="cursor:pointer; font-size:16px; font-weight:700; color:var(--ink); padding:14px 18px; background:rgba(255,255,255,.06); border-radius:12px; list-style:none; display:flex; align-items:center; gap:8px;">🎨 הוספת רקע ומוזיקה <span style="font-size:13px; font-weight:400; color:var(--ink-dim); opacity:.8;">(לא חובה)</span></summary>
+      <div style="padding-top:18px;">
+        <p style="font-size:14px; color:var(--ink-dim); line-height:1.6; margin:0 0 18px;">רקע ומוזיקה מוסיפים אווירה למשחק. הם לא נשמרים עם החידון, אז בוחרים אותם כאן לפני כל הפעלה. בזמן המשחק יהיה כפתור להשתקת המוזיקה או הסתרת הרקע אם הם מפריעים.</p>
 
         <div class="field">
-          <label>תמונת רקע</label>
-          <button class="btn ghost sm" onclick="openBgGallery()" style="width:100%;">🎨 בחירת רקע מהגלריה</button>
-          <button class="btn ghost sm" onclick="$('bg-input').click()" id="pg-bg-btn" style="width:100%; margin-top:8px;">🖼️ בחירת תמונת רקע מהמחשב</button>
-          <button class="btn ghost sm" onclick="clearBg(); $('pg-bg-btn').textContent='🖼️ בחירת תמונת רקע מהמחשב';" style="width:100%; margin-top:8px;">↩️ בלי תמונת רקע</button>
+          <label style="font-size:16px;">תמונת רקע</label>
+          <button class="btn ghost" onclick="openBgGallery()" style="width:100%;">🎨 בחירת רקע מהגלריה</button>
+          <button class="btn ghost" onclick="$('bg-input').click()" id="pg-bg-btn" style="width:100%; margin-top:10px;">🖼️ בחירת תמונת רקע מהמחשב</button>
+          <button class="btn ghost sm" onclick="clearBg(); $('pg-bg-btn').textContent='🖼️ בחירת תמונת רקע מהמחשב';" style="width:100%; margin-top:10px;">↩️ בלי תמונת רקע</button>
         </div>
 
-        <div class="field">
-          <label>מוזיקת רקע</label>
-          <button class="btn ghost sm" onclick="openMusicGallery()" style="width:100%;">🎼 בחירת מוזיקה מהגלריה</button>
-          <button class="btn ghost sm" onclick="$('music-input').click()" id="pg-music-btn" style="width:100%; margin-top:8px;">🎵 בחירת מוזיקה מהמחשב</button>
-          <div id="pg-music-list" style="font-size:14px; color:var(--ink-dim); margin-top:8px;"></div>
+        <div class="field" style="margin-top:20px;">
+          <label style="font-size:16px;">מוזיקת רקע</label>
+          <button class="btn ghost" onclick="openMusicGallery()" style="width:100%;">🎼 בחירת מוזיקה מהגלריה</button>
+          <button class="btn ghost" onclick="$('music-input').click()" id="pg-music-btn" style="width:100%; margin-top:10px;">🎵 בחירת מוזיקה מהמחשב</button>
+          <div id="pg-music-list" style="font-size:14px; color:var(--ink-dim); margin-top:10px;"></div>
         </div>
       </div>
     </details>
-
-    <div class="row" style="margin-top:14px;">
-      <button class="btn ghost sm" onclick="refreshMyList()">→ חזרה לרשימה</button>
-    </div>
   </div>
 </div>
 
 <div class="screen" id="lobby">
   <div class="wrap">
     <h2 id="lobby-title">החידון</h2>
-    <p class="sub">המשתתפים נכנסים לכתובת, מקלידים את הקוד, ומצטרפים.</p>
+    <p class="sub">המשתתפים מצטרפים באחת משלוש דרכים — בוחרים מה שנוח.</p>
     <div>קוד למשחק:</div>
     <span class="codepill" id="play-code">----</span>
-    <p style="font-size:14px; color:var(--ink-dim); word-break:break-all; margin:10px auto 4px; max-width:340px;" id="join-addr"></p>
-    <button id="copy-join-link" class="btn ghost sm" style="margin:0 auto 6px; display:none;">📋 העתקת קישור ההצטרפות</button>
     <div class="qrbox" id="qrbox" style="background:#fff; padding:14px; border-radius:18px; display:none; margin:10px auto; width:max-content;">
       <img id="qr" alt="QR להצטרפות" style="display:block; width:190px; height:190px;">
     </div>
-    <div style="background:rgba(46,196,182,.12); border:1px solid rgba(46,196,182,.4); border-radius:14px; padding:14px 18px; margin:14px auto; max-width:360px; text-align:right;">
-      <div style="font-weight:700; color:var(--teal); margin-bottom:8px; text-align:center;">איך מצטרפים? 👇</div>
-      <div style="font-size:15px; line-height:1.9;">1️⃣ סרקו את הברקוד, או היכנסו לכתובת למעלה<br>2️⃣ הקלידו את הקוד <b style="color:var(--gold);" id="join-code-echo"></b><br>3️⃣ כתבו שם ולחצו כניסה</div>
+    <button id="copy-join-link" class="btn teal sm" style="margin:6px auto 0; display:none;">🔗 העתקת קישור לשליחה לתלמידים</button>
+    <div style="background:rgba(46,196,182,.12); border:1px solid rgba(46,196,182,.4); border-radius:14px; padding:14px 18px; margin:14px auto; max-width:380px; text-align:right;">
+      <div style="font-weight:700; color:var(--teal); margin-bottom:10px; text-align:center;">איך מצטרפים? 👇</div>
+      <div style="font-size:15px; line-height:1.9;">📷 <b>סורקים את הברקוד</b> — ונכנסים ישר<br>או 🔗 <b>שולחים את הקישור</b> (כפתור ההעתקה למעלה) בוואטסאפ הכיתה<br>או ⌨️ <b>נכנסים לכתובת</b> ומקלידים את הקוד <b style="color:var(--gold);" id="join-code-echo"></b></div>
+      <div style="font-size:13px; color:var(--ink-dim); margin-top:10px; line-height:1.5;">בכל דרך — בסוף כותבים שם ולוחצים כניסה.</div>
     </div>
     <div style="margin:16px 0;">
       <div style="font-size:15px; color:var(--ink-dim); margin-bottom:8px;">מצטרפים (<b id="joined-n">0</b>):</div>
@@ -684,8 +686,8 @@ input:focus{border-color:var(--gold); outline:none;}
   <!-- הרשימה הנגללת — נפתחת מעל השורה הקבועה -->
   <div id="host-controls">
     <button onclick="hostSkip()">⏭️ הבא</button>
-    <button onclick="hostToggleMusic()" id="music-toggle">🔊 מוזיקה</button>
-    <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🖼️ רקע</button>
+    <button onclick="hostToggleMusic()" id="music-toggle" style="display:none;">🔇 השתקת מוזיקה</button>
+    <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🙈 הסתרת רקע</button>
     <button onclick="toggleReinforce()" id="reinforce-toggle">🌟 חיזוקים: פעיל</button>
     <button onclick="hostJumpFinish()">🏁 סיום</button>
   </div>
@@ -698,8 +700,8 @@ input:focus{border-color:var(--gold); outline:none;}
 </div>
 <!-- סרגל מצב בדיקה — זהה במראה לסרגל המשחק, אבל עם חזרה לעריכה זמינה תמיד -->
 <div class="host-bar" id="solo-bar" style="display:none;">
-  <button onclick="hostToggleMusic()" id="solo-music-toggle">🔊 מוזיקה</button>
-  <button onclick="soloToggleBg()" id="solo-bg-toggle" style="display:none;">🖼️ רקע</button>
+  <button onclick="hostToggleMusic()" id="solo-music-toggle" style="display:none;">🔇 השתקת מוזיקה</button>
+  <button onclick="soloToggleBg()" id="solo-bg-toggle" style="display:none;">🙈 הסתרת רקע</button>
   <button onclick="backToEditor()">← חזרה לעריכה</button>
 </div>
 <div id="solo-badge" style="position:fixed; top:10px; left:14px; z-index:55; font-size:14px; font-weight:800; color:#1a2342; background:var(--gold); border-radius:10px; padding:6px 14px; display:none;">👁️ מצב בדיקה</div>
@@ -2964,17 +2966,15 @@ async function goPlay(){
   if ($('join-code-echo')) $('join-code-echo').textContent = playCode;
   $('lobby-title').textContent = quiz.title || 'החידון';
   const baseUrl = location.origin.startsWith('http') ? (location.origin + location.pathname) : '';
-  // הקישור המלא — כולל קוד המשחק. זה מה שמוצג וזה מה שמועתק (באג ב': קודם הוצג בלי הקוד).
+  // הקישור המלא — כולל קוד המשחק. מועתק דרך הכפתור (הוסר טקסט הכתובת הארוכה — היה רעש ויזואלי).
   const joinUrl = baseUrl ? (baseUrl + '?game=' + playCode) : '';
-  const dispUrl = joinUrl.replace(/^https?:\/\//,'');
-  $('join-addr').textContent = dispUrl ? ('קישור: ' + dispUrl) : '';
-  // כפתור העתקת קישור מלא
+  // כפתור העתקת קישור מלא — הדרך המרכזית לקבל את הקישור (במקום לסמן ידנית כתובת ארוכה)
   const copyJoinBtn = $('copy-join-link');
   if (copyJoinBtn){
     if (joinUrl){
       copyJoinBtn.style.display = 'block';
       copyJoinBtn.onclick = ()=>{
-        const done = ()=>{ copyJoinBtn.textContent='✓ הקישור הועתק!'; setTimeout(()=>copyJoinBtn.textContent='📋 העתקת קישור ההצטרפות',1600); };
+        const done = ()=>{ copyJoinBtn.textContent='✓ הקישור הועתק! אפשר להדביק בוואטסאפ'; setTimeout(()=>copyJoinBtn.textContent='🔗 העתקת קישור לשליחה לתלמידים',1900); };
         if (navigator.clipboard && navigator.clipboard.writeText){
           navigator.clipboard.writeText(joinUrl).then(done).catch(()=>{ legacyCopy(joinUrl); done(); });
         } else { legacyCopy(joinUrl); done(); }
@@ -3085,6 +3085,7 @@ function hostStart(){
   if ($('solo-next')) $('solo-next').style.display='none';
   solo = false;
   $('bg-toggle').style.display = bgUrl ? 'inline-block' : 'none';
+  $('music-toggle').style.display = musicList.length ? 'inline-block' : 'none';   // רק אם נבחרה מוזיקה
   applyGameBg(true);
   bestMs = Infinity; bestName = ''; maxStreak = 0; streakKing = '';
   intermissionDone = new Set();
@@ -3146,9 +3147,14 @@ function applyGameBg(on){
   else $('game-bg').classList.remove('on');
 }
 function hostToggleBg(){
-  // מחליף בין רקע הכחול לתמונה בזמן המשחק
-  if ($('game-bg').classList.contains('on')) $('game-bg').classList.remove('on');
+  // מחליף בין הרקע הכחול לתמונה בזמן המשחק
+  const showing = $('game-bg').classList.contains('on');
+  if (showing) $('game-bg').classList.remove('on');
   else if (bgUrl) $('game-bg').classList.add('on');
+  // התווית מתארת את הפעולה הבאה: כשהרקע מוצג — "הסתרה"; כשמוסתר — "הצגה"
+  const nowShowing = $('game-bg').classList.contains('on');
+  const label = nowShowing ? '🙈 הסתרת רקע' : '🖼️ הצגת רקע';
+  ['bg-toggle','solo-bg-toggle'].forEach(id=>{ const b=$(id); if(b) b.textContent=label; });
 }
 
 /* גלריית רקעים מצוירים (CSS) — נטענים מיד, לא נשברים, לא תלויים באינטרנט */
@@ -3297,8 +3303,11 @@ function playGameMusic(){
 function stopGameMusic(){ if (musicAudio){ try{ musicAudio.pause(); }catch(e){} } }
 function hostToggleMusic(){
   musicMuted = !musicMuted;
-  if (musicMuted){ stopGameMusic(); $('music-toggle').textContent='🔇 מוזיקה'; }
-  else { if (musicAudio && musicAudio.paused) musicAudio.play().catch(()=>{}); else playGameMusic(); $('music-toggle').textContent='🔊 מוזיקה'; }
+  // התווית מתארת את הפעולה הבאה: כשמושתק — "הפעלה"; כשמתנגן — "השתקה"
+  const label = musicMuted ? '🔊 הפעלת מוזיקה' : '🔇 השתקת מוזיקה';
+  if (musicMuted){ stopGameMusic(); }
+  else { if (musicAudio && musicAudio.paused) musicAudio.play().catch(()=>{}); else playGameMusic(); }
+  ['music-toggle','solo-music-toggle'].forEach(id=>{ const b=$(id); if(b) b.textContent=label; });
 }
 function nextQ(){
   revealed = false; answers = {};
@@ -3894,6 +3903,7 @@ function previewQuiz(){
   $('solo-bar').style.display='flex';
   $('solo-badge').style.display='block';
   $('solo-bg-toggle').style.display = bgUrl ? 'inline-block' : 'none';
+  $('solo-music-toggle').style.display = musicList.length ? 'inline-block' : 'none';   // רק אם נבחרה מוזיקה
   $('ingame-credit').style.display='none';
   applyGameBg(true);
   playGameMusic();
