@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v119 - מסך פתיחה (hero) למצב לא-מחובר + מיתוג yopoy: #auth-out עוצב מחדש כ-hero — מותג-העל yopoy (תלת-ממד, גופן Fredoka) מעל אייקון המוח, מתחתיו QuizPlay בעיצוב המקורי (Secular One + גרדיאנט זהב), טאגליין, פסקת-הסבר, שני הכפתורים (Google/אורח) ושורת-תועלת (יצירה מהירה · תוצאה מרשימה · שיתוף קל). הכותרת הגנרית "בונה חידונים" (home-h1) מוסתרת כשלא-מחובר ומוצגת רק כשמחובר/אורח. #auth-out הוצא מ-#auth-box לרוחב מלא; נוספו ארבע נקודות-זוהר (orbs) ברקע הלוגד-אאוט בלבד (position:fixed, z-index נמוך). לוגיקת ההתחברות (signInGoogle/enterGuest/showInfo) לא שונתה — רק layout. נוסף גופן Fredoka. אומת: node --check + איזון-תגיות
   v118 - מקבץ ניקוי באגים (10 פריטים, אחרי סריקה עמוקה): (א.2) ניתוק אפקטי-הקול מהשתקת-המוזיקה — sfxAllowed מחזיר תמיד true; השתקה נוגעת רק בלולאת-הרקע, האפקטים (שיא/רצף/ניצחון) תמיד מנגנים (החלטת המשתמש: מעולם לא רצה השתקת אפקטים; היה צימוד מכוון שגוי מבניית מנוע-הקול). (א.3) איפוס מצב-קול בין משחקים — hostStart/previewQuiz מאפסים musicMuted=false ו-musicIdx=0 ומשחזרים את תוויות מתגי המוזיקה/רקע (קודם משחק חוזר נשאר מושתק בשקט והתווית נתקעה מהמשחק הקודם). (ב.5) playExisting/testExisting טוענים עכשיו aiMeta כמו openExisting — קודם שיחקת→חזרה-לעריכה→שמירה מחק את קדם-מילוי ה-AI כי saveQuiz עושה set שמחליף את כל הצומת. (ד.1) ניקוי מאזיני Firebase — נוספו detachGameListeners ו-detachPresence (off ספציפי לכל handler, לא נוגע במאזין ה-conn הגלובלי של שורת-החיבור), נקראים מ-endGameSession ובראש listenGame/setupPresence — מונע הצטברות מאזינים כשמריצים כמה משחקים באותה טעינת-דף. (ב.2) soloFinish — אחרי בדיקת-סולו מוצגים רק כפתורי-בדיקה (חזרה-לעריכה/בדיקה-שוב) ולא כפתורי משחק-אמיתי; קודם "התחלה מחדש" הפעילה בטעות משחק עם קהל. כפתורי הסיום נעטפו ב-hfin-host-actions, נוסף hfin-solo-actions, ו-hostFinish משחזר את הרגילים. (ב.3) parseImport מגביל את העודף לתקרת הבורר (impQCount) — קודם אם ה-AI החזיר יותר שאלות מהמבוקש, כולן נכנסו. (ב.4) buildImportPrompt — בעריכת חידון קיים, אם לא נדרשות שאלות חדשות (לא סומנו החלפות והבורר לא גדל), מחזיר הודעת-הכוונה במקום פרומפט "0 שאלות". (ד.2) unshareEveryone/unshareSpecificAll מוחקים עכשיו גם את codes/{displayCode} — syncShareCopies יוצא מוקדם ב-mode=none ולא ניקה אותו, אז נשארה רשומה יתומה והקוד האנושי החזיר "לא נמצא" עד שיתוף-חוזר. (ד.4) ניקוי ה-pinned ב-bulkDelete נכלל עכשיו ב-Promise.all (קודם fire-and-forget). (ב.1) הוסרה restorePendingGuestQuiz — רשת-ביטחון מתה (שום מקום לא כתב ל-sessionStorage מאז מעבר ל-popup ב-v99). לא נכלל: ד.3 (אימות-אייפון) — דורש מכשיר אמיתי, לא תיקון-קוד. אומת: node --check + איזון-תגיות + grep ללא שאריות
   v117 - תיקון באג ניווט-אורח (השלמה ל-v116): רצף "אורח → סיום-משחק → התחברות → goBack" נחת ב"חידונים שלי" במקום בבית-עם-האופציות. השורש: refreshMyList (שנקרא מ-finishToList ועוד) שלח *אורח* ל-home — מסך שבור עבורו (אין כפתורים, כי auth-out מוסתר ו-logged-in-home מוסתר; רק תגית-אורח) — ואיפס את navStack ל-[]. אחרי התחברות, goBack עם מחסנית ריקה נפל ל-refreshMyList→mylist. התיקון: refreshMyList לאורח → חזרה לעורך (שם הוא בונה), לא ל-home. כך האורח נשאר בזרימת-הבנייה, לא נוחת על מסך שבור, ולא נוצר מצב-המחסנית-הריקה. מחובר — ללא שינוי (refreshMyList→mylist כרגיל). בנוסף goBack עם מחסנית ריקה נופל עכשיו לבית (המרכז) ולא ל-mylist — זו הייתה הנפילה האחרונה שהשאירה את האורח-שהתחבר על הרשימה
   v117 - תיקון z-index: החלון-הצף (i) של כפתור "יציאה מהחשבון" בתפריט הופיע *מאחורי* התפריט — .info-pop היה z-index:50 בעוד #nav-menu הוא z-index:60. הועלה ל-210. אותו תיקון גם ב-teacher-library.html (v8)
@@ -93,7 +94,7 @@
 <title>בונה חידונים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Fredoka:wght@500;600;700&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg1:#05080f; --bg2:#0a1020;
@@ -153,6 +154,27 @@ input:focus{border-color:var(--gold); outline:none;}
 .codepill{display:inline-block; font-family:'Secular One'; font-size:30px; letter-spacing:.12em; background:var(--card); color:var(--gold); border-radius:12px; padding:8px 22px; margin:6px 0;}
 .info-i{display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,.16); color:var(--ink); font-size:13px; font-weight:700; cursor:pointer; margin-inline-start:6px; vertical-align:middle; user-select:none;}
 .info-i:hover{background:var(--teal); color:#06231f;}
+/* ===== v119: hero למצב לא-מחובר (מותג yopoy) ===== */
+.ho-orb{position:fixed; border-radius:50%; opacity:.5; z-index:0; pointer-events:none;}
+.ho-o1{width:14px;height:14px;background:var(--teal);top:24%;inset-inline-start:16%;box-shadow:0 0 30px 9px rgba(46,196,182,.5);}
+.ho-o2{width:10px;height:10px;background:var(--gold);top:70%;inset-inline-start:22%;box-shadow:0 0 26px 8px rgba(255,209,102,.5);}
+.ho-o3{width:12px;height:12px;background:var(--violet);top:20%;inset-inline-end:18%;box-shadow:0 0 28px 9px rgba(141,141,242,.5);}
+.ho-o4{width:9px;height:9px;background:var(--coral);top:74%;inset-inline-end:20%;box-shadow:0 0 24px 8px rgba(255,107,107,.45);}
+.ho-stage{position:relative; max-width:640px; margin:0 auto; padding:6px 0 2px; text-align:center;}
+.ho-brand{font-family:'Secular One'; font-size:clamp(46px,7.2vw,84px); line-height:1; letter-spacing:-.025em; margin:0; display:inline-flex; align-items:center; justify-content:center; gap:12px; position:relative; z-index:2;}
+.ho-stack{display:inline-flex; flex-direction:column; align-items:center; gap:1px;}
+.ho-yopoy{font-family:'Fredoka'; font-weight:600; font-size:20px; line-height:1; color:#ffd76a; text-shadow:0 1px 0 #d6a53e,0 2px 0 #b07f27,0 3px 4px rgba(0,0,0,.45);}
+.ho-brain{font-size:.86em; filter:drop-shadow(0 4px 16px rgba(0,0,0,.45));}
+.ho-word{background:linear-gradient(180deg,#ffe7a6 0%,#ffce5e 50%,#f3b439 100%); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 6px 30px rgba(255,209,102,.25));}
+.ho-tag{font-family:'Heebo'; font-weight:800; color:var(--ink); font-size:clamp(21px,3.2vw,34px); line-height:1.25; letter-spacing:-.01em; margin:22px auto 0; max-width:560px; position:relative; z-index:2;}
+.ho-lede{font-family:'Heebo'; font-weight:400; color:var(--ink-dim); font-size:clamp(15px,1.7vw,17px); line-height:1.6; margin:15px auto 0; max-width:520px; position:relative; z-index:2;}
+.ho-cta{display:flex; align-items:center; justify-content:center; gap:12px; margin:28px 0 0; flex-wrap:wrap; position:relative; z-index:2;}
+.ho-cta .btn{font-size:16px;}
+.ho-primary{background:#fff !important; color:#15203f !important; box-shadow:0 12px 40px rgba(255,255,255,.15),0 2px 8px rgba(0,0,0,.35); display:inline-flex; align-items:center; gap:9px;}
+.ho-reassure{display:inline-flex; gap:18px; flex-wrap:wrap; justify-content:center; margin:22px 0 0; color:var(--ink-dim); font-size:13px; font-weight:500; opacity:.85; position:relative; z-index:2;}
+.ho-reassure span{display:inline-flex; align-items:center; gap:5px;}
+.ho-reassure b{color:var(--teal); font-weight:800;}
+@media (max-width:560px){ .ho-cta .btn{width:100%; max-width:330px;} .ho-reassure{gap:12px;} }
 .info-pop{position:fixed; z-index:210; max-width:280px; background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.5; color:var(--ink); box-shadow:0 10px 30px rgba(0,0,0,.5);}
 
 /* כרטיס חידון ברשימה (מוערם — מותאם לנייד) */
@@ -346,7 +368,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v118</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v119</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -364,20 +386,31 @@ input:focus{border-color:var(--gold); outline:none;}
 <!-- ============ מסך בית ============ -->
 <div class="screen on" id="home">
   <div class="wrap">
-    <h1>🧠 בונה חידונים</h1>
+    <h1 id="home-h1" style="display:none;">🧠 בונה חידונים</h1>
 
-    <!-- שורת התחברות דקה -->
-    <div id="auth-box" style="max-width:420px; margin:0 auto 16px;">
-      <div id="auth-out" style="display:none;">
-        <div style="display:flex; gap:10px;">
-          <button class="btn" onclick="signInGoogle()" style="flex:1; min-width:0; background:#fff; color:#1a2342; display:flex; align-items:center; justify-content:center; gap:8px; padding-inline:10px; font-size:15px;">
-            <svg width="18" height="18" viewBox="0 0 48 48" style="flex:none;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> <span>התחברות</span> <span class="info-i" onclick="event.stopPropagation(); showInfo(event, 'ההתחברות עוזרת לשמור על המערכת בטוחה ואמינה — היא מוודאת שכל חידון נשמר לחשבון אמיתי, ומונעת שימוש לרעה שעלול לפגוע בחוויה. כך גם ספריית החידונים המשותפת נשארת נקייה ואיכותית לכולם. אפשר גם להיכנס כאורח, אבל אז לא ניתן לשמור או לשתף.')">i</span>
+    <!-- v119: hero למצב לא-מחובר (yopoy) -->
+    <div id="auth-out" style="display:none;">
+      <span class="ho-orb ho-o1"></span><span class="ho-orb ho-o2"></span><span class="ho-orb ho-o3"></span><span class="ho-orb ho-o4"></span>
+      <div class="ho-stage">
+        <h1 class="ho-brand"><span class="ho-stack"><span class="ho-yopoy">yopoy</span><span class="ho-brain">🧠</span></span><span class="ho-word">QuizPlay</span></h1>
+        <p class="ho-tag">הופכים רעיון לפעילות אינטראקטיבית בתוך דקות</p>
+        <p class="ho-lede">צרו חידונים בעזרת AI או בעצמכם, הפעילו משתתפים באופן אישי או בקבוצות, ושמרו את החידונים בענן לשימוש חוזר ולשיתוף.</p>
+        <div class="ho-cta">
+          <button class="btn ho-primary" onclick="signInGoogle()">
+            <svg width="18" height="18" viewBox="0 0 48 48" style="flex:none;"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            <span>התחברות עם Google</span>
+            <span class="info-i" onclick="event.stopPropagation(); showInfo(event, 'ההתחברות עוזרת לשמור על המערכת בטוחה ואמינה — היא מוודאת שכל חידון נשמר לחשבון אמיתי, ומונעת שימוש לרעה שעלול לפגוע בחוויה. כך גם ספריית החידונים המשותפת נשארת נקיה ואיכותית לכולם. אפשר גם להיכנס כאורח, אבל אז לא ניתן לשמור או לשתף.')">i</span>
           </button>
-          <button class="btn ghost" onclick="enterGuest()" style="flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:6px; padding-inline:10px; font-size:15px;">
+          <button class="btn ghost" onclick="enterGuest()" style="display:inline-flex; align-items:center; gap:6px;">
             👤 כניסה כאורח <span class="info-i" onclick="event.stopPropagation(); showInfo(event, 'כאורח אפשר לבנות חידון, לערוך, לשחק ולהשתמש בכל האפשרויות — אבל בלי יכולת לשמור או לשתף את החידון. כדי לשמור ולשתף, יש להתחבר עם Google. בסוף משחק של אורח תהיה הזדמנות להתחבר ולשמור.')">i</span>
           </button>
         </div>
+        <div class="ho-reassure"><span><b>✓</b> יצירה מהירה</span><span><b>✓</b> תוצאה מרשימה</span><span><b>✓</b> שיתוף קל</span></div>
       </div>
+    </div>
+
+    <!-- שורת התחברות דקה -->
+    <div id="auth-box" style="max-width:420px; margin:0 auto 16px;">
       <div id="auth-in" style="display:none;">
         <div style="display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; font-size:14px; color:var(--ink-dim);">
           <span>🟢 מחוברים כ־<b id="auth-name" style="color:var(--gold);"></b></span>
@@ -1039,6 +1072,7 @@ function enterGuest(){
   if ($('auth-out')) $('auth-out').style.display = 'none';
   if ($('guest-badge')) $('guest-badge').style.display = 'block';
   if ($('user-badge')) $('user-badge').style.display = 'none';   // v114: אורח — אין שם-חשבון
+  if ($('home-h1')) $('home-h1').style.display = '';   // v119: כותרת-עבודה לאורח
   $('home-msg').textContent = '';
   newQuiz();
 }
@@ -1211,6 +1245,7 @@ fauth.onAuthStateChanged(user => {
     // v114: מצב מחובר — מציגים את תוכן מסך-הבית (פעולות+קוד) ואת שם-החשבון הקבוע למעלה
     if ($('logged-in-home')) $('logged-in-home').style.display = 'block';
     if ($('user-badge')){ $('user-badge').style.display = 'block'; if ($('user-badge-name')) $('user-badge-name').textContent = myAuthName || myEmail; }
+    if ($('home-h1')) $('home-h1').style.display = '';   // v119: כותרת-עבודה למחובר
     // רושמים את המורה (לפי UID)
     fdb.ref('teacher_emails/'+myStoreKey).set({ email: myEmail, name: myAuthName, uid: myUid, last: Date.now() }).catch(()=>{});
     // הגירה חד-פעמית: אם אין עדיין חידונים תחת ה-UID אבל יש ישנים תחת המייל — מעבירים אותם
