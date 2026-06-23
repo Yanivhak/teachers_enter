@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v127 - שחזור משחק אם המארח נופל (מורה מחובר, מכל מכשיר) + אזהרת-יציאה: עד כה כל מנוע-המשחק (טיימר, שליחת שאלות, ניקוד) רץ רק בדפדפן המארח והמצב לא נשמר בשום מקום — אם הלפטופ נסגר/בטריה מתה/יציאה, המשחק קפא לכולם והניקוד אבד, בלי דרך חזרה. עכשיו: (א) בתחילת משחק (hostStart) נכתב צילום-מצב מלא ל-Firebase תחת נתיב-משנה חדש games/{code}/hostState (החידון פעם אחת) ומצביע teachers/{uid}/activeGame; בכל מעבר-שאלה (nextQ) נשמרת נקודת-ביקורת קלה (qIndex+ניקוד+seq, כפי שהיו *בתחילת* השאלה — כדי ששידור-מחדש לא יספור פעמיים). (ב) בפתיחת היישום מכל מכשיר מחובר לאותו חשבון (כולל טלפון), onAuthStateChanged קורא maybeOfferResume — אם יש משחק פעיל וטרי (עד 45 ד׳), מופיע באנר "יש משחק פעיל — להמשיך?". (ג) בלחיצה על המשך, resumeHostGame משחזר את החידון/השחקנים/הניקוד, מתחבר-מחדש לאותו חדר *בלי למחוק אותו* (listenGame עם skipBefore שמתעלם מהודעות ישנות כדי שלא יישלח welcome מ-join ישן ויקפיץ תלמידים), ומשדר מחדש את השאלה הנוכחית — התלמידים המחוברים עוברים אליה אוטומטית, בלי הצטרפות-מחדש. ההחלטה: השאלה הנוכחית מתחילה מחדש (טיימר מלא); הניקוד מכל הקודמות נשמר. (ד) endGameSession מסיר את hostState ואת המצביע; hostFinish מנקה את המצביע (משחק שהסתיים אינו ניתן לשחזור). (ה) beforeunload מזהיר עכשיו גם כשמשחק חי רץ (לא רק לאורח עם חידון לא-שמור). מגבלות מודעות: עובד רק למורה מחובר ל-Google (אורח — אין שחזור, נוסף הסבר במודאל-האורח); רקע/מוזיקה אובדים בשחזור (blobs מקומיים); חוזרים לתחילת השאלה, לא לשנייה המדויקת. אומת: node --check + איזון-תגיות
+  v126 - "התחלה מחדש" משחקת את אותו חידון עם אותם תלמידים (שינוי התנהגות): קודם הכפתור 🔄 פתח משחק חדש לגמרי עם קוד חדש, וכל התלמידים נותקו והיו צריכים להצטרף מחדש (restartGame איפס playCode→goPlay→חדר חדש). עכשיו: restartGame שומר את הקוד, החדר והשחקנים המחוברים, מאפס רק את הניקוד/הרצף/הנכונות של כל שחקן (שם וקבוצה נשמרים), וקורא ל-hostStart — אותו מסלול התחלה כמו מהלובי (מאפס שיאים+qIndex ושולח שאלה ראשונה). השחקנים עוברים אוטומטית ממסך-הסיום לשאלה 1 כשמגיעה הודעת q (showPQ), בלי הודעה נוספת. למשחק חדש מאפס יש כבר "➕ חידון חדש". אומת: node --check + איזון-תגיות
+  v125 - תיקון לוגי (חשיפה אוטומטית מול מחוברים-כעת): קודם ה-auto-reveal קפץ רק כש-answers ≥ כל מי שהצטרף אי-פעם — אז תלמיד אחד שהתנתק (נעילת מסך/וויפיי) חסם את "כולם ענו" לשארית המשחק, וכל שאלה חיכתה לטיימר המלא. התיקון: נוספה allPresentAnswered() שמשווה מול ה-ids המחוברים-כעת (מתוך מאזין הנוכחות, _presentIds) ולא מול כל המצטרפים — תלמיד מנותק כבר לא חוסם. אם הנוכחות לא זמינה, נפילה לכל-המצטרפים (בלי רגרסיה). בנוסף, ירידה בנוכחות מפעילה בדיקת-חשיפה מחדש (אם המתנתק היה האחרון שלא ענה — חושפים מיד). נגזר מהפס הלוגי לקראת v1. אומת: node --check + איזון-תגיות
+  v124 - מיתוג כותרת + תצוגה-מקדימה לשיתוף: כותרת הדף (title) שונתה מ-"בונה חידונים" ל-"QuizPlay · חידונים אינטראקטיביים" (מופיעה בלשונית ובכותרת שיתוף הלינק). נוספו תגיות Open Graph (og:title/description/url/locale/type) + Twitter Card + meta description — כך ששיתוף הלינק בוואטסאפ/הודעות מציג כרטיס מותג: כותרת + תיאור (הטאגליין). טרם נוספה תמונת-תצוגה (og:image) — דורשת קובץ תמונה מאוחסן. אומת: node --check + איזון-תגיות
+  v123 - תיקון אבטחה (XSS): יישום escapeHtml עקבי בכל נקודות הרינדור של נתוני-משתמש דרך innerHTML במסכי התוצאות/פודיום — שמות שחקנים (פודיום 4442 + כרטיסי-סיום/funCard), טקסט תשובות (גרפי תוצאות חי+בדיקה), ושמות קבוצות (hr-teams, scoreLine, winLine). קודם שם/טקסט עם תווי HTML (גם תמים כמו <) נכנס גולמי ויכל להריץ קוד על מסך המורה (ה-maxlength=14 הוא צד-לקוח בלבד, עקיף דרך כתיבה ישירה ל-Firebase). הלובי/טקסט-השאלה/כפתורי-התשובה כבר השתמשו ב-textContent — התיקון משלים את חוסר-העקביות. אומת: node --check + איזון-תגיות
   v122 - תיקון דליפת home-h1 למסך הלא-מחובר + העברת הטיזר: (א) הבאג — אחרי התנתקות, הענף הלא-מחובר הציג את ה-hero אבל לא הסתיר בחזרה את home-h1 (כותרת המסך המחובר), אז הופיעו שני QuizPlay. התיקון: הענף הלא-מחובר מסתיר עכשיו את home-h1 מפורשות. (ב) "בונה חידונים" הועבר אל מתחת ל-QuizPlay של ה-hero (בין המותג לטאגליין). אומת: node --check + איזון-תגיות
   v121 - כותרת המסך המחובר אוחדה עם מותג ה-hero: במקום QuizPlay+yopoy מ-v120, כעת אותו בלוק כמו במסך הפתיחה — yopoy מעל אייקון המוח 🧠 + QuizPlay (גרדיאנט זהב), ומתחתיו "בונה חידונים" כטיזר קטן (לא ככותרת). משתמש באותן מחלקות ה-hero (ho-stack/ho-yopoy/ho-brain/ho-word) בגודל מסך-עבודה (ho-brand-sm). ההצגה המותנית (רק כשמחובר/אורח) נשמרה. אומת: node --check + איזון-תגיות
   v120 - מותג QuizPlay בכותרת המסך המחובר: הכותרת "🧠 בונה חידונים" (home-h1) הוחלפה ב-QuizPlay (גרדיאנט זהב) עם yopoy קטן מתחתיו, בלי אייקון המוח — לעקביות מותג בין מסך הפתיחה למסך העבודה, ובלי ריבוי כותרות. ההצגה המותנית (רק כשמחובר/אורח) נשמרה. אומת: node --check + איזון-תגיות
@@ -94,7 +99,17 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>בונה חידונים</title>
+<title>QuizPlay · חידונים אינטראקטיביים</title>
+<meta name="description" content="הופכים רעיון לפעילות אינטראקטיבית בתוך דקות.">
+<!-- v124: תגיות תצוגה-מקדימה לשיתוף לינק (Open Graph + Twitter) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="QuizPlay · חידונים אינטראקטיביים">
+<meta property="og:description" content="הופכים רעיון לפעילות אינטראקטיבית בתוך דקות. צרו חידונים בעזרת AI או בעצמכם והפעילו משתתפים בזמן אמת.">
+<meta property="og:url" content="https://yanivhak.github.io/teachers_enter/teacherquiz.html">
+<meta property="og:locale" content="he_IL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="QuizPlay · חידונים אינטראקטיביים">
+<meta name="twitter:description" content="הופכים רעיון לפעילות אינטראקטיבית בתוך דקות.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Fredoka:wght@500;600;700&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -376,8 +391,13 @@ input:focus{border-color:var(--gold); outline:none;}
 </style>
 </head>
 <body>
+<div id="resume-banner" style="display:none; position:fixed; top:0; left:0; right:0; z-index:9999; background:var(--gold,#f5c518); color:#1a2342; padding:10px 14px; text-align:center; font-weight:800; box-shadow:0 4px 16px rgba(0,0,0,.35); font-size:15px;">
+  <span id="resume-banner-text">יש משחק פעיל — להמשיך?</span>
+  <button onclick="resumeHostGameFromBanner()" style="margin-inline-start:10px; background:#1a2342; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-weight:800; cursor:pointer;">▶ המשך משחק</button>
+  <button onclick="dismissResumeBanner()" style="margin-inline-start:6px; background:transparent; color:#1a2342; border:1px solid #1a2342; border-radius:8px; padding:6px 12px; font-weight:700; cursor:pointer;">✕ לא עכשיו</button>
+</div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v122</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v127</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -886,6 +906,7 @@ input:focus{border-color:var(--gold); outline:none;}
     <div style="font-size:46px; margin-bottom:8px;">⚠️</div>
     <h2 style="font-family:'Secular One'; font-size:24px; color:#ff9a8d; margin:0 0 10px;">החידון הזה לא נשמר</h2>
     <p style="font-size:15px; color:var(--ink); line-height:1.6; margin:0 0 18px;">בניתם את החידון במצב אורח, ולכן הוא יימחק כשתסגרו את הדף. כדי לשמור אותו ולהשתמש בו שוב בעתיד — התחברו עכשיו עם Google. אחרת תוכלו להמשיך, אבל העבודה לא תישמר.</p>
+    <p style="font-size:13px; color:var(--ink-dim); line-height:1.5; margin:0 0 18px;">⚠️ כמו כן, כאורח אין שחזור אם המכשיר ייפול באמצע משחק חי. למורה מחובר ל-Google — המשחק ניתן לשחזור מכל מכשיר.</p>
     <div style="display:flex; flex-direction:column; gap:10px;">
       <button class="btn teal" onclick="guestPlaySaveFirst()">🔐 התחברו ושמרו</button>
       <button class="btn ghost" onclick="guestPlayContinue()">להמשיך בלי לשמור</button>
@@ -1267,6 +1288,7 @@ fauth.onAuthStateChanged(user => {
     handlePendingShare();
     // אם נכנסו מהספרייה עם ?new=1 — פותחים חידון חדש עכשיו (אחרי שההתחברות נפתרה)
     maybeStartPendingNewQuiz();
+    maybeOfferResume();   // v127: אם יש משחק פעיל שננטש — מציעים להמשיך מכל מכשיר מחובר
     // v111: ההקפצה לרשימה קורית *רק* כשהקישור מבקש זאת מפורשות (?list=1). כך הקישור "החידונים שלי"
     // (מהספרייה, שמצביע ל-teacherquiz.html?list=1) נוחת ישר על הרשימה — אבל כניסה כללית
     // (index → teacherquiz.html בלי סימן) נשארת על מסך הבית, שם יש שליטת-חשבון (התחברות/החלפת חשבון).
@@ -3562,19 +3584,30 @@ async function goPlay(){
 
 let _gameMsgQuery = null, _gameMsgHandler = null;            // v118
 let _presenceCountRef = null, _presenceCountHandler = null;  // v118
+let _presentIds = new Set();  // v125: ids של המחוברים-כעת (מתעדכן ממאזין הנוכחות)
 // v118: ניתוק מאזיני-המשחק (off ספציפי לכל handler — לא נוגע במאזינים אחרים)
 function detachGameListeners(){
   try { if (_gameMsgQuery && _gameMsgHandler) _gameMsgQuery.off('child_added', _gameMsgHandler); } catch(e){}
   try { if (_presenceCountRef && _presenceCountHandler) _presenceCountRef.off('value', _presenceCountHandler); } catch(e){}
   _gameMsgHandler = null; _presenceCountHandler = null;
 }
-function listenGame(code, onReady){
+// v125: האם כל המחוברים-כעת ענו? (במקום כל מי שהצטרף — תלמיד מנותק לא חוסם את החשיפה)
+function allPresentAnswered(){
+  const ids = Object.keys(players);
+  if (!ids.length) return false;
+  // אם הנוכחות זמינה — סופרים רק מחוברים; אחרת נופלים לכל המצטרפים (התנהגות קודמת, בלי רגרסיה)
+  const present = (_presentIds && _presentIds.size) ? ids.filter(id => _presentIds.has(id)) : ids;
+  if (!present.length) return false;
+  return present.every(id => answers[id]);
+}
+function listenGame(code, onReady, skipBefore){
   detachGameListeners();   // v118: ניקוי מאזיני-משחק קודמים לפני רישום חדש
   topic = code;
   gameRef = fdb.ref('games/'+code+'/messages');
   _gameMsgQuery = gameRef.limitToLast(80);
   _gameMsgHandler = _gameMsgQuery.on('child_added', snap => {
     const m = snap.val(); if (!m || m.from === myId) return;
+    if (skipBefore && m.ts && m.ts < skipBefore) return;   // v127: בשחזור מתעלמים מהודעות שקדמו לחיבור-מחדש (מונע welcome מ-join ישן)
     if (role === 'host') hostMsg(m); else playerMsg(m);
   });
   // המנחה מאזין לנוכחות — סופר כמה מחוברים כעת (פריט 6)
@@ -3582,8 +3615,11 @@ function listenGame(code, onReady){
     _presenceCountRef = fdb.ref('games/'+code+'/presence');
     _presenceCountHandler = _presenceCountRef.on('value', snap => {
       const pres = snap.val() || {};
+      _presentIds = new Set(Object.keys(pres));   // v125
       const connectedNow = Object.keys(pres).length;
       updatePresenceCounter(connectedNow);
+      // v125: אם ירידה בנוכחות הביאה למצב שכל המחוברים כבר ענו — חושפים
+      if (!revealed && qIndex >= 0 && allPresentAnswered()) setTimeout(revealQ, 600);
     });
   }
   if (onReady) setTimeout(onReady, 400);
@@ -3628,7 +3664,7 @@ function hostMsg(m){
     if (players[m.id] && !answers[m.id]){
       answers[m.id] = { pick:m.pick, dt:m.dt };
       $('hq-answered').textContent = Object.keys(answers).length;
-      if (Object.keys(answers).length >= Object.keys(players).length) setTimeout(revealQ, 600);
+      if (allPresentAnswered()) setTimeout(revealQ, 600);   // v125: מול מחוברים-כעת
     }
   }
 }
@@ -3651,6 +3687,7 @@ function toggleHostMenu(){
 }
 
 function hostStart(){
+  saveHostSnapshot();   // v127: צילום החידון + מצביע "משחק פעיל" לשחזור מכל מכשיר
   $('host-menu').style.display = 'flex';
   $('host-menu').classList.remove('open');   // התפריט מתחיל סגור — מסך נקי בזמן המשחק
   $('ingame-credit').style.display = 'block';
@@ -3993,6 +4030,7 @@ function nextQ(){
   show('hq');
   // שולחים לשחקנים: טקסט + תשובות (מעורבבות לתצוגה אבל עם אינדקס מקורי)
   send({ t:'q', i:seq, text:curQ.text, dur:quiz.time, options: opts.map(o=>({txt:o.a, idx:o.i})), correct: curQ.correct, total: quiz.questions.length, num: qIndex+1 });
+  saveHostCheckpoint();   // v127: נקודת-ביקורת לשחזור (הניקוד כפי שהיה בתחילת השאלה — מונע ספירה כפולה)
   let t = quiz.time;
   clearInterval(hostTimer);
   hostTimer = setInterval(()=>{
@@ -4279,7 +4317,7 @@ function revealQ(){
   const denom = Math.max(1, ...opts.map(o=>dist[o.i]));
   opts.forEach(o => {
     const row = document.createElement('div'); row.className='bar'+(o.i===curQ.correct?' is-correct':'');
-    row.innerHTML = '<span class="name">'+o.a+'</span><span class="track"><span class="fill"></span></span><span class="n">'+dist[o.i]+'</span>';
+    row.innerHTML = '<span class="name">'+escapeHtml(o.a)+'</span><span class="track"><span class="fill"></span></span><span class="n">'+dist[o.i]+'</span>';
     box.appendChild(row);
     requestAnimationFrame(()=>{ row.querySelector('.fill').style.width = (dist[o.i]/denom*100)+'%'; });
   });
@@ -4294,7 +4332,7 @@ function revealQ(){
   if (quiz.teamCount>0){
     const tSum = {}; for(let i=0;i<quiz.teamCount;i++) tSum[i]=0;
     Object.values(players).forEach(p => { if (p.team>=0) tSum[p.team]+=p.score; });
-    $('hr-teams').innerHTML = Object.keys(tSum).map(k=>'<span style="display:inline-block; margin:0 10px;">'+quiz.teamNames[k]+': <b style="color:#fff;">'+tSum[k]+'</b> נק׳</span>').join('');
+    $('hr-teams').innerHTML = Object.keys(tSum).map(k=>'<span style="display:inline-block; margin:0 10px;">'+escapeHtml(quiz.teamNames[k])+': <b style="color:#fff;">'+tSum[k]+'</b> נק׳</span>').join('');
   } else $('hr-teams').textContent = '';
   show('hr');
 }
@@ -4439,7 +4477,7 @@ function hostFinish(){
     if (!top3[pos]) return;
     const p = top3[pos];
     const d = document.createElement('div'); d.className='pod p'+(pos+1);
-    d.innerHTML = '<div class="nm">'+p.name+'</div><div class="pts">'+p.score+'</div>';
+    d.innerHTML = '<div class="nm">'+escapeHtml(p.name)+'</div><div class="pts">'+p.score+'</div>';
     pod.appendChild(d);
   });
   // קבוצות
@@ -4448,8 +4486,8 @@ function hostFinish(){
     board.forEach(p => { if (p.team>=0) tSum[p.team]+=p.score; });
     const best = Math.max(...Object.values(tSum));
     const winners = Object.keys(tSum).filter(k=>tSum[k]===best);
-    const scoreLine = Object.keys(tSum).map(k=>'<span style="display:inline-block; margin:0 10px;">'+quiz.teamNames[k]+': <b style="color:#fff;">'+tSum[k]+'</b> נק׳</span>').join('');
-    const winLine = winners.length>1 ? '🤝 תיקו בין הקבוצות!' : '🏆 ' + quiz.teamNames[winners[0]] + ' ניצחו!';
+    const scoreLine = Object.keys(tSum).map(k=>'<span style="display:inline-block; margin:0 10px;">'+escapeHtml(quiz.teamNames[k])+': <b style="color:#fff;">'+tSum[k]+'</b> נק׳</span>').join('');
+    const winLine = winners.length>1 ? '🤝 תיקו בין הקבוצות!' : '🏆 ' + escapeHtml(quiz.teamNames[winners[0]]) + ' ניצחו!';
     $('team-final').innerHTML = '<div style="margin-bottom:8px;">' + scoreLine + '</div><div style="font-size:clamp(22px,3vw,32px);">' + winLine + '</div>';
   } else $('team-final').textContent='';
 
@@ -4462,6 +4500,7 @@ function hostFinish(){
   if (byCorrect && byCorrect.correct>0) funCard(fc, '🎯', 'הכי הרבה תשובות נכונות', byCorrect.name, byCorrect.correct + ' תשובות');
 
   send({ t:'end', scores: board });
+  clearActiveGamePointer();   // v127: המשחק נגמר — אין מה לשחזר (משחק חוזר יכתוב מצביע מחדש דרך hostStart)
   $('guest-save-box').style.display = isGuest ? 'block' : 'none';
   if ($('hfin-host-actions')) $('hfin-host-actions').style.display = '';   // v118: שחזור כפתורי משחק-אמיתי (אם בדיקת-סולו קודמת הסתירה)
   if ($('hfin-solo-actions')) $('hfin-solo-actions').style.display = 'none';
@@ -4475,7 +4514,7 @@ function funCard(box, ic, title, big, small){
   d.style.cssText = 'background:var(--card); border-radius:16px; padding:16px 20px; min-width:150px; max-width:220px;';
   d.innerHTML = '<div style="font-size:34px;">'+ic+'</div>'+
                 '<div style="font-size:14px; color:var(--ink-dim); margin:4px 0;">'+title+'</div>'+
-                '<div style="font-size:20px; font-weight:900; color:var(--gold);">'+big+'</div>'+
+                '<div style="font-size:20px; font-weight:900; color:var(--gold);">'+escapeHtml(big)+'</div>'+
                 '<div style="font-size:14px; color:var(--teal);">'+small+'</div>';
   box.appendChild(d);
 }
@@ -4486,12 +4525,135 @@ function hostSkip(){
 }
 function hostJumpFinish(){ clearInterval(hostTimer); hostFinish(); }
 // סוף סשן משחק — מאפס את קוד המשחק והמחסנית, כך שהמשחק הבא יקבל קוד חדש. נקרא ביציאה אמיתית מהזרימה.
-function endGameSession(){ playCode = null; navStack = []; detachGameListeners(); detachPresence(); }   // v118: ניקוי מאזינים ביציאה ממשחק
+function endGameSession(){
+  // v127: ניקוי שאריות-שחזור לפני איפוס הקוד
+  clearActiveGamePointer();
+  if (playCode) fdb.ref('games/'+playCode+'/hostState').remove().catch(()=>{});
+  playCode = null; navStack = []; detachGameListeners(); detachPresence();
+}   // v118: ניקוי מאזינים ביציאה ממשחק
 function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); renderEditor(); show('editor'); }
-function restartGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); playCode=null; goPlay(); }
+function restartGame(){
+  // v126: "התחלה מחדש" = אותו חידון, אותם תלמידים שכבר מחוברים, הניקוד מתאפס — בלי קוד חדש ובלי הצטרפות מחדש.
+  clearInterval(hostTimer);
+  hideReturnQR();
+  if ($('solo-bar')) $('solo-bar').style.display='none';
+  if ($('solo-badge')) $('solo-badge').style.display='none';
+  // מאפסים ניקוד ומצב-תחרותי לכל מי שמחובר (שומרים שם וקבוצה). הקוד, החדר והשחקנים — לא נוגעים.
+  Object.values(players).forEach(p => {
+    p.score = 0; p.streak = 0; p.correct = 0; p.wasWrong = false;
+    p.totalReinforcements = 0; p.lastReinforcementAt = -1; p.gotWelcome = false;
+  });
+  // hostStart מאפס שיאים+qIndex, מתחיל מהשאלה הראשונה ושולח 'q' — השחקנים עוברים אוטומטית ממסך-הסיום לשאלה.
+  hostStart();
+}
 function finishToList(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); refreshMyList(); }
 // יצירת חידון חדש ישירות ממסך הסיום (אותו ניקוי מצב משחק, ואז newQuiz)
 function newQuizFromGame(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); newQuiz(); }
+
+/* ===== v127: שחזור משחק — צילום-מצב ל-Firebase + הצעת-המשך מכל מכשיר (מורה מחובר בלבד) ===== */
+// צילום החידון + מצביע "משחק פעיל". נקרא פעם אחת בתחילת משחק (hostStart). נתיב-משנה חדש בלבד.
+function saveHostSnapshot(){
+  if (!myStoreKey || !playCode) return;   // רק מורה מחובר; אורח — אין שחזור
+  try {
+    fdb.ref('games/'+playCode+'/hostState/quiz').set(quiz).catch(()=>{});
+    fdb.ref('games/'+playCode+'/hostState/editCode').set(editCode || '').catch(()=>{});
+    fdb.ref('teachers/'+myStoreKey+'/activeGame').set({ code: playCode, title: (quiz && quiz.title) || 'החידון', ts: Date.now() }).catch(()=>{});
+  } catch(e){}
+}
+// נקודת-ביקורת קלה — מצב המשחק בתחילת השאלה הנוכחית. נקרא בכל nextQ.
+function saveHostCheckpoint(){
+  if (!myStoreKey || !playCode) return;
+  const now = Date.now();
+  try {
+    fdb.ref('games/'+playCode+'/hostState/progress').set({
+      qIndex: qIndex, seq: seq, players: players,
+      bestMs: (bestMs === Infinity ? null : bestMs), bestName: bestName,
+      maxStreak: maxStreak, streakKing: streakKing,
+      intermissionDone: Array.from(intermissionDone), ts: now
+    }).catch(()=>{});
+    fdb.ref('teachers/'+myStoreKey+'/activeGame/ts').set(now).catch(()=>{});
+  } catch(e){}
+}
+// מנקה את המצביע "משחק פעיל" (מה שמפעיל את הצעת-ההמשך). לא נוגע בחדר עצמו.
+function clearActiveGamePointer(){
+  if (!myStoreKey) return;
+  try { fdb.ref('teachers/'+myStoreKey+'/activeGame').remove().catch(()=>{}); } catch(e){}
+}
+// בטעינה (מורה מחובר): אם יש משחק פעיל שננטש וטרי — מציעים להמשיך. לא מציע אם כבר מארחים כאן.
+function maybeOfferResume(){
+  if (!myStoreKey) return;
+  if (role === 'host' || playCode) return;            // כבר בתוך משחק במכשיר הזה
+  if (pendingNewQuiz || pendingShareId) return;       // זרימה אחרת כבר מנווטת
+  try {
+    fdb.ref('teachers/'+myStoreKey+'/activeGame').once('value').then(snap => {
+      const a = snap.val();
+      if (!a || !a.code) return;
+      const age = Date.now() - (a.ts || 0);
+      if (age > 45*60*1000){ clearActiveGamePointer(); return; }   // ישן מדי
+      fdb.ref('games/'+a.code+'/hostState/progress').once('value').then(ps => {
+        if (!ps.exists()){ clearActiveGamePointer(); return; }     // המשחק כבר נוקה
+        showResumeBanner(a.code, a.title || 'החידון');
+      }).catch(()=>{});
+    }).catch(()=>{});
+  } catch(e){}
+}
+let _resumeCode = null;
+function showResumeBanner(code, title){
+  _resumeCode = code;
+  const b = $('resume-banner'); if (!b) return;
+  const t = $('resume-banner-text');
+  if (t) t.textContent = 'יש משחק פעיל: "' + title + '" — להמשיך?';
+  b.style.display = 'block';
+}
+function dismissResumeBanner(){
+  const b = $('resume-banner'); if (b) b.style.display = 'none';
+  clearActiveGamePointer();   // המורה בחר לא להמשיך — מסירים את ההצעה
+  _resumeCode = null;
+}
+function resumeHostGameFromBanner(){ if (_resumeCode) resumeHostGame(_resumeCode); }
+// מסך-בקרת-המשחק (בלי איפוס שיאים/qIndex; מוזיקה/רקע אבדו במכשיר המקורי)
+function showHostGameChrome(){
+  if ($('host-menu')){ $('host-menu').style.display = 'flex'; $('host-menu').classList.remove('open'); }
+  if ($('ingame-credit')) $('ingame-credit').style.display = 'block';
+  if ($('solo-answers')) $('solo-answers').style.display = 'none';
+  if ($('solo-next')) $('solo-next').style.display = 'none';
+  solo = false;
+  if ($('bg-toggle')) $('bg-toggle').style.display = bgUrl ? 'inline-block' : 'none';
+  if ($('music-toggle')) $('music-toggle').style.display = musicList.length ? 'inline-block' : 'none';
+}
+// השחזור עצמו: טוען צילום-מצב, מתחבר-מחדש לחדר הקיים (בלי מחיקה), ומשדר מחדש את השאלה הנוכחית.
+function resumeHostGame(code){
+  const b = $('resume-banner'); if (b) b.style.display = 'none';
+  fdb.ref('games/'+code+'/hostState').once('value').then(snap => {
+    const hs = snap.val();
+    if (!hs || !hs.quiz || !hs.progress){ alert('לא נמצא משחק לשחזור — ייתכן שכבר הסתיים.'); clearActiveGamePointer(); return; }
+    const pr = hs.progress;
+    quiz = hs.quiz;
+    editCode = hs.editCode || editCode;
+    players = pr.players || {};
+    seq = pr.seq || 0;
+    bestMs = (pr.bestMs == null ? Infinity : pr.bestMs);
+    bestName = pr.bestName || '';
+    maxStreak = pr.maxStreak || 0;
+    streakKing = pr.streakKing || '';
+    intermissionDone = new Set(pr.intermissionDone || []);
+    revealed = false; answers = {};
+    role = 'host';
+    playCode = code;
+    solo = false;
+    // התחברות-מחדש לחדר הקיים — בלי מחיקה; skipBefore מתעלם מהודעות ישנות
+    listenGame(playCode, null, Date.now());
+    setupPresence(playCode, myId);
+    showHostGameChrome();
+    applyGameBg(false);
+    // שידור-מחדש של השאלה הנוכחית: nextQ מקדם qIndex ב-1, אז מחזירים אחורה ב-1.
+    // מוודאים שלא תוצג הפסקת-ביניים על השאלה הזו (כבר עברנו אותה).
+    intermissionDone.add(pr.qIndex);
+    qIndex = pr.qIndex - 1;
+    nextQ();
+  }).catch(()=>{ alert('תקלה בשחזור המשחק. נסו שוב.'); });
+}
+
 
 // מסיר את פינת ה-QR אם פתוחה (בסיום/יציאה מהמשחק)
 function hideReturnQR(){ const c = $('return-qr-corner'); if (c) c.remove(); }
@@ -4648,7 +4810,7 @@ function soloReveal(){
   const denom = Math.max(1, ...opts.map(o=>dist[o.i]));
   opts.forEach(o => {
     const row = document.createElement('div'); row.className='bar'+(o.i===curQ.correct?' is-correct':'');
-    row.innerHTML = '<span class="name">'+o.a+'</span><span class="track"><span class="fill"></span></span><span class="n">'+dist[o.i]+'</span>';
+    row.innerHTML = '<span class="name">'+escapeHtml(o.a)+'</span><span class="track"><span class="fill"></span></span><span class="n">'+dist[o.i]+'</span>';
     box.appendChild(row);
     requestAnimationFrame(()=>{ row.querySelector('.fill').style.width = (dist[o.i]/denom*100)+'%'; });
   });
@@ -4886,7 +5048,9 @@ function showPFin(m){
 
 /* אזהרה לפני יציאה — רק לאורח שכבר בנה לפחות שאלה אחת (כדי לא לאבד עבודה לא שמורה) */
 window.addEventListener('beforeunload', function(e){
-  if (isGuest && quiz && quiz.questions && quiz.questions.length > 0){
+  // v127: אזהרה גם כשמשחק חי רץ (מארח) — סגירה בטעות עוצרת את המשחק לכל התלמידים
+  const liveGame = (role === 'host' && playCode && qIndex >= 0);
+  if (liveGame || (isGuest && quiz && quiz.questions && quiz.questions.length > 0)){
     e.preventDefault();
     e.returnValue = '';   // הדפדפן יציג חלון אישור סטנדרטי משלו
     return '';
