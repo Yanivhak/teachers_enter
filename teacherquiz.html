@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v122 - תיקון דליפת home-h1 למסך הלא-מחובר + העברת הטיזר: (א) הבאג — אחרי התנתקות, הענף הלא-מחובר הציג את ה-hero אבל לא הסתיר בחזרה את home-h1 (כותרת המסך המחובר), אז הופיעו שני QuizPlay. התיקון: הענף הלא-מחובר מסתיר עכשיו את home-h1 מפורשות. (ב) "בונה חידונים" הועבר אל מתחת ל-QuizPlay של ה-hero (בין המותג לטאגליין). אומת: node --check + איזון-תגיות
   v121 - כותרת המסך המחובר אוחדה עם מותג ה-hero: במקום QuizPlay+yopoy מ-v120, כעת אותו בלוק כמו במסך הפתיחה — yopoy מעל אייקון המוח 🧠 + QuizPlay (גרדיאנט זהב), ומתחתיו "בונה חידונים" כטיזר קטן (לא ככותרת). משתמש באותן מחלקות ה-hero (ho-stack/ho-yopoy/ho-brain/ho-word) בגודל מסך-עבודה (ho-brand-sm). ההצגה המותנית (רק כשמחובר/אורח) נשמרה. אומת: node --check + איזון-תגיות
   v120 - מותג QuizPlay בכותרת המסך המחובר: הכותרת "🧠 בונה חידונים" (home-h1) הוחלפה ב-QuizPlay (גרדיאנט זהב) עם yopoy קטן מתחתיו, בלי אייקון המוח — לעקביות מותג בין מסך הפתיחה למסך העבודה, ובלי ריבוי כותרות. ההצגה המותנית (רק כשמחובר/אורח) נשמרה. אומת: node --check + איזון-תגיות
   v119 - מסך פתיחה (hero) למצב לא-מחובר + מיתוג yopoy: #auth-out עוצב מחדש כ-hero — מותג-העל yopoy (תלת-ממד, גופן Fredoka) מעל אייקון המוח, מתחתיו QuizPlay בעיצוב המקורי (Secular One + גרדיאנט זהב), טאגליין, פסקת-הסבר, שני הכפתורים (Google/אורח) ושורת-תועלת (יצירה מהירה · תוצאה מרשימה · שיתוף קל). הכותרת הגנרית "בונה חידונים" (home-h1) מוסתרת כשלא-מחובר ומוצגת רק כשמחובר/אורח. #auth-out הוצא מ-#auth-box לרוחב מלא; נוספו ארבע נקודות-זוהר (orbs) ברקע הלוגד-אאוט בלבד (position:fixed, z-index נמוך). לוגיקת ההתחברות (signInGoogle/enterGuest/showInfo) לא שונתה — רק layout. נוסף גופן Fredoka. אומת: node --check + איזון-תגיות
@@ -181,6 +182,7 @@ input:focus{border-color:var(--gold); outline:none;}
 .ho-brand-sm{font-size:clamp(36px,8vw,52px); gap:9px;}
 .ho-brand-sm .ho-yopoy{font-size:14px;}
 .ho-home-teaser{font-family:'Heebo'; font-weight:500; font-size:14px; color:var(--ink-dim); letter-spacing:.14em; margin-top:9px; opacity:.85;}
+.ho-hero-teaser{font-family:'Heebo'; font-weight:500; font-size:15px; color:var(--ink-dim); letter-spacing:.14em; margin:10px 0 0; opacity:.85;}
 @media (max-width:560px){ .ho-cta .btn{width:100%; max-width:330px;} .ho-reassure{gap:12px;} }
 .info-pop{position:fixed; z-index:210; max-width:280px; background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.5; color:var(--ink); box-shadow:0 10px 30px rgba(0,0,0,.5);}
 
@@ -375,7 +377,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v121</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v122</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -403,6 +405,7 @@ input:focus{border-color:var(--gold); outline:none;}
       <span class="ho-orb ho-o1"></span><span class="ho-orb ho-o2"></span><span class="ho-orb ho-o3"></span><span class="ho-orb ho-o4"></span>
       <div class="ho-stage">
         <h1 class="ho-brand"><span class="ho-stack"><span class="ho-yopoy">yopoy</span><span class="ho-brain">🧠</span></span><span class="ho-word">QuizPlay</span></h1>
+        <div class="ho-hero-teaser">בונה חידונים</div>
         <p class="ho-tag">הופכים רעיון לפעילות אינטראקטיבית בתוך דקות</p>
         <p class="ho-lede">צרו חידונים בעזרת AI או בעצמכם, הפעילו משתתפים באופן אישי או בקבוצות, ושמרו את החידונים בענן לשימוש חוזר ולשיתוף.</p>
         <div class="ho-cta">
@@ -1284,6 +1287,7 @@ fauth.onAuthStateChanged(user => {
       if ($('auth-out')) $('auth-out').style.display = 'block';
       if ($('auth-in')) $('auth-in').style.display = 'none';
       if ($('guest-badge')) $('guest-badge').style.display = 'none';
+      if ($('home-h1')) $('home-h1').style.display = 'none';   // v122: לא-מחובר — ה-hero הוא המותג, לא home-h1
     }
     // v114: לא-מחובר (או אחרי התנתקות) — מסתירים תוכן-מחובר ואת השם הקבוע
     if ($('logged-in-home')) $('logged-in-home').style.display = 'none';
