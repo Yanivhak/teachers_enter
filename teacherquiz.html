@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v121 - כותרת המסך המחובר אוחדה עם מותג ה-hero: במקום QuizPlay+yopoy מ-v120, כעת אותו בלוק כמו במסך הפתיחה — yopoy מעל אייקון המוח 🧠 + QuizPlay (גרדיאנט זהב), ומתחתיו "בונה חידונים" כטיזר קטן (לא ככותרת). משתמש באותן מחלקות ה-hero (ho-stack/ho-yopoy/ho-brain/ho-word) בגודל מסך-עבודה (ho-brand-sm). ההצגה המותנית (רק כשמחובר/אורח) נשמרה. אומת: node --check + איזון-תגיות
+  v120 - מותג QuizPlay בכותרת המסך המחובר: הכותרת "🧠 בונה חידונים" (home-h1) הוחלפה ב-QuizPlay (גרדיאנט זהב) עם yopoy קטן מתחתיו, בלי אייקון המוח — לעקביות מותג בין מסך הפתיחה למסך העבודה, ובלי ריבוי כותרות. ההצגה המותנית (רק כשמחובר/אורח) נשמרה. אומת: node --check + איזון-תגיות
   v119 - מסך פתיחה (hero) למצב לא-מחובר + מיתוג yopoy: #auth-out עוצב מחדש כ-hero — מותג-העל yopoy (תלת-ממד, גופן Fredoka) מעל אייקון המוח, מתחתיו QuizPlay בעיצוב המקורי (Secular One + גרדיאנט זהב), טאגליין, פסקת-הסבר, שני הכפתורים (Google/אורח) ושורת-תועלת (יצירה מהירה · תוצאה מרשימה · שיתוף קל). הכותרת הגנרית "בונה חידונים" (home-h1) מוסתרת כשלא-מחובר ומוצגת רק כשמחובר/אורח. #auth-out הוצא מ-#auth-box לרוחב מלא; נוספו ארבע נקודות-זוהר (orbs) ברקע הלוגד-אאוט בלבד (position:fixed, z-index נמוך). לוגיקת ההתחברות (signInGoogle/enterGuest/showInfo) לא שונתה — רק layout. נוסף גופן Fredoka. אומת: node --check + איזון-תגיות
   v118 - מקבץ ניקוי באגים (10 פריטים, אחרי סריקה עמוקה): (א.2) ניתוק אפקטי-הקול מהשתקת-המוזיקה — sfxAllowed מחזיר תמיד true; השתקה נוגעת רק בלולאת-הרקע, האפקטים (שיא/רצף/ניצחון) תמיד מנגנים (החלטת המשתמש: מעולם לא רצה השתקת אפקטים; היה צימוד מכוון שגוי מבניית מנוע-הקול). (א.3) איפוס מצב-קול בין משחקים — hostStart/previewQuiz מאפסים musicMuted=false ו-musicIdx=0 ומשחזרים את תוויות מתגי המוזיקה/רקע (קודם משחק חוזר נשאר מושתק בשקט והתווית נתקעה מהמשחק הקודם). (ב.5) playExisting/testExisting טוענים עכשיו aiMeta כמו openExisting — קודם שיחקת→חזרה-לעריכה→שמירה מחק את קדם-מילוי ה-AI כי saveQuiz עושה set שמחליף את כל הצומת. (ד.1) ניקוי מאזיני Firebase — נוספו detachGameListeners ו-detachPresence (off ספציפי לכל handler, לא נוגע במאזין ה-conn הגלובלי של שורת-החיבור), נקראים מ-endGameSession ובראש listenGame/setupPresence — מונע הצטברות מאזינים כשמריצים כמה משחקים באותה טעינת-דף. (ב.2) soloFinish — אחרי בדיקת-סולו מוצגים רק כפתורי-בדיקה (חזרה-לעריכה/בדיקה-שוב) ולא כפתורי משחק-אמיתי; קודם "התחלה מחדש" הפעילה בטעות משחק עם קהל. כפתורי הסיום נעטפו ב-hfin-host-actions, נוסף hfin-solo-actions, ו-hostFinish משחזר את הרגילים. (ב.3) parseImport מגביל את העודף לתקרת הבורר (impQCount) — קודם אם ה-AI החזיר יותר שאלות מהמבוקש, כולן נכנסו. (ב.4) buildImportPrompt — בעריכת חידון קיים, אם לא נדרשות שאלות חדשות (לא סומנו החלפות והבורר לא גדל), מחזיר הודעת-הכוונה במקום פרומפט "0 שאלות". (ד.2) unshareEveryone/unshareSpecificAll מוחקים עכשיו גם את codes/{displayCode} — syncShareCopies יוצא מוקדם ב-mode=none ולא ניקה אותו, אז נשארה רשומה יתומה והקוד האנושי החזיר "לא נמצא" עד שיתוף-חוזר. (ד.4) ניקוי ה-pinned ב-bulkDelete נכלל עכשיו ב-Promise.all (קודם fire-and-forget). (ב.1) הוסרה restorePendingGuestQuiz — רשת-ביטחון מתה (שום מקום לא כתב ל-sessionStorage מאז מעבר ל-popup ב-v99). לא נכלל: ד.3 (אימות-אייפון) — דורש מכשיר אמיתי, לא תיקון-קוד. אומת: node --check + איזון-תגיות + grep ללא שאריות
   v117 - תיקון באג ניווט-אורח (השלמה ל-v116): רצף "אורח → סיום-משחק → התחברות → goBack" נחת ב"חידונים שלי" במקום בבית-עם-האופציות. השורש: refreshMyList (שנקרא מ-finishToList ועוד) שלח *אורח* ל-home — מסך שבור עבורו (אין כפתורים, כי auth-out מוסתר ו-logged-in-home מוסתר; רק תגית-אורח) — ואיפס את navStack ל-[]. אחרי התחברות, goBack עם מחסנית ריקה נפל ל-refreshMyList→mylist. התיקון: refreshMyList לאורח → חזרה לעורך (שם הוא בונה), לא ל-home. כך האורח נשאר בזרימת-הבנייה, לא נוחת על מסך שבור, ולא נוצר מצב-המחסנית-הריקה. מחובר — ללא שינוי (refreshMyList→mylist כרגיל). בנוסף goBack עם מחסנית ריקה נופל עכשיו לבית (המרכז) ולא ל-mylist — זו הייתה הנפילה האחרונה שהשאירה את האורח-שהתחבר על הרשימה
@@ -174,6 +176,11 @@ input:focus{border-color:var(--gold); outline:none;}
 .ho-reassure{display:inline-flex; gap:18px; flex-wrap:wrap; justify-content:center; margin:22px 0 0; color:var(--ink-dim); font-size:13px; font-weight:500; opacity:.85; position:relative; z-index:2;}
 .ho-reassure span{display:inline-flex; align-items:center; gap:5px;}
 .ho-reassure b{color:var(--teal); font-weight:800;}
+/* v121: כותרת המסך המחובר — מותג ה-hero (yopoy+מוח+QuizPlay) + טיזר */
+.ho-home-wrap{margin:0 0 6px;}
+.ho-brand-sm{font-size:clamp(36px,8vw,52px); gap:9px;}
+.ho-brand-sm .ho-yopoy{font-size:14px;}
+.ho-home-teaser{font-family:'Heebo'; font-weight:500; font-size:14px; color:var(--ink-dim); letter-spacing:.14em; margin-top:9px; opacity:.85;}
 @media (max-width:560px){ .ho-cta .btn{width:100%; max-width:330px;} .ho-reassure{gap:12px;} }
 .info-pop{position:fixed; z-index:210; max-width:280px; background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.5; color:var(--ink); box-shadow:0 10px 30px rgba(0,0,0,.5);}
 
@@ -368,7 +375,7 @@ input:focus{border-color:var(--gold); outline:none;}
 </head>
 <body>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v119</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v121</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -386,7 +393,10 @@ input:focus{border-color:var(--gold); outline:none;}
 <!-- ============ מסך בית ============ -->
 <div class="screen on" id="home">
   <div class="wrap">
-    <h1 id="home-h1" style="display:none;">🧠 בונה חידונים</h1>
+    <div id="home-h1" class="ho-home-wrap" style="display:none;">
+      <h1 class="ho-brand ho-brand-sm"><span class="ho-stack"><span class="ho-yopoy">yopoy</span><span class="ho-brain">🧠</span></span><span class="ho-word">QuizPlay</span></h1>
+      <div class="ho-home-teaser">בונה חידונים</div>
+    </div>
 
     <!-- v119: hero למצב לא-מחובר (yopoy) -->
     <div id="auth-out" style="display:none;">
