@@ -1,184 +1,212 @@
 <!DOCTYPE html>
+<!-- teacher-guide v3 — QuizPlay בלבד (קהל רחב). חלק מ-yopoy. -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<title>הסבר קצר</title>
+<title>QuizPlay · מדריך</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Secular+One&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-:root{ --bg1:#05080f; --bg2:#0a1020; --ink:#f7f4ec; --ink-dim:#aab4cf; --gold:#ffd166; --teal:#2ec4b6; --card:#22325c; }
+:root{ --bg1:#05080f; --bg2:#0a1020; --ink:#f7f4ec; --ink-dim:#aab4cf; --gold:#ffd166; --teal:#2ec4b6; --card:#16223f; }
 *{box-sizing:border-box;}
 html,body{margin:0; padding:0;}
 body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); color:var(--ink); min-height:100vh; padding:32px 20px; line-height:1.7;}
 .wrap{max-width:760px; margin:0 auto;}
-h1{font-family:'Secular One'; font-size:clamp(30px,5vw,46px); color:var(--gold); margin:0 0 6px; text-align:center;}
+
+/* כותרת ממותגת */
+.brand{text-align:center; margin-bottom:6px;}
+.brand .yopoy{font-family:'Fredoka',sans-serif; font-weight:600; font-size:20px; color:var(--gold); letter-spacing:.5px; opacity:.9;}
+h1{font-family:'Secular One'; font-size:clamp(34px,6vw,52px); color:var(--gold); margin:2px 0 4px; text-align:center;}
 .lead{text-align:center; color:var(--ink-dim); font-size:18px; margin:0 0 34px;}
-h2{font-family:'Secular One'; font-size:24px; color:var(--teal); margin:30px 0 10px; border-bottom:1px solid rgba(255,255,255,.12); padding-bottom:6px;}
-/* כותרת ראשית של כלי — גדולה, בולטת, עם רקע צבעוני */
-.tool-head{font-family:'Secular One'; font-size:30px; margin:42px 0 6px; padding:16px 20px; border-radius:14px; border-bottom:none;}
-.tool-head.quiz{color:#06231f; background:linear-gradient(135deg, #2ec4b6, #25a99d);}
-.tool-head.montage{color:#0b0b2a; background:linear-gradient(135deg, #8d8df2, #6f6fd6);}
-.tool-head.combo{color:#1a1400; background:linear-gradient(135deg, #ffd166, #f0b93e);}
-/* תת-נושא בתוך כלי — קטן יותר, עם פס צבעוני בצד, מוזח */
-.sub-head{font-family:'Secular One'; font-size:20px; margin:22px 0 8px; padding:4px 14px; border-bottom:none; border-inline-start:4px solid; }
-.sub-head.quiz{color:var(--teal); border-color:var(--teal);}
-.sub-head.montage{color:var(--violet); border-color:var(--violet);}
-.sub-head.combo{color:var(--gold); border-color:var(--gold);}
-.card{background:var(--card); border-radius:16px; padding:20px 24px; margin:16px 0;}
+
+h2{font-family:'Secular One'; font-size:24px; color:var(--teal); margin:34px 0 10px; border-bottom:1px solid rgba(255,255,255,.12); padding-bottom:6px;}
+/* כותרת מודגשת עם רקע (לאזורי-הדגל) */
+.banner-head{font-family:'Secular One'; font-size:27px; color:#06231f; background:linear-gradient(135deg, #2ec4b6, #25a99d); margin:40px 0 6px; padding:15px 20px; border-radius:14px; border-bottom:none;}
+/* תת-נושא */
+h3{font-family:'Secular One'; font-size:20px; color:var(--teal); margin:24px 0 8px; padding:4px 14px; border-inline-start:4px solid var(--teal);}
+
+.card{background:var(--card); border:1px solid rgba(255,255,255,.07); border-radius:16px; padding:20px 24px; margin:16px 0;}
 ol, ul{margin:10px 0; padding-inline-start:22px;}
 li{margin-bottom:8px;}
 .tip{background:rgba(46,196,182,.12); border-radius:12px; padding:12px 16px; margin:14px 0; font-size:15px;}
 .warn{background:rgba(255,209,102,.12); border-radius:12px; padding:12px 16px; margin:14px 0; font-size:15px;}
 b{color:var(--gold);}
-.back{display:inline-block; margin-top:30px; color:var(--ink-dim); text-decoration:none; font-size:15px;}
 code{background:rgba(255,255,255,.1); padding:2px 7px; border-radius:6px; font-size:14px;}
+
+/* "הרעיון בקצרה" — בלוק לב, בולט */
+.pitch{background:linear-gradient(135deg, rgba(46,196,182,.16), rgba(255,209,102,.10)); border:1px solid rgba(46,196,182,.3); border-radius:18px; padding:24px 26px; margin:18px 0;}
+.pitch .big{font-size:21px; font-weight:800; color:var(--ink); margin:0 0 10px; line-height:1.5;}
+.pitch .big span{color:var(--gold);}
+
+/* רשת "מה מיוחד" */
+.special{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:16px 0;}
+.sp-box{background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:16px 18px;}
+.sp-box .t{font-family:'Secular One'; font-size:17px; color:var(--teal); margin-bottom:8px;}
+.sp-box ul{margin:0; padding-inline-start:18px;}
+.sp-box li{margin-bottom:6px; font-size:14.5px;}
+@media (max-width:560px){ .special{grid-template-columns:1fr;} }
+
+/* כפתור רעיון */
+.idea-btn{display:inline-block; background:var(--teal); color:#06231f; font-weight:800; font-size:17px; text-decoration:none; padding:13px 26px; border-radius:12px; margin-top:6px;}
+.back{display:inline-block; margin-top:26px; color:var(--ink-dim); text-decoration:none; font-size:15px;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>🎓 ברוכים הבאים</h1>
+
+  <div class="brand">
+    <div class="yopoy">yopoy</div>
+    <h1>🧠 QuizPlay</h1>
+  </div>
   <p class="lead">נולד מתוך צורך. נבנה מניסיון.</p>
 
-  <h2 class="tool-head quiz" style="background:none; color:var(--gold); padding:0; font-size:26px; margin-top:10px;">👋 כמה מילים על המערכת</h2>
+  <!-- ===== כמה מילים (אישי) ===== -->
+  <h2 style="background:none; color:var(--gold); padding:0; border:none; font-size:26px; margin-top:8px;">👋 כמה מילים</h2>
   <div class="card">
     <p style="margin-top:0;">שלום, אני יניב.</p>
     <p>כבר יותר מעשור אני עובד עם קבוצות ומעביר פעילויות לקהלים מגוונים. לאורך השנים ראיתי שוב ושוב את אותו אתגר: איך שומרים על קשב, איך גורמים ליותר אנשים להשתתף, ואיך הופכים פעילות רגילה לחוויה שאנשים באמת נהנים להיות חלק ממנה.</p>
-    <p>מתוך הניסיון הזה נולד הכלי שאתם רואים כאן.</p>
-    <p>במשך השנים השתמשתי במגוון פתרונות, התנסיתי ברעיונות שונים ולמדתי מה עובד טוב מול קהל ומה פחות. בסופו של דבר החלטתי ליצור מערכת משלי, שתשלב במקום אחד את הכלים שאני עצמי רציתי להשתמש בהם.</p>
-    <p>המערכת היא תוצאה של תקופה ארוכה של פיתוח, ניסויים ושיפורים, במטרה ליצור כלי פשוט לשימוש מצד אחד, אך עשיר ביכולות מצד שני.</p>
-    <p>היום אני משתמש בה בעצמי ומשתף אותה בחינם עם כל מי שמוביל קבוצה, מעביר פעילות או עומד מול קהל.</p>
-    <p style="margin-bottom:0;">המערכת ממשיכה להתפתח כל הזמן, ואם יש לכם רעיון, צורך או הצעה לשיפור — אשמח מאוד לשמוע.</p>
+    <p>מתוך הניסיון הזה נולד QuizPlay. במשך השנים התנסיתי בהרבה פתרונות ולמדתי מה עובד טוב מול קהל ומה פחות, ובסוף החלטתי לבנות כלי משלי — כזה שאני עצמי רוצה להשתמש בו: פשוט לשימוש מצד אחד, ועשיר ביכולות מצד שני.</p>
+    <p style="margin-bottom:0;">היום אני משתמש בו בעצמי ומשתף אותו בחינם עם כל מי שמוביל קבוצה, מעביר פעילות או עומד מול קהל. QuizPlay הוא חלק ממשפחת הכלים <b>yopoy</b>, והוא ממשיך להתפתח כל הזמן.</p>
   </div>
 
-  <h2>🚀 שלושת הכלים</h2>
-  <div style="display:flex; flex-direction:column; gap:12px;">
-    <div style="background:rgba(46,196,182,.1); border-radius:14px; padding:16px 18px;">
-      <div style="font-size:19px; font-weight:800; color:var(--teal);">🎬 מצגת</div>
-      <div style="margin-top:5px;">תמונות עם מוזיקה, כיתובים מתחלפים, מעברים רכים ואפקטים על המסך (שלג, גשם, זיקוקים, לבבות ועוד). מצגת מרשימה בתוך דקות — לפתיחת שיעור, טקס, יום שיא או מסיבת סיום.</div>
+  <!-- ===== הרעיון בקצרה (הלב) ===== -->
+  <h2>⚡ הרעיון בקצרה</h2>
+  <div class="pitch">
+    <p class="big">מאפיינים את הקבוצה בכמה לחיצות, וה-AI בונה לכם חידון שלם <span>תוך כ-5 דקות</span>. בלחיצה נוספת אפשר לשתף אותו עם מישהו אחר.</p>
+    <p style="margin:0; font-size:16px; color:var(--ink-dim);">וכל מה שהופך חידון לחוויה — החיזוקים האישיים, תחרות הקבוצות, רגעי השיא, היציבות בזמן תקלה — פשוט קורה מאליו, <b style="color:var(--ink);">מתחת למכסה המנוע</b>. אתם לא צריכים להכיר את זה כדי ליהנות ממנו. מבחוץ זה פשוט; מבפנים זה עשיר.</p>
+  </div>
+
+  <!-- ===== מה מיוחד ===== -->
+  <h2>✨ מה מיוחד ב-QuizPlay</h2>
+  <p style="color:var(--ink-dim); margin:4px 0 0;">אם תרצו להציץ מתחת למכסה — הנה מה שקורה שם, בלי שתצטרכו לגעת בזה:</p>
+  <div class="special">
+    <div class="sp-box">
+      <div class="t">🟢 קל מבחוץ</div>
+      <ul>
+        <li>חידון שלם ב-AI תוך דקות — בכל כלי AI שתבחרו</li>
+        <li>שמירה אוטומטית: בכל יציאה הכול נשמר בדיוק, בלי כפתור "שמירה"</li>
+        <li>שיתוף בלחיצה — והמקבל מקבל עותק עצמאי משלו</li>
+      </ul>
     </div>
-    <div style="background:rgba(46,196,182,.1); border-radius:14px; padding:16px 18px;">
-      <div style="font-size:19px; font-weight:800; color:var(--teal);">🧠 חידון חי</div>
-      <div style="margin-top:5px;">המשתתפים עונים מהטלפון, והשאלות על הלוח הגדול. רגעי שיא, רצפים, תחרות בין קבוצות, מוזיקה ואפקטי קול — וחידון שלם אפשר ליצור ב-AI תוך דקה.</div>
+    <div class="sp-box">
+      <div class="t">❤️ חוויה חברתית</div>
+      <ul>
+        <li>חיזוקים אישיים אוטומטיים — גם השקטים מקבלים עידוד, לא רק טבלת מובילים</li>
+        <li>רגעי-לוח מדי כמה שאלות — מרימים את כל העיניים מהטלפון אל המסך המשותף</li>
+        <li>תחרות קבוצות (לא רק יחידים) ורגעי שיא: "מלך הרצף", "התשובה הכי מהירה"</li>
+      </ul>
     </div>
-    <div style="background:rgba(46,196,182,.1); border-radius:14px; padding:16px 18px;">
-      <div style="font-size:19px; font-weight:800; color:var(--teal);">🎬🧠 מצגת + חידון</div>
-      <div style="margin-top:5px;">שני הכלים בדף אחד עם מעבר בלחיצה. מתחילים במצגת, עוברים לחידון, וחוזרים — בלי לעבור בין תוכנות ובלי לאבד דבר.</div>
+    <div class="sp-box">
+      <div class="t">🛡️ עמיד לתקלות</div>
+      <ul>
+        <li>מנחה שהתנתק ממשיך מכל מכשיר — הניקוד נשמר</li>
+        <li>משתתף שיצא חוזר לאותו משחק — הניקוד שלו נשמר</li>
+        <li>בתקלת-רשת המשתתפים מתבקשים להמתין, ומובהר שזו הרשת ולא החידון</li>
+      </ul>
+    </div>
+    <div class="sp-box">
+      <div class="t">🆓 חופשי ובטוח</div>
+      <ul>
+        <li>חינם לגמרי — בלי פרסומות ובלי איסוף מידע</li>
+        <li>עברית מלאה, מימין לשמאל כמו שצריך</li>
+        <li>משתתפים נכנסים בלי הרשמה ובלי אפליקציה — רק סורקים</li>
+      </ul>
     </div>
   </div>
 
-  <h2 class="tool-head quiz">🧠 חידון</h2>
-  <h3 class="sub-head quiz">למה זה עובד</h3>
-  <div class="card">
-    חידון חי הופך כל אדם בקהל למשתתף פעיל. במקום שאחד שואל ואחד עונה — כולם עונים בו-זמנית מהטלפון, השאלות מוצגות על הלוח הגדול, והניקוד עולה בזמן אמת. רגעי שיא ורצפים קופצים על המסך, אפשר לחלק לקבוצות ולנהל תחרות, ומוזיקה ואפקטי קול מלווים את הדרך. בכיתה, במסיבה או בערב גיבוש — זה מייצר אנרגיה, צחוק, ורצון אמיתי לדעת את התשובה.
-  </div>
+  <!-- ===== המדריך עצמו ===== -->
+  <h2 class="banner-head">🧠 איך משתמשים</h2>
 
-  <h3 class="sub-head quiz">הכניסה</h3>
+  <h3>🚪 הכניסה</h3>
   <div class="card">
     <p style="margin-top:0;">אפשר לעבוד בשתי דרכים:</p>
-    <p><b style="color:var(--gold);">התחברות עם Google</b> — החידונים נשמרים לחשבון שלכם, נגישים מכל מחשב, ואפשר לשתף אותם ולפרסם בספרייה.</p>
-    <p><b style="color:var(--gold);">כניסה כאורח</b> — אפשר לבנות ולשחק, אבל החידון לא נשמר ולא ניתן לשתף. מתאים לניסיון ראשון או לפעילות חד-פעמית. בסוף החידון יש הזדמנות להתחבר ולשמור.</p>
+    <p><b>התחברות עם Google</b> — החידונים נשמרים לחשבון שלכם, נגישים מכל מחשב, ואפשר לשתף אותם ולפרסם בספרייה.</p>
+    <p style="margin-bottom:0;"><b>כניסה כאורח</b> — אפשר לבנות ולשחק, אבל החידון לא נשמר ולא ניתן לשתף. מתאים לניסיון ראשון או לפעילות חד-פעמית. בסוף החידון תהיה הזדמנות להתחבר ולשמור.</p>
+    <div class="tip">ההתחברות עם Google גם שומרת על המערכת בטוחה ואמינה (מפני שימוש לרעה ובוטים) — ולכן השמירה והספרייה זמינות רק למשתמש רשום.</div>
   </div>
 
-  <h3 class="sub-head quiz">יצירת חידון</h3>
+  <h3>✏️ יצירת חידון</h3>
   <div class="card">
-    <p style="margin-top:0;">נותנים שם לחידון, מגדירים כמה שניות לכל שאלה, ומוסיפים שאלות — לכל אחת 2 עד 4 תשובות, עם סימון התשובה הנכונה בעיגול הירוק. העבודה נשמרת אוטומטית תוך כדי.</p>
-    <p>מעבר לשאלות, אפשר להפוך את החידון לחוויה: לחלק את המשתתפים ל-<b>קבוצות</b> (2, 3 או 4) עם שמות משלהן ולנהל תחרות קבוצתית, לבחור <b>תמונת רקע</b> מגלריה מוכנה או מהמחשב, ולהוסיף <b>מוזיקת רקע</b> שתתנגן במהלך החידון. כל אלה נמצאים תחת "⚙️ אפשרויות נוספות" ואינם חובה.</p>
+    <p style="margin-top:0;">נותנים שם לחידון, מגדירים כמה שניות לכל שאלה, ומוסיפים שאלות — לכל אחת 2 עד 4 תשובות, עם סימון התשובה הנכונה בעיגול הירוק. <b>העבודה נשמרת אוטומטית תוך כדי</b>, ואם תצאו ותחזרו — הכול יחכה לכם בדיוק כמו שהשארתם.</p>
+    <p style="margin-bottom:0;">אפשר גם לחלק את המשתתפים ל<b>קבוצות</b> (2, 3 או 4) עם שמות משלהן ולנהל תחרות קבוצתית — זו החלטה על אופי המשחק, ולכן היא חלק מהגדרת המבנה (לצד השם והזמן).</p>
     <div class="tip">לפני שמשחקים עם קהל, אפשר ללחוץ <b>"👁️ בדיקה"</b> ולעבור על החידון לבד — רואים בדיוק איך הוא ייראה, בלי שאף אחד צריך להצטרף. שאלות ותשובות קצרות עובדות הכי טוב: קל לקרוא אותן על המסך הגדול ובטלפון, והמהירות מודדת ידע ולא זמן קריאה.</div>
   </div>
 
-  <h3 class="sub-head quiz">יצירה באמצעות בינה מלאכותית</h3>
+  <h3>🤖 יצירה באמצעות בינה מלאכותית</h3>
   <div class="card">
-    קצרים בזמן? המערכת בונה עבורכם חידון שלם כמעט לבד. בוחרים כמה הגדרות (מסלול לימודי או חברתי, נושא, שכבת גיל ומטרה), והמערכת מכינה פרומפט מדויק שכבר כולל את כל הכללים לחידון איכותי וקריא. מעתיקים אותו לכלי AI לבחירתכם (ChatGPT, Claude, Gemini ועוד), מדביקים בחזרה את התשובה — והשאלות נכנסות למערכת אוטומטית, מוכנות לשחק. אין צורך לנסח, לעצב או להתאים.
+    קצרים בזמן? QuizPlay בונה עבורכם חידון שלם כמעט לבד. בוחרים כמה הגדרות שמאפיינות את הקבוצה (מסלול לימודי או חברתי, נושא, שכבת גיל ומטרה), והמערכת מכינה פרומפט מדויק שכבר כולל את כל הכללים לחידון איכותי וקריא. מעתיקים אותו לכלי AI לבחירתכם (ChatGPT, Claude, Gemini ועוד), מדביקים בחזרה את התשובה — והשאלות נכנסות אוטומטית, מוכנות לשחק. אין צורך לנסח, לעצב או להתאים. רוצים חידון על תוכן ספציפי? אפשר להוסיף <b>הקשר קצר</b> (כמה מילים על החברה או האירוע, נושא או דגש), ואם יש לכם קובץ מידע — מסמנים שתצרפו אותו בכלי ה-AI, וה-AI בונה את השאלות על בסיסו. כל התהליך — דקות ספורות.
   </div>
 
-  <h3 class="sub-head quiz">🎮 הפעלת החידון</h3>
+  <h3>🎮 הפעלת החידון</h3>
   <div class="card">
+    <p style="margin-top:0;"><b>לפני המשחק</b> אפשר לבחור <b>תמונת רקע</b> (מגלריה מוכנה או מהמכשיר) ו<b>מוזיקת רקע</b> שילוו את ההצגה. הם מלווים את הרגע ואינם נשמרים עם החידון — ובמהלך המשחק אפשר לכבות ולהחזיר אותם בלחיצה.</p>
     <ol>
-      <li>לוחצים <b>▶️ משחק</b>. המערכת מציגה קוד משחק וקוד QR.</li>
+      <li>לוחצים <b>▶️ משחק</b>. מופיעים קוד משחק וקוד QR.</li>
       <li>המשתתפים סורקים את ה-QR או מקלידים את הקוד — בלי הרשמה ובלי אפליקציה.</li>
       <li>כשכולם הצטרפו — לוחצים <b>מתחילים</b>.</li>
     </ol>
-    <p><b>במהלך החידון:</b> כל שאלה מוצגת על המסך הגדול, והמשתתפים עונים מהטלפון שלהם. הניקוד מתגמל גם דיוק וגם מהירות — מי שעונה נכון ומהר צובר יותר, ויש בונוס על <b>רצף</b> תשובות נכונות. בין השאלות קופצים רגעי שיא ("התשובה הכי מהירה", "מלך הרצף"), ומדי 4 שאלות יש הפסקת ביניים עם סטטיסטיקה שמרימה את כל העיניים מהטלפון אל המסך. מוזיקה ואפקטי קול מלווים את הרגעים הגדולים, ובסיום מגיע פודיום מנצח עם השיאים והקבוצה המובילה.</p>
+    <p><b>במהלך החידון:</b> כל שאלה על המסך הגדול, והמשתתפים עונים מהטלפון. הניקוד מתגמל דיוק <b>וגם</b> מהירות, ויש בונוס על <b>רצף</b> תשובות נכונות. בין השאלות קופצים רגעי שיא, ומדי כמה שאלות יש הפסקת-ביניים עם סטטיסטיקה שמרימה את כל העיניים מהטלפון אל המסך. לאורך הדרך המערכת שולחת <b>חיזוקים אישיים</b> למשתתפים — מילה טובה שמופיעה על המסך של מי שהתקדם, צדק בשאלה קשה או שמר על רצף — כך שגם השקטים מרגישים שרואים אותם.</p>
+    <p style="margin-bottom:0;"><b>בסיום</b> מגיע פודיום חגיגי עם השיאים והקבוצה המובילה — סיכום קליל ושמח, לא דוח כבד.</p>
     <div class="warn">קוד המשחק נפרד מההתחברות, כך שאף משתתף לא רואה את השאלות מראש.</div>
   </div>
 
-  <h3 class="sub-head quiz">📂 החידונים שלי</h3>
+  <h3>🔄 גם כשמשהו משתבש</h3>
   <div class="card">
-    ליד כל חידון יש: <b>▶️ משחק</b> (הפעלה עם משתתפים), <b>👁️ בדיקה</b> (הרצה ללא משתתפים — אתם עונים בעצמכם), <b>✏️ עריכה</b>, ו-<b>🗑️ מחיקה</b>. מי שרק רוצה להציג חידון קיים לוחץ "משחק" ומתחיל מיד.
+    QuizPlay בנוי להחזיק מעמד גם ברגעים לא צפויים:
+    <ul>
+      <li><b>אם הלפטופ שלכם נסגר או הבטריה מתה</b> באמצע משחק — אפשר להמשיך את אותו משחק מכל מכשיר אחר, והניקוד נשמר.</li>
+      <li><b>אם משתתף יצא או איבד רשת</b> — הוא סורק שוב את ה-QR וחוזר לאותו משחק; הניקוד שלו נשמר והוא ממשיך מהשאלה הבאה.</li>
+      <li><b>אם יש תקלת-רשת רגעית</b> — המשתתפים רואים הודעה לבקשת המתנה, עם הבהרה שזו הרשת ולא החידון, כדי שאף אחד לא יישאר מבולבל.</li>
+    </ul>
   </div>
 
-  <h3 class="sub-head quiz">🔗 שיתוף</h3>
+  <h3>📂 החידונים שלי</h3>
   <div class="card">
-    <p style="margin-top:0;">אחרי שמירת חידון אפשר לשתף אותו. <b>המקבל מקבל עותק עצמאי משלו</b> — כל שינוי שלו לא משפיע על המקור שלכם.</p>
+    <p style="margin-top:0;">כל החידונים מסודרים במקום אחד, עם הפרדה בין <b>טיוטות</b> (בעבודה) ל<b>מוכנים</b> — כך שתמיד ברור מה מוכן להפעלה.</p>
+    <p style="margin-bottom:0;">ליד כל חידון: <b>▶️ משחק</b> (הפעלה עם משתתפים), <b>👁️ בדיקה</b> (הרצה לבד — אתם עונים בעצמכם), <b>✏️ עריכה</b>, ו-<b>🗑️ מחיקה</b>. מי שרק רוצה להציג חידון קיים — לוחץ "משחק" ומתחיל מיד.</p>
+  </div>
+
+  <h3>🔗 שיתוף</h3>
+  <div class="card">
+    <p style="margin-top:0;">אחרי שמירה אפשר לשתף חידון. <b>המקבל מקבל עותק עצמאי משלו</b> — כל שינוי שלו לא משפיע על המקור שלכם.</p>
     <ul>
-      <li><b>🔗 יצירת קישור שיתוף</b> — נוצר קישור (ומועתק בלחיצה אחת) שאפשר לשלוח לכל אחד. כל מי שמחזיק בו מקבל עותק.</li>
+      <li><b>🔗 יצירת קישור שיתוף</b> — נוצר קישור (ומועתק בלחיצה) שאפשר לשלוח לכל אחד. מי שמחזיק בו מקבל עותק.</li>
       <li><b>🔒 שיתוף עם אנשים מסוימים</b> — מגדירים כתובות מייל, ורק מי שמחובר עם מייל מהרשימה יכול לקבל.</li>
       <li><b>📚 פרסום בספרייה הציבורית</b> — כדי שאחרים יוכלו למצוא ולהשתמש.</li>
     </ul>
-    <div class="tip">כל סוג שיתוף אפשר לבטל בכל רגע (X), בלי למחוק את החידון.</div>
+    <div class="tip">כל סוג שיתוף אפשר לבטל בכל רגע, בלי למחוק את החידון.</div>
   </div>
 
-  <h3 class="sub-head quiz">📚 ספריית החידונים</h3>
+  <h3>📚 ספריית החידונים</h3>
   <div class="card">
-    בספרייה אפשר לחפש חידונים לפי נושא, לראות כמה השתמשו בהם ואיך דירגו אותם, ולהעתיק חידון לרשימה שלכם בלחיצה אחת.
+    בספרייה אפשר לחפש חידונים לפי נושא, לראות כמה השתמשו בהם ואיך דירגו אותם, ולהעתיק חידון לרשימה שלכם בלחיצה אחת — בסיס מצוין להתחיל ממנו.
   </div>
 
-  <h2 class="tool-head montage">🎬 מצגת</h2>
-  <h3 class="sub-head montage">למה להשתמש</h3>
-  <div class="card">
-    מצגות רבות נבנות עבור אירוע אחד ונשארות במחשב. כאן אפשר ליצור מצגת חדשה בתוך דקות, גם בלי ניסיון קודם — והכלי מתאים במיוחד למסיבות, ימי הולדת, אירועים משפחתיים, ערבי גיבוש, טקסים וימי שיא שבהם רוצים ליצור <b>חוויה</b>, לא רק להציג מידע. לפעמים רוצים פשוט להקרין תמונות יפות ברקע, להציג רגעים מהפעילות, או לפתוח אירוע בתמונה מסקרנת. כל זה בלי PowerPoint ובלי תוכנות עריכה — משלבים תמונות, מוזיקה, כיתובים ואפקטים, והכול רץ מהדפדפן.
-  </div>
-
-  <h3 class="sub-head montage">מה אפשר להוסיף</h3>
-  <div class="card">
-    <ul>
-      <li><b>📸 תמונות</b> — הבסיס. מעלים מהמחשב ויוצרים מצגת מתחלפת. (זה השלב היחיד שחובה.)</li>
-      <li><b>🎵 מוזיקה</b> — מהגלריה או קובץ משלכם, מתנגנת ברקע ומוסיפה אווירה.</li>
-      <li><b>💬 כיתובים</b> — כותרות, משפטי השראה, ברכות, הקדשות או שאלות לדיון. כמה כיתובים מתחלפים במהלך המצגת.</li>
-      <li><b>✨ מעברים בין תמונות</b> — דהייה, החלקה, התקרבות, התרחקות, והחלקה מלמעלה או מלמטה. אפשר לבחור אחד קבוע, או כמה שיתחלפו.</li>
-      <li><b>🎆 אפקטים על המסך</b> — שלג, גשם, זיקוקים, לבבות, בועות, עלים, כוכבים, נצנוצים וקונפטי. בוחרים אחד או כמה שירוצו יחד, ואפשר להחליף גם תוך כדי ההצגה.</li>
-    </ul>
-  </div>
-
-  <h3 class="sub-head montage">הפעלה</h3>
-  <div class="card">
-    בוחרים תמונות, מוסיפים מוזיקה/כיתובים/אפקטים (לא חובה), ולוחצים <b>התחלת המצגת</b>. תוך כדי אפשר לעצור ולהמשיך, להשתיק מוזיקה, להחליף אפקטים, לקפוץ לסיום, ולחזור לעריכה.
-  </div>
-
-  <h2 class="tool-head combo">🎬🧠 מצגת + חידון</h2>
-  <h3 class="sub-head combo">למה זה קיים</h3>
-  <div class="card">
-    בפעילויות רבות משתמשים ביותר מכלי אחד: פותחים במצגת, מסבירים, שואלים, מפעילים חידון, וחוזרים להסבר. בדרך כלל זה דורש מעבר בין כמה תוכנות. המצב המשולב מרכז את הכול במסך אחד, והמעבר בין הכלים בלחיצה אחת — בלי לאבד את מה שהכנתם ובלי להפריע לרצף הפעילות.
-  </div>
-
-  <h3 class="sub-head combo">דוגמאות לשימוש</h3>
-  <div class="card">
-    <ul>
-      <li><b>📚 פתיחת שיעור</b> — תמונות או שאלה מעוררת חשיבה, ואז חידון קצר.</li>
-      <li><b>📝 סיכום נושא</b> — מצגת מסכמת ואחריה חידון לבדיקת הבנה.</li>
-      <li><b>🎓 מסיבת סיום</b> — מצגת תמונות ואחריה חידון על הכיתה, המורים והחוויות.</li>
-      <li><b>🎉 יום שיא</b> — שילוב של תוכן, חידון ופעילות באותו רצף.</li>
-    </ul>
-    <div class="tip">איך עובדים: מכינים מצגת, מכינים חידון, פותחים את כלי מצגת + חידון, ועוברים ביניהם בסרגל העליון במהלך הפעילות.</div>
-  </div>
-
+  <!-- ===== דברים שכדאי לדעת ===== -->
   <h2>💡 דברים שכדאי לדעת</h2>
   <div class="card">
     <ul>
-      <li><b>תמונות ומוזיקה לא נשמרות.</b> מטעמי אבטחת הדפדפן, צריך לבחור אותן מחדש בכל פתיחה. זה תקין.</li>
+      <li><b>רקע ומוזיקה לא נשמרים.</b> מטעמי אבטחת הדפדפן צריך לבחור אותם מחדש בכל פתיחה. זה תקין — והם נבחרים ממילא רגע לפני המשחק.</li>
       <li><b>חידונים נשמרים רק עם חשבון Google</b> (לא במצב אורח).</li>
       <li><b>הכול עובד מהדפדפן.</b> הכי טוב בכרום במחשב.</li>
     </ul>
   </div>
 
-  <p style="text-align:center; font-size:17px; color:var(--gold); margin:28px 0 10px;">מאחלים לכם פעילויות מהנות, מלאות השתתפות, סקרנות וחיוכים. 🎉</p>
+  <!-- ===== סיום + הזמנה + רעיון ===== -->
+  <p style="text-align:center; font-size:17px; color:var(--gold); margin:30px 0 10px;">מאחל לכם פעילויות מהנות, מלאות השתתפות, סקרנות וחיוכים. 🎉</p>
+
+  <div class="card" style="text-align:center;">
+    <p style="margin-top:0;">ניסיתי לכסות את הצרכים מתוך ניסיון של שנים בשטח. אם חסר לכם משהו חשוב — מוזמנים לפנות אליי, ואשקול להוסיף בגרסאות הבאות.</p>
+    <a class="idea-btn" href="mailto:yanivhpro@gmail.com?subject=רעיון%20ל-QuizPlay">💡 יש לי רעיון</a>
+  </div>
 
   <div style="text-align:center;">
-    <a class="back" href="index.html">→ חזרה לבחירת הכלים</a>
+    <a class="back" href="teacherquiz.html">→ חזרה ל-QuizPlay</a>
   </div>
+
 </div>
 </body>
 </html>
