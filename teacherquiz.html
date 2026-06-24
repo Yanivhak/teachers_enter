@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v150.2 - הקראה-לחדר: שני שיפורים לפי משוב. (1) הקראה תלוית-מסך — במסך-השאלה הכפתור מקריא את השאלה (כמו קודם), ובמסך-החשיפה הוא מקריא "התשובה הנכונה היא [X]" (לפי הדגל revealed). הקראת כל-התשובות בוטלה (בלבול); רק הנכונה, ורק בחשיפה. (2) הכפתור הוצא מתפריט-הבקרה המתקפל (☰) אל השורה-הקבועה התמיד-גלויה, מוגדל ובולט (טורקיז) — לחיצה אחת בלי לפתוח תפריט. נשאר אופציונלי וכבוי כברירת-מחדל. אומת: node --check + איזון-תגיות. דורש בדיקה-חוזרת של יניב (אודיו).
+  v150.1 - תיקון הקראה-לחדר (ערוץ 1): שלושה באגים שדווחו בבדיקה חיה. (1) "צעק נקודה-נקודה": המפריד בין הפריטים היה '. ' והקול העברי הקריא את הנקודות בקול. (2) "הקריא מה שלא על המסך": ערוץ 1 הקריא שאלה + תשובות, אבל התשובות לא על לוח-המארח (הן בטלפוני המשתתפים) — שונה כך שערוץ 1 מקריא רק את השאלה (מה שעל הלוח); התשובות יוקראו בערוץ 2 (טלפון המשתתף, v151) שם הן על המסך. כך גם נעלם המפריד והנקודות. (3) "התחרפן אחרי כמה לחיצות": באג ידוע של speechSynthesis בכרום — cancel ואז speak מיידי משאיר תור פגום ומקריא טקסט ישן. תוקן עם cancel + השהיה קצרה (80ms) לפני speak. אומת: node --check + איזון-תגיות. דורש בדיקה-חוזרת של יניב על המחשב.
   v150 - הקראה לחדר (ערוץ 1 — נגישות, צד-מחשב): מנוע TTS דרך speechSynthesis של הדפדפן, בוחר קול עברי (he-IL) מ-getVoices עם טיפול ב-voiceschanged. אם אין קול עברי במכשיר — הכפתור לא מופיע (בלי ג'יבריש), בדיקה פר-מכשיר בזמן-אמת. במסך-ההכנה (pregame) נוסף מתג "🔊 הקראה לחדר", off כברירת-מחדל, ליד מתג-המהירות. דלוק ← במשחק מופיע כפתור 🔊 בסרגל-המארח (host-menu); לחיצה מקריאה את השאלה + התשובות הנוכחיות לחדר דרך רמקול-המחשב, פעם אחת (cancel לפני כל הקראה; הקראה קודמת נעצרת אוטומטית בשאלה הבאה). נשמר ל-hostState/roomTtsOn ונקרא בחזרה בשחזור (v127). אפס Firebase, אפס נגיעה בצד-התלמיד — הקראת-התלמידים (ערוץ 2, חי) היא v151. אומת: node --check + איזון-תגיות. דורש אימות-מכשיר: יניב בודק על המחשב שאיתו מנחה שהקול העברי נשמע.
   v149 - מתג כיבוי בונוס-מהירות (נגישות): במסך-ההכנה (pregame) נוסף מתג "⚡ בונוס מהירות", דלוק כברירת-מחדל. כבוי ← כל תשובה נכונה שווה 1000 קבוע (בלי רכיב-מהירות), בונוס-הרצף ללא שינוי. ההגדרה פר-משחק (לא נשמרת על החידון — צורך תלוי-קהל). נקראת ב-hostStart מ-#pg-speed-toggle, נשמרת ל-games/{code}/hostState/speedBonusOn ונקראת בחזרה בשחזור (v127) כך שהניקוד עקבי לפני/אחרי נפילת-מארח. כשכבוי: באנר "🚀 שיא מהירות" + הזיקוקים/הצליל מוסתרים, ורמז-השחקן בטלפון מתחלף ל"קחו את הזמן" (הדגל נוסע במנת-q כ-speedOn). גם כרטיס-הסיום "התשובה הכי מהירה" מגודר (לא מוצג כשכבוי). מסלול הבדיקה (solo) לא הושפע — תמיד מהיר. אומת: node --check + איזון-תגיות + בדיקת-לוגיקה.
   v148 - גישה לספרייה הציבורית מ"החידונים שלי": עד כה תפריט-הניווט הוסתר לגמרי במסך "החידונים שלי" (ההנחה: לכל כרטיס תפריט-⋯ משלו + כפתור "בנייה" בולט), אבל זה גם הסתיר משם את "📚 ספרייה ציבורית" — לא הייתה דרך להגיע לספרייה מהרשימה. עכשיו התפריט מוצג גם שם, עם: 📚 ספרייה ציבורית · 🎬 יציאה למצגת · 🚪 יציאה מהחשבון — בלי "עריכת החידון" (לכל כרטיס יש כפתור עריכה משלו) ובלי "החידונים שלי" (כבר כאן). אומת: node --check + איזון-תגיות + בדיקת-דפדפן
@@ -481,7 +483,7 @@ input:focus{border-color:var(--gold); outline:none;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v148</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v150.2</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -1018,13 +1020,13 @@ input:focus{border-color:var(--gold); outline:none;}
     <button onclick="hostSkip()">⏭️ הבא</button>
     <button onclick="hostToggleMusic()" id="music-toggle" style="display:none;">🔇 השתקת מוזיקה</button>
     <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🙈 הסתרת רקע</button>
-    <button onclick="hostSpeakRoom()" id="host-speak-btn" style="display:none;">🔊 הקראת השאלה</button>
     <button onclick="toggleReinforce()" id="reinforce-toggle">🌟 חיזוקים פעילים</button>
     <button onclick="hostJumpFinish()">🏁 סיום</button>
   </div>
   <!-- השורה הקבועה התחתונה — תמיד גלויה: מונה, קוד-חזרה, וכפתור פתיחת התפריט -->
   <div id="host-menu-bar">
     <span id="presence-counter" style="display:none;"></span>
+    <button onclick="hostSpeakRoom()" id="host-speak-btn" style="display:none; font-family:'Heebo'; font-size:16px; font-weight:800; color:#06231f; background:var(--teal); border:none; border-radius:11px; padding:11px 20px; cursor:pointer;">🔊 הקראה</button>
     <button id="return-code-btn" onclick="showReturnQR()" style="font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:9px 14px; cursor:pointer;">📲 קוד חזרה</button>
     <button id="host-menu-toggle" onclick="toggleHostMenu()" title="פתיחה/סגירה של תפריט הבקרה">☰ תפריט <span class="chev">▾</span></button>
   </div>
@@ -3975,15 +3977,24 @@ function refreshHostSpeakBtn(){
   const b = $('host-speak-btn'); if (!b) return;
   b.style.display = (roomTtsOn && ttsVoice && window.speechSynthesis) ? 'inline-block' : 'none';
 }
-// v150: הקראת השאלה + התשובות הנוכחיות לחדר (פעם אחת; מבטל הקראה קודמת)
+// v150.2: הקראה תלוית-מסך — מסך-שאלה מקריא את השאלה; מסך-חשיפה (revealed) מקריא "התשובה הנכונה היא [X]". cancel + השהיה קצרה מונעים באג cancel/speak של כרום.
 function hostSpeakRoom(){
   if (!window.speechSynthesis || !ttsVoice || !curQ) return;
   try {
-    speechSynthesis.cancel();
-    const parts = [curQ.text]; cleanAnswers(curQ).forEach(o => parts.push(o.a));
-    const u = new SpeechSynthesisUtterance(parts.join('. '));
+    let text;
+    if (revealed){
+      const ans = curQ.answers ? curQ.answers[curQ.correct] : '';
+      if (!ans) return;
+      text = 'התשובה הנכונה היא ' + ans;
+    } else {
+      if (!curQ.text) return;
+      text = curQ.text;
+    }
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
     u.lang = 'he-IL'; u.voice = ttsVoice;
-    speechSynthesis.speak(u);
+    setTimeout(function(){ try { synth.speak(u); } catch(e){} }, 80);
   } catch(e){}
 }
 if (window.speechSynthesis){ loadTtsVoice(); speechSynthesis.onvoiceschanged = loadTtsVoice; }
