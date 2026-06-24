@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v150 - הקראה לחדר (ערוץ 1 — נגישות, צד-מחשב): מנוע TTS דרך speechSynthesis של הדפדפן, בוחר קול עברי (he-IL) מ-getVoices עם טיפול ב-voiceschanged. אם אין קול עברי במכשיר — הכפתור לא מופיע (בלי ג'יבריש), בדיקה פר-מכשיר בזמן-אמת. במסך-ההכנה (pregame) נוסף מתג "🔊 הקראה לחדר", off כברירת-מחדל, ליד מתג-המהירות. דלוק ← במשחק מופיע כפתור 🔊 בסרגל-המארח (host-menu); לחיצה מקריאה את השאלה + התשובות הנוכחיות לחדר דרך רמקול-המחשב, פעם אחת (cancel לפני כל הקראה; הקראה קודמת נעצרת אוטומטית בשאלה הבאה). נשמר ל-hostState/roomTtsOn ונקרא בחזרה בשחזור (v127). אפס Firebase, אפס נגיעה בצד-התלמיד — הקראת-התלמידים (ערוץ 2, חי) היא v151. אומת: node --check + איזון-תגיות. דורש אימות-מכשיר: יניב בודק על המחשב שאיתו מנחה שהקול העברי נשמע.
   v149 - מתג כיבוי בונוס-מהירות (נגישות): במסך-ההכנה (pregame) נוסף מתג "⚡ בונוס מהירות", דלוק כברירת-מחדל. כבוי ← כל תשובה נכונה שווה 1000 קבוע (בלי רכיב-מהירות), בונוס-הרצף ללא שינוי. ההגדרה פר-משחק (לא נשמרת על החידון — צורך תלוי-קהל). נקראת ב-hostStart מ-#pg-speed-toggle, נשמרת ל-games/{code}/hostState/speedBonusOn ונקראת בחזרה בשחזור (v127) כך שהניקוד עקבי לפני/אחרי נפילת-מארח. כשכבוי: באנר "🚀 שיא מהירות" + הזיקוקים/הצליל מוסתרים, ורמז-השחקן בטלפון מתחלף ל"קחו את הזמן" (הדגל נוסע במנת-q כ-speedOn). גם כרטיס-הסיום "התשובה הכי מהירה" מגודר (לא מוצג כשכבוי). מסלול הבדיקה (solo) לא הושפע — תמיד מהיר. אומת: node --check + איזון-תגיות + בדיקת-לוגיקה.
   v148 - גישה לספרייה הציבורית מ"החידונים שלי": עד כה תפריט-הניווט הוסתר לגמרי במסך "החידונים שלי" (ההנחה: לכל כרטיס תפריט-⋯ משלו + כפתור "בנייה" בולט), אבל זה גם הסתיר משם את "📚 ספרייה ציבורית" — לא הייתה דרך להגיע לספרייה מהרשימה. עכשיו התפריט מוצג גם שם, עם: 📚 ספרייה ציבורית · 🎬 יציאה למצגת · 🚪 יציאה מהחשבון — בלי "עריכת החידון" (לכל כרטיס יש כפתור עריכה משלו) ובלי "החידונים שלי" (כבר כאן). אומת: node --check + איזון-תגיות + בדיקת-דפדפן
   v147 - תיקון "פס שחור" בתחתית המסך במובייל: רקע הדף הוגדר על body כגרדיאנט בלבד, בלי background-color מוצק. הקיצור background: מאפס את צבע-הרקע ל-transparent, ולכן iOS צבע את אזור ה-home-indicator (מתחת ל-viewport) בשחור. נוסף צבע-רצפה מוצק על html,body השווה בדיוק לצבע התחתון של הגרדיאנט (var(--bg1) = #05080f), כך שהרצועה התחתונה נצבעת באותו כחול-כהה — מעבר חלק לגמרי, בלי שחור. גלובלי (כל המסכים).
@@ -765,9 +766,20 @@ input:focus{border-color:var(--gold); outline:none;}
       <label for="pg-speed-toggle" style="display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer; margin:0;">
         <span style="flex:1;">
           <span style="font-size:16px; font-weight:700; color:var(--ink);">⚡ בונוס מהירות</span>
-          <span id="pg-speed-desc" style="display:block; font-size:13px; color:var(--ink-dim); line-height:1.5; margin-top:3px;">תשובות מהירות מזכות בניקוד גבוה יותר</span>
+          <span id="pg-speed-desc" style="display:block; font-size:13px; color:var(--ink-dim); line-height:1.5; margin-top:3px;">תשובה מהירה מזכה בניקוד גבוה יותר</span>
         </span>
         <span class="spd-sw"><input type="checkbox" id="pg-speed-toggle" checked onchange="updateSpeedDesc()"><span class="spd-track"></span></span>
+      </label>
+    </div>
+
+    <!-- v150: מתג הקראה-לחדר (ערוץ 1) — צד-מארח, off כברירת-מחדל. נקרא ב-hostStart דרך #pg-roomtts-toggle. -->
+    <div style="margin:14px auto 0; max-width:430px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:14px 18px; text-align:right;">
+      <label for="pg-roomtts-toggle" style="display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer; margin:0;">
+        <span style="flex:1;">
+          <span style="font-size:16px; font-weight:700; color:var(--ink);">🔊 הקראה לחדר</span>
+          <span id="pg-roomtts-desc" style="display:block; font-size:13px; color:var(--ink-dim); line-height:1.5; margin-top:3px;">אין הקראה לחדר</span>
+        </span>
+        <span class="spd-sw"><input type="checkbox" id="pg-roomtts-toggle" onchange="updateRoomTtsDesc()"><span class="spd-track"></span></span>
       </label>
     </div>
 
@@ -1006,6 +1018,7 @@ input:focus{border-color:var(--gold); outline:none;}
     <button onclick="hostSkip()">⏭️ הבא</button>
     <button onclick="hostToggleMusic()" id="music-toggle" style="display:none;">🔇 השתקת מוזיקה</button>
     <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🙈 הסתרת רקע</button>
+    <button onclick="hostSpeakRoom()" id="host-speak-btn" style="display:none;">🔊 הקראת השאלה</button>
     <button onclick="toggleReinforce()" id="reinforce-toggle">🌟 חיזוקים פעילים</button>
     <button onclick="hostJumpFinish()">🏁 סיום</button>
   </div>
@@ -3732,6 +3745,7 @@ function setupPresence(code, pid){
 let players = {}, seq = 0, curQ = null, answers = {}, revealed = false, hostTimer = null, qIndex = -1, qShownAt = 0;
 let bestMs = Infinity, bestName = '', maxStreak = 0, streakKing = '';
 let speedBonusOn = true;   // v149: בונוס-מהירות בניקוד — דלוק כברירת-מחדל; נקבע ב-hostStart מהמתג ב-pregame
+let roomTtsOn = false, ttsVoice = null;   // v150: הקראה-לחדר (ערוץ 1) — off כברירת-מחדל; ttsVoice = הקול העברי או null
 let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
 
@@ -3943,10 +3957,40 @@ function toggleHostMenu(){
 function updateSpeedDesc(){   // v149: עדכון תיאור המתג לפי מצבו
   const t = $('pg-speed-toggle'), d = $('pg-speed-desc');
   if (!t || !d) return;
-  d.textContent = t.checked ? 'תשובות מהירות מזכות בניקוד גבוה יותר' : 'כל תשובה נכונה שווה ניקוד מלא — בלי לחץ שעון';
+  d.textContent = t.checked ? 'תשובה מהירה מזכה בניקוד גבוה יותר' : 'אין בונוס על מהירות — כל תשובה נכונה שווה ניקוד מלא';
 }
+function updateRoomTtsDesc(){   // v150: תיאור מתג ההקראה-לחדר
+  const t = $('pg-roomtts-toggle'), d = $('pg-roomtts-desc');
+  if (!t || !d) return;
+  d.textContent = t.checked ? 'כפתור 🔊 יופיע במשחק — לחיצה תקריא את השאלה לחדר' : 'אין הקראה לחדר';
+}
+// v150: טעינת הקול העברי (אסינכרוני — getVoices ריק בקריאה ראשונה, מתעדכן ב-voiceschanged)
+function loadTtsVoice(){
+  const vs = (window.speechSynthesis ? speechSynthesis.getVoices() : []);
+  ttsVoice = vs.find(v => (v.lang||'').toLowerCase().indexOf('he') === 0) || null;
+  refreshHostSpeakBtn();
+}
+// v150: הכפתור מופיע רק אם ההקראה-לחדר דלוקה ויש קול עברי במכשיר
+function refreshHostSpeakBtn(){
+  const b = $('host-speak-btn'); if (!b) return;
+  b.style.display = (roomTtsOn && ttsVoice && window.speechSynthesis) ? 'inline-block' : 'none';
+}
+// v150: הקראת השאלה + התשובות הנוכחיות לחדר (פעם אחת; מבטל הקראה קודמת)
+function hostSpeakRoom(){
+  if (!window.speechSynthesis || !ttsVoice || !curQ) return;
+  try {
+    speechSynthesis.cancel();
+    const parts = [curQ.text]; cleanAnswers(curQ).forEach(o => parts.push(o.a));
+    const u = new SpeechSynthesisUtterance(parts.join('. '));
+    u.lang = 'he-IL'; u.voice = ttsVoice;
+    speechSynthesis.speak(u);
+  } catch(e){}
+}
+if (window.speechSynthesis){ loadTtsVoice(); speechSynthesis.onvoiceschanged = loadTtsVoice; }
 function hostStart(){
   speedBonusOn = $('pg-speed-toggle') ? $('pg-speed-toggle').checked : true;   // v149: קריאת המתג לפני הצילום
+  roomTtsOn = $('pg-roomtts-toggle') ? $('pg-roomtts-toggle').checked : false;   // v150
+  refreshHostSpeakBtn();   // v150
   saveHostSnapshot();   // v127: צילום החידון + מצביע "משחק פעיל" לשחזור מכל מכשיר
   setupHostAlive(playCode);   // v129: סימון "המארח חי" לתלמידים
   $('host-menu').style.display = 'flex';
@@ -4282,6 +4326,7 @@ function nextQ(){
 
   seq++;
   curQ = quiz.questions[qIndex];
+  if (window.speechSynthesis) speechSynthesis.cancel();   // v150: עוצרים הקראה קודמת לפני השאלה הבאה
   const opts = cleanAnswers(curQ);
   $('hq-num').textContent = 'שאלה ' + (qIndex+1) + ' / ' + quiz.questions.length;
   $('hq-text').textContent = curQ.text;
@@ -4838,6 +4883,7 @@ function saveHostSnapshot(){
     fdb.ref('games/'+playCode+'/hostState/quiz').set(quiz).catch(()=>{});
     fdb.ref('games/'+playCode+'/hostState/editCode').set(editCode || '').catch(()=>{});
     fdb.ref('games/'+playCode+'/hostState/speedBonusOn').set(speedBonusOn).catch(()=>{});   // v149
+    fdb.ref('games/'+playCode+'/hostState/roomTtsOn').set(roomTtsOn).catch(()=>{});   // v150
     fdb.ref('teachers/'+myStoreKey+'/activeGame').set({ code: playCode, title: (quiz && quiz.title) || 'החידון', ts: Date.now() }).catch(()=>{});
   } catch(e){}
 }
@@ -4916,6 +4962,8 @@ function resumeHostGame(code){
     quiz = hs.quiz;
     editCode = hs.editCode || editCode;
     speedBonusOn = (hs.speedBonusOn !== false);   // v149: ברירת-מחדל דלוק (תאימות-לאחור)
+    roomTtsOn = !!hs.roomTtsOn;   // v150
+    refreshHostSpeakBtn();
     players = pr.players || {};
     seq = pr.seq || 0;
     bestMs = (pr.bestMs == null ? Infinity : pr.bestMs);
