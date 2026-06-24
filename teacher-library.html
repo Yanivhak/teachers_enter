@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   ספריית חידונים (yopoy) — changelog
+  v11 - ספירת שאלות אמיתיות בתצוגת הספרייה: עד כה הספירה ספרה גם שאלות ריקות (וערך 0 נפל בטעות לאורך-המערך). עכשיו מחושבת ישירות ממערך השאלות המסונכרן (realQCount) — שאלה ריקה לא נספרת, וחידון ללא תוכן אמיתי מראה "0 שאלות". (משלים את teacherquiz v146.)
   v10 - החלפת 2 ה-confirm הנייטיב (הסרה מהספרייה, דיווח) במודאל אישור כן/לא פנימי, זהה לזה שב-QuizPlay. מונע את חלון "Suppress dialogs" של הדפדפן (שמופיע אחרי כמה דיאלוגים נייטיב ברצף ויכול לחסום דיאלוגים אחרים). נוסף showConfirm + .confirm-ov + חותמת-גרסה גלויה. (ה-toast הפנימי כבר היה קיים — מעולם לא היו כאן alert נייטיב.) היסטוריית v7-v9 מתועדת בהערות פנימיות בקוד.
 -->
 <html lang="he" dir="rtl">
@@ -72,7 +73,7 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
      (מתבצעת רק בדף החידונים); לא-מחובר → תוכן מוסתר + הפניה לדף החידונים. תפריט ניווט:
      ➕ בניית חידון חדש (teacherquiz.html?new=1) · 🗂️ החידונים שלי (teacherquiz.html?list=1 — ?list=1 מקפיץ ישר לרשימה) · 🎬 יציאה למצגת.
      "ספרייה" לא בתפריט (אנחנו כאן). הסגנון זהה ל-nav-menu בקובץ teacherquiz.html. -->
-<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v10</div>
+<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v11</div>
 <!-- v7: שם-חשבון קבוע למעלה-במרכז, כמו בדף החידונים (נראה כשמחובר) -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -140,6 +141,8 @@ let myVotes = {};          // ההצבעות שלי: quizId -> 'like'|'dislike'
 let myReports = {};        // הדיווחים שלי: quizId -> true
 
 function $(id){ return document.getElementById(id); }
+// v11: ספירת שאלות ײאמיתיות׳ (לא ריקות) — מחושב ממערך השאלות המסונכרן.
+function realQCount(qs){ return (qs||[]).filter(q => (q.text && q.text.trim()) || (q.answers && q.answers.some(a => a && a.trim()))).length; }
 function emailToKey(e){ return e.trim().toLowerCase().replace(/[.#$\[\]\/@]/g, '_'); }
 function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2200); }
 // v10: מודאל אישור פנימי — מחליף confirm() הנייטיב. א-סינכרוני (callbacks). var (מורם) כדי שיהיה נגיש בכל קריאה ללא תלות ברצף האתחול.
@@ -267,7 +270,7 @@ function renderList(){
     card.querySelector('h3').textContent = q.title || 'חידון';
     card.querySelector('.meta').textContent = 'מאת ' + (q.ownerName || 'מורה');
     card.querySelector('.desc').textContent = q.description || '';
-    card.querySelector('.n-q').textContent = q.questionCount || (q.quiz && q.quiz.questions ? q.quiz.questions.length : 0);
+    card.querySelector('.n-q').textContent = (q.quiz && q.quiz.questions) ? realQCount(q.quiz.questions) : (q.questionCount || 0);
     card.querySelector('.n-d').textContent = q.downloads || 0;
     card.querySelector('.n-s').textContent = score(q);
 

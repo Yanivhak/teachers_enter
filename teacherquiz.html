@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v146 - שני תיקוני-ניסוח/תצוגה: (1) מסך ה-AI בעריכת חידון קיים — "שלב 4 — יצירת החידון" והכפתור "✓ צור חידון" התאימו את עצמם להקשר כמו הכותרת: בחידון עם תוכן הם עכשיו "עדכון החידון"/"✓ עדכן חידון" (quizHasRealContent), ובחידון ריק נשארים "יצירת/צור". הכותרת+כפתור הראשי כבר היו מותאי-הקשר — זה סגר את אי-העקביות האחרונה (למעלה "עריכה", למטה "צור"). (2) שורת-המטא בכרטיס ברשימה ("קוד X · N שאלות") — הקוד הלטיני והמספר התהפכו ויזואלית בגלל ערבוב עברית-לטינית (BIDI), והשורה נקראה הפוך ולא מובן; כל מקטע לטיני עוטף עכשיו ב-unicode-bidi:isolate (הקוד גם direction:ltr), אז השורה נקראת נכון. בנוסף תוקן דקדוק היחיד: "1 שאלות" → "שאלה". אומת: node --check + איזון-תגיות + בדיקת-דפדפן
+  v146 - (1) מסך ה-AI: "שלב 4 / ✓ צור חידון" מתאימים להקשר — בעריכה (יש תוכן) "עדכון החידון / ✓ עדכן חידון", בריק "יצירה/צור" כמו קודם. (2) ספירת שאלות ײאמיתיות׳ בלבד (realQCount): שאלה ריקה (שלד בלי טקסט ובלי תשובה) לא נספרת — בכרטיס ברשימה ובספרייה. חידון עם שלד ריק בלבד מראה "0 שאלות". (3) חסימת משחק לחידון ריק: כפתור משחק בכרטיס מושבת (חצי-שקוף) עם רמז כשאין שאלה אמיתית. (שיתוף כבר נחסם ע״י shareLibValidationError; העורך/לובי ע״י quizReady.) (4) הסרה אוטומטית מהספרייה הציבורית: חידון שהתרוקן ונמצא בספרייה — מוסר אוטומטית בשמירה (syncShareCopies), כי אסור לשתף תוכן ריק; ה-share המעודכן נכתב בחזרה ל-teachers/. (5) toast עדין כשהשאלה האחרונה נמחקת (delQuestion). אומת: node --check + איזון-תגיות + בדיקת-דפדפן
   v145 - החלפת confirm() נייטיב במודאל אישור פנימי (השלמת תיקון ײSuppress dialogs׳): גם שני confirm ברצף מהיר (מחיקת שני חידונים, או אישור-ואז-ביטול) הפעילו את הסף, כמו שני ה-alert בבאג המקורי. התיקון: נוסף מודאל כן/לא פנימי (showConfirm(msg,onYes,onNo) + .confirm-ov, z-index:320, רקע-לחיצה=ביטול, רב-שורתי). כל 10 קריאות confirm() הומרו — אין יותר *שום* דיאלוג נייטיב, אז הסף לא יכול להופיע. ההמרה א-סינכרונית (callbacks): guard → showConfirm(msg,()=>{...}); ושתי שאלות-הטיוטה, שבהן הפונקציה ממשיכה אחרי ה-confirm, פוצלו — ההמשך חולץ ל-_openShareOverlayCore/_openLibraryOverlayCore שנקרא גם מ-callback הײכן׳ וגם מהמסלול הלא-טיוטה. shareToEveryone (async) קיבל callback async. אומת אתר-אחר-אתר: node --check + איזון-תגיות + בדיקת-דפדפן
   v144 - החלפת alert() נייטיב בהודעה-צפה פנימית (תיקון "Suppress dialogs"): לחיצה על שיתוף ואז ספרייה (או הפוך) על חידון ריק הפעילה שני alert() נייטיב ברצף, והדפדפן הוסיף את "Suppress dialogs" — שאם נלחץ, חוסם *את כל* הדיאלוגים כולל אישורי-confirm של מחיקה. התיקון: נוספה showToast(msg) — הודעה-צפה פנימית (#app-toast, אותו עיצוב כמו save/lock-toast הקיימים), עם צבע אוטומטי לפי תוכן (אזהרה כתום / הצלחה ירוק / מידע ניטרלי), משך מותאם-אורך, ותמיכה ברב-שורתי. כל 37 קריאות alert() הומרו ל-showToast() — אין יותר דיאלוגים נייטיב, אז הסף לא מופעל. ההתנהגות נשמרה (alert(x);return; ← showToast(x);return; — עוצר אך לא חוסם מסך). 10 קריאות confirm() (כן/לא — מחיקה/שיתוף) נשארו נייטיב בינתיים (דורשות בחירה, נלחצות אחת-אחת — סיכון נמוך). אומת: node --check + איזון-תגיות + בדיקת-דפדפן
   v143 - פס עליון במסכי-המורה (תיקון הסתרת-תוכן בטלפון): השם (#user-badge), התפריט (#nav-menu) וחיוון-החיבור/הגרסה (.conn) צפים ב-position:fixed; top:12px ומסתירים את ראש התוכן. התיקון: נוסף פס עליון (.topbar — רצועה קבועה ברוחב מלא, נייבי שקוף-למחצה + blur, גובה 54px, z-index:45) *בתוך* כל אחד מ-4 מסכי-המורה (editor/mylist/pregame/lobby), כך שהוא נטען רק כשהמסך פעיל ולא נוגע במסכי-המשתתפים (join/pq/psent/pfeed/plook — שם אין שם/תפריט, רק הנקודה, והתוכן ממורכז) ולא במסכי-המשחק הממורכזים. נוסף padding-top:64px לאותם 4 מסכים כדי שהתוכן יתחיל מתחת לפס (מתקן מנוחה+גלילה). אומת: node --check + איזון-תגיות
@@ -468,7 +470,7 @@ input:focus{border-color:var(--gold); outline:none;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v145</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v146</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -1741,7 +1743,7 @@ function buildQuizCard(code, q){
     ? '<div class="qlcard-updated">🕒 עודכן ' + escapeHtml(relativeTime(q.updated)) + '</div>'
     : '';
   titleWrap.innerHTML = '<div class="qlcard-title">' + pinMark + escapeHtml(q.title || 'חידון ללא שם') + '</div>' +
-                        '<div class="qlcard-meta">קוד ' + escapeHtml(q.displayCode || '——') + ' · ' + (q.questions? q.questions.length:0) + ' שאלות</div>' +
+                        '<div class="qlcard-meta">קוד <span style="unicode-bidi:isolate; direction:ltr;">' + escapeHtml(q.displayCode || '——') + '</span> · <span style="unicode-bidi:isolate;">' + realQCount(q.questions) + '</span> ' + ((realQCount(q.questions)===1) ? 'שאלה' : 'שאלות') + '</div>' +
                         updatedLine +
                         sharedLine;
 
@@ -1790,7 +1792,9 @@ function buildQuizCard(code, q){
   card.appendChild(top);
 
   // --- כפתור ראשי: משחק (רוחב מלא) ---
-  const play = document.createElement('button'); play.className='btn teal'; play.style.cssText='width:100%; margin-top:12px;'; play.textContent='▶️ משחק'; play.onclick=()=>playExisting(code, q);
+  const play = document.createElement('button'); play.className='btn teal'; play.style.cssText='width:100%; margin-top:12px;'; play.textContent='▶️ משחק';
+  if (realQCount(q.questions) === 0){ play.style.opacity='.5'; play.style.cursor='not-allowed'; play.onclick=()=>showToast('הוסיפו שאלה כדי לשחק.'); }
+  else { play.onclick=()=>playExisting(code, q); }
   card.appendChild(play);
 
   // --- שורת משנה: עריכה · בדיקה ---
@@ -2036,6 +2040,8 @@ function quizHasRealContent(){
   if (!quiz || !quiz.questions) return false;
   return quiz.questions.some(q => (q.text && q.text.trim()) || (q.answers && q.answers.some(a => a && a.trim())));
 }
+// v146: ספירת שאלות ײאמיתיות׳ (לא ריקות) — לתצוגות ולבדיקת משחק/שיתוף. שאלה ריקה (שלד) לא נספרת.
+function realQCount(qs){ return (qs||[]).filter(q => (q.text && q.text.trim()) || (q.answers && q.answers.some(a => a && a.trim()))).length; }
 // דגל "נחשף" — חי בתוך החידון הנוכחי בלבד (לא נשמר, לא localStorage).
 // מתאפס בכל פתיחת חידון. נדלק כשהמורה כתב תוכן או סגר את הכרטיס ב-X.
 let aiCardDismissed = false;
@@ -2574,10 +2580,10 @@ function openImport(){
   box.appendChild(msg);
 
   // שלב 4
-  const step4 = document.createElement('div'); step4.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin:6px 0 8px;'; step4.textContent='שלב 4 — יצירת החידון';
+  const step4 = document.createElement('div'); step4.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin:6px 0 8px;'; step4.textContent = quizHasRealContent() ? 'שלב 4 — עדכון החידון' : 'שלב 4 — יצירת החידון';
   box.appendChild(step4);
   const actions = document.createElement('div'); actions.style.cssText='display:flex; gap:10px;';
-  const doBtn = document.createElement('button'); doBtn.className='btn teal'; doBtn.textContent='✓ צור חידון'; doBtn.style.flex='1';
+  const doBtn = document.createElement('button'); doBtn.className='btn teal'; doBtn.textContent = quizHasRealContent() ? '✓ עדכן חידון' : '✓ צור חידון'; doBtn.style.flex='1';
   doBtn.onclick = ()=>parseImport();
   const closeBtn = document.createElement('button'); closeBtn.className='btn ghost sm'; closeBtn.textContent='ביטול';
   closeBtn.onclick = ()=>ov.remove();
@@ -2721,6 +2727,7 @@ function countOverLength(list){
 function delQuestion(i){
   quiz.questions.splice(i,1);
   renderQuestions(); touch();
+  if (realQCount(quiz.questions) === 0) showToast('אין שאלות בחידון — הוסיפו שאלה כדי לשחק או לשתף.');
 }
 // פריט 12: הזזת שאלה למעלה/למטה בעורך הראשי (dir: -1 למעלה, +1 למטה)
 function moveQuestion(i, dir){
@@ -2881,12 +2888,20 @@ function syncShareCopies(){
   }
   // עדכון הספרייה אם החידון בה — כתיבה אחת אטומית (כדי שלא יישאר מצב חלקי)
   if (sh.mode === 'public' && sh.inLibrary && sh.libraryId){
-    fdb.ref('library/'+sh.libraryId).update({
-      quiz: quizData,
-      questionCount: quizData.questions.length,
-      title: quizData.title,
-      updated: Date.now()
-    }).catch(()=>{});
+    if (realQCount(quizData.questions) === 0){
+      // v146: חידון שהתרוקן — מסירים אוטומטית מהספרייה הציבורית (אסור לשתף תוכן ריק)
+      const _lid = sh.libraryId;
+      fdb.ref('library/'+_lid).remove().catch(()=>{});
+      sh.inLibrary = false; sh.libraryId = null;
+      fdb.ref('teachers/'+myStoreKey+'/'+editCode+'/share').set(sh).catch(()=>{});
+    } else {
+      fdb.ref('library/'+sh.libraryId).update({
+        quiz: quizData,
+        questionCount: realQCount(quizData.questions),
+        title: quizData.title,
+        updated: Date.now()
+      }).catch(()=>{});
+    }
   }
 }
 
@@ -3245,7 +3260,7 @@ function openLibraryPublishFromCard(code, q, onDone){
         ownerUid: myUid, ownerName: myAuthName || myEmail || 'מורה',
         originalAuthor: q.originalAuthor || null,
         title: q.title, description: desc,
-        questionCount: q.questions.length,
+        questionCount: realQCount(q.questions),
         publishDate: Date.now(), updated: Date.now(),
         downloads: 0, likes: 0, dislikes: 0, reports: 0,
         quiz: {
