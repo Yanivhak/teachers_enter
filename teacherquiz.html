@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v147 - תיקון "פס שחור" בתחתית המסך במובייל: רקע הדף הוגדר על body כגרדיאנט בלבד, בלי background-color מוצק. הקיצור background: מאפס את צבע-הרקע ל-transparent, ולכן iOS צבע את אזור ה-home-indicator (מתחת ל-viewport) בשחור. נוסף צבע-רצפה מוצק על html,body השווה בדיוק לצבע התחתון של הגרדיאנט (var(--bg1) = #05080f), כך שהרצועה התחתונה נצבעת באותו כחול-כהה — מעבר חלק לגמרי, בלי שחור. גלובלי (כל המסכים).
   v146 - שני תיקוני-ניסוח/תצוגה: (1) מסך ה-AI בעריכת חידון קיים — "שלב 4 — יצירת החידון" והכפתור "✓ צור חידון" התאימו את עצמם להקשר כמו הכותרת: בחידון עם תוכן הם עכשיו "עדכון החידון"/"✓ עדכן חידון" (quizHasRealContent), ובחידון ריק נשארים "יצירת/צור". הכותרת+כפתור הראשי כבר היו מותאי-הקשר — זה סגר את אי-העקביות האחרונה (למעלה "עריכה", למטה "צור"). (2) שורת-המטא בכרטיס ברשימה ("קוד X · N שאלות") — הקוד הלטיני והמספר התהפכו ויזואלית בגלל ערבוב עברית-לטינית (BIDI), והשורה נקראה הפוך ולא מובן; כל מקטע לטיני עוטף עכשיו ב-unicode-bidi:isolate (הקוד גם direction:ltr), אז השורה נקראת נכון. בנוסף תוקן דקדוק היחיד: "1 שאלות" → "שאלה". אומת: node --check + איזון-תגיות + בדיקת-דפדפן
   v146 - (1) מסך ה-AI: "שלב 4 / ✓ צור חידון" מתאימים להקשר — בעריכה (יש תוכן) "עדכון החידון / ✓ עדכן חידון", בריק "יצירה/צור" כמו קודם. (2) ספירת שאלות ײאמיתיות׳ בלבד (realQCount): שאלה ריקה (שלד בלי טקסט ובלי תשובה) לא נספרת — בכרטיס ברשימה ובספרייה. חידון עם שלד ריק בלבד מראה "0 שאלות". (3) חסימת משחק לחידון ריק: כפתור משחק בכרטיס מושבת (חצי-שקוף) עם רמז כשאין שאלה אמיתית. (שיתוף כבר נחסם ע״י shareLibValidationError; העורך/לובי ע״י quizReady.) (4) הסרה אוטומטית מהספרייה הציבורית: חידון שהתרוקן ונמצא בספרייה — מוסר אוטומטית בשמירה (syncShareCopies), כי אסור לשתף תוכן ריק; ה-share המעודכן נכתב בחזרה ל-teachers/. (5) toast עדין כשהשאלה האחרונה נמחקת (delQuestion). אומת: node --check + איזון-תגיות + בדיקת-דפדפן
   v145 - החלפת confirm() נייטיב במודאל אישור פנימי (השלמת תיקון ײSuppress dialogs׳): גם שני confirm ברצף מהיר (מחיקת שני חידונים, או אישור-ואז-ביטול) הפעילו את הסף, כמו שני ה-alert בבאג המקורי. התיקון: נוסף מודאל כן/לא פנימי (showConfirm(msg,onYes,onNo) + .confirm-ov, z-index:320, רקע-לחיצה=ביטול, רב-שורתי). כל 10 קריאות confirm() הומרו — אין יותר *שום* דיאלוג נייטיב, אז הסף לא יכול להופיע. ההמרה א-סינכרונית (callbacks): guard → showConfirm(msg,()=>{...}); ושתי שאלות-הטיוטה, שבהן הפונקציה ממשיכה אחרי ה-confirm, פוצלו — ההמשך חולץ ל-_openShareOverlayCore/_openLibraryOverlayCore שנקרא גם מ-callback הײכן׳ וגם מהמסלול הלא-טיוטה. shareToEveryone (async) קיבל callback async. אומת אתר-אחר-אתר: node --check + איזון-תגיות + בדיקת-דפדפן
@@ -141,7 +142,7 @@
   --card:#22325c; --card-hi:#2c3f72;
 }
 *{box-sizing:border-box;}
-html,body{margin:0; padding:0; min-height:100%;}
+html,body{margin:0; padding:0; min-height:100%; background:var(--bg1);}  /* v147: רצפת מוצקת = תחתית הגרדיאנט (אזור ה-home-indicator לא נצבע שחור ב-iOS) */
 body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); color:var(--ink); min-height:100vh;}
 .screen{display:none; min-height:100vh; min-height:100dvh; padding:24px; flex-direction:column; align-items:center; justify-content:center; text-align:center; position:relative; z-index:2;}  /* v136: 100dvh ממרכז את ההודעות בטלפון (100vh כלל את האזור שמאחורי שורת-הכתובת והוריד אותן לשליש התחתון) */
 .screen.on{display:flex;}
@@ -470,7 +471,7 @@ input:focus{border-color:var(--gold); outline:none;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v146</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v147</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
