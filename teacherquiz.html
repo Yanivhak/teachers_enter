@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v148 - גישה לספרייה הציבורית מ"החידונים שלי": עד כה תפריט-הניווט הוסתר לגמרי במסך "החידונים שלי" (ההנחה: לכל כרטיס תפריט-⋯ משלו + כפתור "בנייה" בולט), אבל זה גם הסתיר משם את "📚 ספרייה ציבורית" — לא הייתה דרך להגיע לספרייה מהרשימה. עכשיו התפריט מוצג גם שם, עם: 📚 ספרייה ציבורית · 🎬 יציאה למצגת · 🚪 יציאה מהחשבון — בלי "עריכת החידון" (לכל כרטיס יש כפתור עריכה משלו) ובלי "החידונים שלי" (כבר כאן). אומת: node --check + איזון-תגיות + בדיקת-דפדפן
   v147 - תיקון "פס שחור" בתחתית המסך במובייל: רקע הדף הוגדר על body כגרדיאנט בלבד, בלי background-color מוצק. הקיצור background: מאפס את צבע-הרקע ל-transparent, ולכן iOS צבע את אזור ה-home-indicator (מתחת ל-viewport) בשחור. נוסף צבע-רצפה מוצק על html,body השווה בדיוק לצבע התחתון של הגרדיאנט (var(--bg1) = #05080f), כך שהרצועה התחתונה נצבעת באותו כחול-כהה — מעבר חלק לגמרי, בלי שחור. גלובלי (כל המסכים).
   v146 - שני תיקוני-ניסוח/תצוגה: (1) מסך ה-AI בעריכת חידון קיים — "שלב 4 — יצירת החידון" והכפתור "✓ צור חידון" התאימו את עצמם להקשר כמו הכותרת: בחידון עם תוכן הם עכשיו "עדכון החידון"/"✓ עדכן חידון" (quizHasRealContent), ובחידון ריק נשארים "יצירת/צור". הכותרת+כפתור הראשי כבר היו מותאי-הקשר — זה סגר את אי-העקביות האחרונה (למעלה "עריכה", למטה "צור"). (2) שורת-המטא בכרטיס ברשימה ("קוד X · N שאלות") — הקוד הלטיני והמספר התהפכו ויזואלית בגלל ערבוב עברית-לטינית (BIDI), והשורה נקראה הפוך ולא מובן; כל מקטע לטיני עוטף עכשיו ב-unicode-bidi:isolate (הקוד גם direction:ltr), אז השורה נקראת נכון. בנוסף תוקן דקדוק היחיד: "1 שאלות" → "שאלה". אומת: node --check + איזון-תגיות + בדיקת-דפדפן
   v146 - (1) מסך ה-AI: "שלב 4 / ✓ צור חידון" מתאימים להקשר — בעריכה (יש תוכן) "עדכון החידון / ✓ עדכן חידון", בריק "יצירה/צור" כמו קודם. (2) ספירת שאלות ײאמיתיות׳ בלבד (realQCount): שאלה ריקה (שלד בלי טקסט ובלי תשובה) לא נספרת — בכרטיס ברשימה ובספרייה. חידון עם שלד ריק בלבד מראה "0 שאלות". (3) חסימת משחק לחידון ריק: כפתור משחק בכרטיס מושבת (חצי-שקוף) עם רמז כשאין שאלה אמיתית. (שיתוף כבר נחסם ע״י shareLibValidationError; העורך/לובי ע״י quizReady.) (4) הסרה אוטומטית מהספרייה הציבורית: חידון שהתרוקן ונמצא בספרייה — מוסר אוטומטית בשמירה (syncShareCopies), כי אסור לשתף תוכן ריק; ה-share המעודכן נכתב בחזרה ל-teachers/. (5) toast עדין כשהשאלה האחרונה נמחקת (delQuestion). אומת: node --check + איזון-תגיות + בדיקת-דפדפן
@@ -471,7 +472,7 @@ input:focus{border-color:var(--gold); outline:none;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v147</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v148</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -1118,9 +1119,9 @@ function updateNavMenu(){
   const m = $('nav-menu'); if (!m) return;
   const list = $('nav-list'); if (!list) return;
   const cur = currentNavScreen();
-  // התפריט מוסתר לגמרי ב: home (התחברות), mylist (לכל חידון תפריט-אפשרויות משלו + "בניית חידון" בולטת),
-  // ובמסכי-משחק/תלמיד (cur=null כי הם לא ב-NAV_SCREENS).
-  const showOn = cur && cur !== 'home' && cur !== 'mylist';
+  // התפריט מוסתר ב: home (התחברות) ובמסכי-משחק/תלמיד (cur=null כי הם לא ב-NAV_SCREENS).
+  // v148: ב"החידונים שלי" התפריט כן מוצג (גישה לספרייה הציבורית), אך בלי "עריכת החידון" ובלי "החידונים שלי".
+  const showOn = cur && cur !== 'home';
   m.classList.toggle('show', !!showOn);
   if (!showOn){ m.classList.remove('open'); const lbl=$('nav-toggle-label'); if(lbl) lbl.textContent='ניווט'; list.innerHTML=''; return; }
 
@@ -1133,7 +1134,7 @@ function updateNavMenu(){
 
   // בונים את רשימת היעדים — כל יעד שאינו המסך הנוכחי
   const items = [];
-  if (hasQuiz && cur !== 'editor') items.push({ kind:'btn', label:'✏️ עריכת החידון', act:"navTo('editor')" });
+  if (hasQuiz && cur !== 'editor' && cur !== 'mylist') items.push({ kind:'btn', label:'✏️ עריכת החידון', act:"navTo('editor')" });
   // v115: לאורח — "החידונים שלי" ו"ספרייה" נעולים (אין לו חשבון לשמור אליו). נראים אך 🔒, לחיצה→הודעה-צפה.
   if (cur !== 'mylist') items.push({ kind:'btn', label:'🗂️ החידונים שלי', act:"navTo('mylist')", locked:isGuest, lockLabel:'🔒 החידונים שלי' });
   // ספרייה — קובץ נפרד, תמיד יעד רלוונטי (אין "מסך ספרייה" פנימי להחריג)

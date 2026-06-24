@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   ספריית חידונים (yopoy) — changelog
+  v13 - תיקון "הפס למעלה": הכותרת והטקסט התנגשו עם התגים הצפים בראש העמוד (חותמת/שם-חשבון/תפריט), כי לא היה פס-עליון קבוע והתוכן התחיל גבוה מדי. נוסף .topbar (פס עליון מלא-רוחב, קבוע, רקע כמעט-אטום עם blur — זהה לחידון) + padding-top שמרחיק את התוכן מתחתיו. עכשיו ראש-העמוד נקי והתוכן נגלל מתחת לפס בצורה נקיה.
   v12 - תיקון "פס שחור" בתחתית המסך במובייל (זהה ל-QuizPlay v147): נוסף צבע-רצפה מוצק על html,body (var(--bg1) = #05080f) — הקיצור background: על body איפס את צבע-הרקע ל-transparent, ולכן iOS צבע את אזור ה-home-indicator בשחור; עכשיו הוא נצבע באותו כחול-כהה כמו תחתית הגרדיאנט, ללא שחור.
   v11 - ספירת שאלות אמיתיות בתצוגת הספרייה: עד כה הספירה ספרה גם שאלות ריקות (וערך 0 נפל בטעות לאורך-המערך). עכשיו מחושבת ישירות ממערך השאלות המסונכרן (realQCount) — שאלה ריקה לא נספרת, וחידון ללא תוכן אמיתי מראה "0 שאלות". (משלים את teacherquiz v146.)
   v10 - החלפת 2 ה-confirm הנייטיב (הסרה מהספרייה, דיווח) במודאל אישור כן/לא פנימי, זהה לזה שב-QuizPlay. מונע את חלון "Suppress dialogs" של הדפדפן (שמופיע אחרי כמה דיאלוגים נייטיב ברצף ויכול לחסום דיאלוגים אחרים). נוסף showConfirm + .confirm-ov + חותמת-גרסה גלויה. (ה-toast הפנימי כבר היה קיים — מעולם לא היו כאן alert נייטיב.) היסטוריית v7-v9 מתועדת בהערות פנימיות בקוד.
@@ -18,7 +19,9 @@
 :root{ --bg1:#05080f; --bg2:#0a1020; --ink:#f7f4ec; --ink-dim:#aab4cf; --gold:#ffd166; --teal:#2ec4b6; --coral:#ff6b6b; --violet:#8d8df2; --card:#22325c; --card-hi:#2c3f72; }
 *{box-sizing:border-box;}
 html,body{margin:0; padding:0; background:var(--bg1);}  /* v12: רצפת מוצקת — אזור ה-home-indicator לא נצבע שחור ב-iOS */
-body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); color:var(--ink); min-height:100vh; padding:30px 18px; line-height:1.6;}
+body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); color:var(--ink); min-height:100vh; padding:64px 18px 30px; line-height:1.6;}
+/* v13: פס עליון קבוע (זהה לחידון) — התוכן נגלל מתחתיו נקי, בלי התנגשות עם התגים הצפים */
+.topbar{position:fixed; top:0; left:0; right:0; height:54px; background:rgba(10,16,32,.92); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-bottom:1px solid rgba(255,255,255,.07); z-index:45;}
 .wrap{max-width:760px; margin:0 auto;}
 h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold); text-align:center; margin:0 0 6px;}
 .sub{text-align:center; color:var(--ink-dim); margin:0 0 22px;}
@@ -70,11 +73,12 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
 </style>
 </head>
 <body>
+<div class="topbar"></div>
 <!-- library v8 — תיקון z-index של החלון-הצף (i) שהופיע מאחורי התפריט; שם-חשבון קבוע למעלה + יציאה בתפריט (כמו דף החידונים); אין התחברות בעמוד
      (מתבצעת רק בדף החידונים); לא-מחובר → תוכן מוסתר + הפניה לדף החידונים. תפריט ניווט:
      ➕ בניית חידון חדש (teacherquiz.html?new=1) · 🗂️ החידונים שלי (teacherquiz.html?list=1 — ?list=1 מקפיץ ישר לרשימה) · 🎬 יציאה למצגת.
      "ספרייה" לא בתפריט (אנחנו כאן). הסגנון זהה ל-nav-menu בקובץ teacherquiz.html. -->
-<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v12</div>
+<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v13</div>
 <!-- v7: שם-חשבון קבוע למעלה-במרכז, כמו בדף החידונים (נראה כשמחובר) -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
