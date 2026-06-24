@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v150.3 - הקראה-לחדר: כפתור בכל מסך + הקראת-מנצח + מתג חי. (1) כפתור-ההקראה הוצא מהסרגל-התחתון (היה רחוק/מהצד) ונוסף כפתור בתוך כל מסך שיש בו הקראה — מסך-שאלה (מקריא שאלה), מסך-חשיפה (מקריא תשובה נכונה), ומסך-סיום (חדש). (2) במסך-הסיום מקריא רק את המנצח — הקבוצה המנצחת במשחק קבוצות, או המקום-הראשון ביחידים (תיקו/אפס-ניקוד מטופלים). (3) פריט בתפריט-הבקרה (☰): "🔇 בטל הקראה / 🔊 הפעל הקראה" — מכבה/מדליק את כל כפתורי-ההקראה תוך כדי משחק (ttsBtnOn), נפרד ממתג-ה-pregame. כל הכפתורים .hspk-btn מנוהלים יחד. אומת: node --check + איזון-תגיות. דורש בדיקת-אודיו + בדיקת-מיקום של יניב.
   v150.2 - הקראה-לחדר: שני שיפורים לפי משוב. (1) הקראה תלוית-מסך — במסך-השאלה הכפתור מקריא את השאלה (כמו קודם), ובמסך-החשיפה הוא מקריא "התשובה הנכונה היא [X]" (לפי הדגל revealed). הקראת כל-התשובות בוטלה (בלבול); רק הנכונה, ורק בחשיפה. (2) הכפתור הוצא מתפריט-הבקרה המתקפל (☰) אל השורה-הקבועה התמיד-גלויה, מוגדל ובולט (טורקיז) — לחיצה אחת בלי לפתוח תפריט. נשאר אופציונלי וכבוי כברירת-מחדל. אומת: node --check + איזון-תגיות. דורש בדיקה-חוזרת של יניב (אודיו).
   v150.1 - תיקון הקראה-לחדר (ערוץ 1): שלושה באגים שדווחו בבדיקה חיה. (1) "צעק נקודה-נקודה": המפריד בין הפריטים היה '. ' והקול העברי הקריא את הנקודות בקול. (2) "הקריא מה שלא על המסך": ערוץ 1 הקריא שאלה + תשובות, אבל התשובות לא על לוח-המארח (הן בטלפוני המשתתפים) — שונה כך שערוץ 1 מקריא רק את השאלה (מה שעל הלוח); התשובות יוקראו בערוץ 2 (טלפון המשתתף, v151) שם הן על המסך. כך גם נעלם המפריד והנקודות. (3) "התחרפן אחרי כמה לחיצות": באג ידוע של speechSynthesis בכרום — cancel ואז speak מיידי משאיר תור פגום ומקריא טקסט ישן. תוקן עם cancel + השהיה קצרה (80ms) לפני speak. אומת: node --check + איזון-תגיות. דורש בדיקה-חוזרת של יניב על המחשב.
   v150 - הקראה לחדר (ערוץ 1 — נגישות, צד-מחשב): מנוע TTS דרך speechSynthesis של הדפדפן, בוחר קול עברי (he-IL) מ-getVoices עם טיפול ב-voiceschanged. אם אין קול עברי במכשיר — הכפתור לא מופיע (בלי ג'יבריש), בדיקה פר-מכשיר בזמן-אמת. במסך-ההכנה (pregame) נוסף מתג "🔊 הקראה לחדר", off כברירת-מחדל, ליד מתג-המהירות. דלוק ← במשחק מופיע כפתור 🔊 בסרגל-המארח (host-menu); לחיצה מקריאה את השאלה + התשובות הנוכחיות לחדר דרך רמקול-המחשב, פעם אחת (cancel לפני כל הקראה; הקראה קודמת נעצרת אוטומטית בשאלה הבאה). נשמר ל-hostState/roomTtsOn ונקרא בחזרה בשחזור (v127). אפס Firebase, אפס נגיעה בצד-התלמיד — הקראת-התלמידים (ערוץ 2, חי) היא v151. אומת: node --check + איזון-תגיות. דורש אימות-מכשיר: יניב בודק על המחשב שאיתו מנחה שהקול העברי נשמע.
@@ -483,7 +484,7 @@ input:focus{border-color:var(--gold); outline:none;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v150.2</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v150.3</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -879,6 +880,7 @@ input:focus{border-color:var(--gold); outline:none;}
   <div class="statement" id="hq-text"></div>
   <p class="answeredline">ענו עד עכשיו: <b id="hq-answered">0</b> מתוך <span id="hq-total">0</span></p>
   <div class="tbar"><i id="hq-bar"></i></div>
+  <button class="hspk-btn" onclick="hostSpeakRoom()" style="display:none; margin:14px 0 0; font-family:'Heebo'; font-size:17px; font-weight:800; color:#06231f; background:var(--teal); border:none; border-radius:12px; padding:12px 24px; cursor:pointer;">🔊 הקראה</button>
 </div>
 
 <!-- ============ מארח: חשיפה ============ -->
@@ -886,6 +888,7 @@ input:focus{border-color:var(--gold); outline:none;}
   <div id="hr-banners" style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px; width:100%; align-items:center;"></div>
   <p class="correct-line">התשובה הנכונה:</p>
   <h2 class="winner-name" id="hr-answer"></h2>
+  <button class="hspk-btn" onclick="hostSpeakRoom()" style="display:none; margin:14px 0 0; font-family:'Heebo'; font-size:17px; font-weight:800; color:#06231f; background:var(--teal); border:none; border-radius:12px; padding:12px 24px; cursor:pointer;">🔊 הקראה</button>
   <div id="hr-bars" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
   <div id="hr-teams" style="margin-top:18px; font-size:clamp(20px,2.4vw,28px); color:var(--gold); font-weight:700;"></div>
   <button class="btn teal" id="hr-next" onclick="nextQ()" style="margin-top:22px;">ממשיכים ◂</button>
@@ -896,6 +899,7 @@ input:focus{border-color:var(--gold); outline:none;}
   <div class="wrap">
     <h1>🎉 סיימנו!</h1>
     <div class="podium" id="podium"></div>
+    <button class="hspk-btn" onclick="hostSpeakWinner()" style="display:none; margin:14px 0 0; font-family:'Heebo'; font-size:17px; font-weight:800; color:#06231f; background:var(--teal); border:none; border-radius:12px; padding:12px 24px; cursor:pointer;">🔊 הקראה</button>
     <div id="team-final" style="margin:14px 0; font-size:clamp(18px,2.4vw,26px); color:var(--gold); font-weight:700;"></div>
     <div id="fun-cards" style="display:flex; flex-wrap:wrap; gap:14px; justify-content:center; margin:18px 0;"></div>
     <div id="hfin-host-actions">
@@ -1020,13 +1024,13 @@ input:focus{border-color:var(--gold); outline:none;}
     <button onclick="hostSkip()">⏭️ הבא</button>
     <button onclick="hostToggleMusic()" id="music-toggle" style="display:none;">🔇 השתקת מוזיקה</button>
     <button onclick="hostToggleBg()" id="bg-toggle" style="display:none;">🙈 הסתרת רקע</button>
+    <button onclick="toggleTtsBtn()" id="tts-toggle" style="display:none;">🔇 בטל הקראה</button>
     <button onclick="toggleReinforce()" id="reinforce-toggle">🌟 חיזוקים פעילים</button>
     <button onclick="hostJumpFinish()">🏁 סיום</button>
   </div>
   <!-- השורה הקבועה התחתונה — תמיד גלויה: מונה, קוד-חזרה, וכפתור פתיחת התפריט -->
   <div id="host-menu-bar">
     <span id="presence-counter" style="display:none;"></span>
-    <button onclick="hostSpeakRoom()" id="host-speak-btn" style="display:none; font-family:'Heebo'; font-size:16px; font-weight:800; color:#06231f; background:var(--teal); border:none; border-radius:11px; padding:11px 20px; cursor:pointer;">🔊 הקראה</button>
     <button id="return-code-btn" onclick="showReturnQR()" style="font-family:'Heebo'; font-size:14px; font-weight:700; color:var(--ink); background:rgba(34,50,92,.92); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:9px 14px; cursor:pointer;">📲 קוד חזרה</button>
     <button id="host-menu-toggle" onclick="toggleHostMenu()" title="פתיחה/סגירה של תפריט הבקרה">☰ תפריט <span class="chev">▾</span></button>
   </div>
@@ -3747,7 +3751,7 @@ function setupPresence(code, pid){
 let players = {}, seq = 0, curQ = null, answers = {}, revealed = false, hostTimer = null, qIndex = -1, qShownAt = 0;
 let bestMs = Infinity, bestName = '', maxStreak = 0, streakKing = '';
 let speedBonusOn = true;   // v149: בונוס-מהירות בניקוד — דלוק כברירת-מחדל; נקבע ב-hostStart מהמתג ב-pregame
-let roomTtsOn = false, ttsVoice = null;   // v150: הקראה-לחדר (ערוץ 1) — off כברירת-מחדל; ttsVoice = הקול העברי או null
+let roomTtsOn = false, ttsVoice = null, ttsBtnOn = false;   // v150/v150.3: off כברירת-מחדל; ttsVoice=הקול העברי/null; ttsBtnOn=מצב הכפתור החי (מתג-תפריט)
 let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
 
@@ -3972,10 +3976,45 @@ function loadTtsVoice(){
   ttsVoice = vs.find(v => (v.lang||'').toLowerCase().indexOf('he') === 0) || null;
   refreshHostSpeakBtn();
 }
-// v150: הכפתור מופיע רק אם ההקראה-לחדר דלוקה ויש קול עברי במכשיר
+// v150.3: כפתורי-ההקראה (.hspk-btn, אחד בכל מסך) + פריט-התפריט החי — מוצגים אם יש קול עברי וההקראה דלוקה (ttsBtnOn)
 function refreshHostSpeakBtn(){
-  const b = $('host-speak-btn'); if (!b) return;
-  b.style.display = (roomTtsOn && ttsVoice && window.speechSynthesis) ? 'inline-block' : 'none';
+  const has = !!(ttsVoice && window.speechSynthesis);
+  const showBtns = has && ttsBtnOn;
+  document.querySelectorAll('.hspk-btn').forEach(function(b){ b.style.display = showBtns ? '' : 'none'; });
+  const m = $('tts-toggle');
+  if (m){ m.style.display = has ? '' : 'none'; m.textContent = ttsBtnOn ? '🔇 בטל הקראה' : '🔊 הפעל הקראה'; }
+}
+// v150.3: מתג חי בתפריט-הבקרה — מכבה/מדליק את כפתורי-ההקראה תוך כדי משחק
+function toggleTtsBtn(){
+  ttsBtnOn = !ttsBtnOn;
+  if (!ttsBtnOn && window.speechSynthesis){ try { speechSynthesis.cancel(); } catch(e){} }
+  refreshHostSpeakBtn();
+}
+// v150.3: הקראת המנצח במסך-הסיום — קבוצה מנצחת (משחק קבוצות) או המקום הראשון (יחידים)
+function hostSpeakWinner(){
+  if (!window.speechSynthesis || !ttsVoice) return;
+  let text = null;
+  try {
+    const board = scoreboard();
+    if (quiz && quiz.teamCount > 0){
+      const tSum = {}; for (let i=0;i<quiz.teamCount;i++) tSum[i]=0;
+      board.forEach(function(p){ if (p.team>=0) tSum[p.team]+=p.score; });
+      const vals = Object.values(tSum);
+      const best = vals.length ? Math.max.apply(null, vals) : 0;
+      if (best > 0){
+        const winners = Object.keys(tSum).filter(function(k){ return tSum[k]===best; });
+        text = (winners.length > 1) ? 'תיקו בין הקבוצות' : ('הקבוצה המנצחת היא ' + quiz.teamNames[winners[0]]);
+      }
+    } else {
+      if (board[0] && board[0].score > 0) text = 'המקום הראשון: ' + board[0].name;
+    }
+    if (!text) return;
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'he-IL'; u.voice = ttsVoice;
+    setTimeout(function(){ try { synth.speak(u); } catch(e){} }, 80);
+  } catch(e){}
 }
 // v150.2: הקראה תלוית-מסך — מסך-שאלה מקריא את השאלה; מסך-חשיפה (revealed) מקריא "התשובה הנכונה היא [X]". cancel + השהיה קצרה מונעים באג cancel/speak של כרום.
 function hostSpeakRoom(){
@@ -4001,6 +4040,7 @@ if (window.speechSynthesis){ loadTtsVoice(); speechSynthesis.onvoiceschanged = l
 function hostStart(){
   speedBonusOn = $('pg-speed-toggle') ? $('pg-speed-toggle').checked : true;   // v149: קריאת המתג לפני הצילום
   roomTtsOn = $('pg-roomtts-toggle') ? $('pg-roomtts-toggle').checked : false;   // v150
+  ttsBtnOn = roomTtsOn;   // v150.3
   refreshHostSpeakBtn();   // v150
   saveHostSnapshot();   // v127: צילום החידון + מצביע "משחק פעיל" לשחזור מכל מכשיר
   setupHostAlive(playCode);   // v129: סימון "המארח חי" לתלמידים
@@ -4974,6 +5014,7 @@ function resumeHostGame(code){
     editCode = hs.editCode || editCode;
     speedBonusOn = (hs.speedBonusOn !== false);   // v149: ברירת-מחדל דלוק (תאימות-לאחור)
     roomTtsOn = !!hs.roomTtsOn;   // v150
+    ttsBtnOn = roomTtsOn;   // v150.3
     refreshHostSpeakBtn();
     players = pr.players || {};
     seq = pr.seq || 0;
