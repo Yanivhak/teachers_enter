@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+  ניהול חידונים (admin, yopoy) — changelog
+  v1 - גרסה ראשונה במעקב. החלפת 2 הדיאלוגים הנייטיב (confirm למחיקת כל חידוני מורה, ו-alert שגיאה) במודאל אישור פנימי + toast, זהים לאלה שב-QuizPlay/הספרייה. מונע את חלון "Suppress dialogs" של הדפדפן (שמופיע אחרי כמה דיאלוגים נייטיב ברצף — רלוונטי כאן כי מוחקים כמה מורים ברצף). נוסף showConfirm + toast + .confirm-ov + חותמת-גרסה גלויה.
+-->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -21,6 +25,17 @@ h1{font-family:'Secular One'; font-size:34px; color:var(--gold); text-align:cent
 .row .email{font-weight:700; word-break:break-all;}
 .row .count{color:var(--gold); font-weight:800; white-space:nowrap;}
 #msg{text-align:center; color:var(--ink-dim); margin:20px 0;}
+/* v1: toast + מודאל אישור פנימי — מחליפים alert/confirm נייטיב */
+.toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 20px; font-size:15px; box-shadow:0 10px 30px rgba(0,0,0,.5); z-index:100; opacity:0; transition:opacity .3s; pointer-events:none; max-width:90vw; text-align:center;}
+.toast.show{opacity:1;}
+.confirm-ov{display:none; position:fixed; inset:0; z-index:320; background:rgba(5,8,20,.74); align-items:center; justify-content:center; padding:24px;}
+.confirm-ov.on{display:flex;}
+.confirm-box{background:#1a2440; border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:24px 22px; max-width:430px; width:100%; box-shadow:0 14px 44px rgba(0,0,0,.55);}
+.confirm-msg{font-family:'Heebo'; font-size:16px; line-height:1.6; color:var(--ink); white-space:pre-line; text-align:center; margin-bottom:20px;}
+.confirm-btns{display:flex; gap:12px; justify-content:center;}
+.cbtn{flex:1; font-family:'Heebo'; font-weight:700; font-size:15px; padding:11px 16px; border-radius:12px; border:none; cursor:pointer;}
+.cbtn.yes{background:var(--teal); color:#06231f;}
+.cbtn.no{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 2px rgba(255,255,255,.2);}
 </style>
 </head>
 <body>
@@ -46,6 +61,19 @@ h1{font-family:'Secular One'; font-size:34px; color:var(--gold); text-align:cent
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+<div style="position:fixed; bottom:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">admin v1</div>
+<!-- v1: מודאל אישור פנימי — מחליף confirm() הנייטיב (מונע "Suppress dialogs") -->
+<div class="confirm-ov" id="confirm-ov" onclick="if(event.target===this) _confirmResolve(false)">
+  <div class="confirm-box">
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="cbtn yes" id="confirm-yes" onclick="_confirmResolve(true)">אישור</button>
+      <button class="cbtn no" id="confirm-no" onclick="_confirmResolve(false)">ביטול</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -65,6 +93,23 @@ const fauth = firebase.auth();
 
 const ADMIN_EMAIL = 'yaniv.hakim@mail.huji.ac.il';
 let adminLoaded = false;
+// v1: toast + מודאל אישור פנימי — מחליפים alert/confirm נייטיב. var (מורם) כדי שיהיו נגישים בכל קריאה ללא תלות ברצף האתחול.
+function toast(t){ const el=document.getElementById('toast'); if(!el) return; el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2600); }
+var _confirmYes = null, _confirmNo = null;
+function showConfirm(msg, onYes, onNo){
+  const ov = document.getElementById('confirm-ov');
+  if (!ov){ return; }
+  document.getElementById('confirm-msg').textContent = msg;
+  _confirmYes = (typeof onYes === 'function') ? onYes : null;
+  _confirmNo  = (typeof onNo  === 'function') ? onNo  : null;
+  ov.classList.add('on');
+}
+function _confirmResolve(yes){
+  const ov = document.getElementById('confirm-ov'); if (ov) ov.classList.remove('on');
+  const y = _confirmYes, n = _confirmNo;
+  _confirmYes = null; _confirmNo = null;
+  if (yes){ if (y) y(); } else { if (n) n(); }
+}
 
 function adminSignIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
@@ -122,12 +167,12 @@ fdb.ref('teachers').once('value').then(snap => {
     del.textContent = '🗑 מחיקה';
     del.style.cssText = 'background:#c0392b; color:#fff; border:none; border-radius:8px; padding:6px 12px; cursor:pointer; font-family:Heebo; font-size:13px;';
     del.onclick = () => {
-      if (confirm('למחוק את כל החידונים של ' + r.email + '? פעולה זו אינה הפיכה.')){
+      showConfirm('למחוק את כל החידונים של ' + r.email + '? פעולה זו אינה הפיכה.', ()=>{
         Promise.all([
           fdb.ref('teachers/'+r.key).remove(),
           fdb.ref('teacher_emails/'+r.key).remove()
-        ]).then(()=>{ d.remove(); }).catch(e=>alert('תקלה: '+e.message));
-      }
+        ]).then(()=>{ d.remove(); }).catch(e=>toast('תקלה: '+e.message));
+      });
     };
     right.appendChild(cnt); right.appendChild(del);
     d.appendChild(left); d.appendChild(right);
