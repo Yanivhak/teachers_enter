@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+  ספריית חידונים (yopoy) — changelog
+  v10 - החלפת 2 ה-confirm הנייטיב (הסרה מהספרייה, דיווח) במודאל אישור כן/לא פנימי, זהה לזה שב-QuizPlay. מונע את חלון "Suppress dialogs" של הדפדפן (שמופיע אחרי כמה דיאלוגים נייטיב ברצף ויכול לחסום דיאלוגים אחרים). נוסף showConfirm + .confirm-ov + חותמת-גרסה גלויה. (ה-toast הפנימי כבר היה קיים — מעולם לא היו כאן alert נייטיב.) היסטוריית v7-v9 מתועדת בהערות פנימיות בקוד.
+-->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -50,6 +54,14 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
 #nav-list a.nav-exit:active{transform:translateY(1px);}
 .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 20px; font-size:15px; box-shadow:0 10px 30px rgba(0,0,0,.5); z-index:100; opacity:0; transition:opacity .3s; pointer-events:none;}
 .toast.show{opacity:1;}
+/* v10: מודאל אישור כן/לא פנימי — מחליף confirm() הנייטיב */
+.confirm-ov{display:none; position:fixed; inset:0; z-index:320; background:rgba(5,8,20,.74); align-items:center; justify-content:center; padding:24px;}
+.confirm-ov.on{display:flex;}
+.confirm-box{background:#1a2440; border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:24px 22px; max-width:430px; width:100%; box-shadow:0 14px 44px rgba(0,0,0,.55);}
+.confirm-msg{font-family:'Heebo'; font-size:16px; line-height:1.6; color:var(--ink); white-space:pre-line; text-align:center; margin-bottom:20px;}
+.confirm-btns{display:flex; gap:12px; justify-content:center;}
+.confirm-btns .btn{flex:1; font-size:15px; padding:11px 16px; border-radius:12px;}
+.confirm-yes{background:var(--teal); color:#06231f;}
 .info-i{display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,.16); color:var(--ink); font-size:13px; font-weight:700; cursor:pointer; margin-inline-start:6px; vertical-align:middle; user-select:none;}
 .info-i:hover{background:var(--teal); color:#06231f;}
 .info-pop{position:fixed; z-index:210; max-width:280px; background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.5; color:var(--ink); box-shadow:0 10px 30px rgba(0,0,0,.5);}
@@ -60,7 +72,7 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
      (מתבצעת רק בדף החידונים); לא-מחובר → תוכן מוסתר + הפניה לדף החידונים. תפריט ניווט:
      ➕ בניית חידון חדש (teacherquiz.html?new=1) · 🗂️ החידונים שלי (teacherquiz.html?list=1 — ?list=1 מקפיץ ישר לרשימה) · 🎬 יציאה למצגת.
      "ספרייה" לא בתפריט (אנחנו כאן). הסגנון זהה ל-nav-menu בקובץ teacherquiz.html. -->
-<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v8</div>
+<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v10</div>
 <!-- v7: שם-חשבון קבוע למעלה-במרכז, כמו בדף החידונים (נראה כשמחובר) -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -94,6 +106,16 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<!-- v10: מודאל אישור פנימי — מחליף confirm() הנייטיב (מונע "Suppress dialogs") -->
+<div class="confirm-ov" id="confirm-ov" onclick="if(event.target===this) _confirmResolve(false)">
+  <div class="confirm-box">
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="btn confirm-yes" id="confirm-yes" onclick="_confirmResolve(true)">אישור</button>
+      <button class="btn ghost" id="confirm-no" onclick="_confirmResolve(false)">ביטול</button>
+    </div>
+  </div>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -120,6 +142,22 @@ let myReports = {};        // הדיווחים שלי: quizId -> true
 function $(id){ return document.getElementById(id); }
 function emailToKey(e){ return e.trim().toLowerCase().replace(/[.#$\[\]\/@]/g, '_'); }
 function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2200); }
+// v10: מודאל אישור פנימי — מחליף confirm() הנייטיב. א-סינכרוני (callbacks). var (מורם) כדי שיהיה נגיש בכל קריאה ללא תלות ברצף האתחול.
+var _confirmYes = null, _confirmNo = null;
+function showConfirm(msg, onYes, onNo){
+  const ov = $('confirm-ov');
+  if (!ov){ return; }
+  $('confirm-msg').textContent = msg;
+  _confirmYes = (typeof onYes === 'function') ? onYes : null;
+  _confirmNo  = (typeof onNo  === 'function') ? onNo  : null;
+  ov.classList.add('on');
+}
+function _confirmResolve(yes){
+  const ov = $('confirm-ov'); if (ov) ov.classList.remove('on');
+  const y = _confirmYes, n = _confirmNo;
+  _confirmYes = null; _confirmNo = null;
+  if (yes){ if (y) y(); } else { if (n) n(); }
+}
 // v7: טקסט-צף (i) — הועבר מדף החידונים לעקביות (משמש בכפתור היציאה בתפריט)
 function showInfo(ev, text){
   ev.stopPropagation();
@@ -293,7 +331,7 @@ function copyToMine(q){
 // כך המצב עקבי בכל המקומות: ספרייה, עריכה, ורשימת החידונים שלי.
 function removeMine(q){
   if (!myUid || q.ownerUid !== myUid){ return; }
-  if (!confirm('להסיר את החידון "' + (q.title||'') + '" מהספרייה הציבורית?\nהוא יוסר מהספרייה ולא יהיה זמין יותר למורים אחרים.\nהחידון עצמו יישאר אצלכם ברשימה.')) return;
+  showConfirm('להסיר את החידון "' + (q.title||'') + '" מהספרייה הציבורית?\nהוא יוסר מהספרייה ולא יהיה זמין יותר למורים אחרים.\nהחידון עצמו יישאר אצלכם ברשימה.', ()=>{
   // 1. הסרת רשומת הספרייה
   fdb.ref('library/'+q._key).remove().then(()=>{
     // 2. סנכרון רשומת החידון המקורית — אם ידוע הקוד שלה
@@ -306,6 +344,7 @@ function removeMine(q){
     toast('✅ החידון הוסר מהספרייה.');
     // הרשימה תתעדכן מהמאזין on('value')
   }).catch(()=>{ toast('תקלה בהסרה. נסו שוב.'); });
+  });
 }
 
 function vote(quizId, kind){
@@ -331,7 +370,7 @@ function vote(quizId, kind){
 function reportQuiz(quizId){
   if (!myUid){ toast('צריך להתחבר עם Google כדי לדווח.'); return; }
   if (myReports[quizId]){ toast('כבר דיווחת על החידון הזה.'); return; }
-  if (!confirm('לדווח על החידון הזה כלא ראוי?')) return;
+  showConfirm('לדווח על החידון הזה כלא ראוי?', ()=>{
   myReports[quizId] = true;
   fdb.ref('lib_user/'+myUid+'/reports/'+quizId).set(true).catch(()=>{});
   fdb.ref('library/'+quizId+'/reports').transaction(v => (v||0)+1).then(res => {
@@ -342,6 +381,7 @@ function reportQuiz(quizId){
     }
     toast('הדיווח נשלח. תודה.');
   }).catch(()=>{ toast('תקלה בדיווח.'); });
+  });
 }
 </script>
 </body>
