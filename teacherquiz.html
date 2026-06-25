@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v151.11 - תיקון השורש האמיתי לבאג-ההגדרות: ה-welcome נשלח לשחקן-מצטרף כבר בלובי (כשהוא סורק), אבל speedBonusOn (וגם sttsHostOn/roomTtsOn) נקראו מהמתגים רק ב-hostStart ("התחל שאלות") — שקורה אחרי שהשחקן הצטרף. אז ה-welcome נשלח עם הערך הישן/ברירת-המחדל, לא עם המתג הנוכחי. תוקן: מתגי-ההכנה נקראים כבר בכניסה ללובי (goPlay), כך שמה שבמתג = מה שהשחקן מקבל. hostStart קורא שוב (עקבי). השחזור לא מושפע (קורא מ-hostState). אומת: node --check + איזון-תגיות.
   v151.10 - תיקון באג-הסנכרון (אפשרות א): כשיוצאים ממשחק ב"סגירה" (לא דרך כפתור-יציאה) המשחק נשאר פעיל ב-Firebase, וההגדרות הישנות (בונוס/הקראה) נטענו מחדש בשחזור ודרסו שינויים חדשים. תוקן: discardStaleGame() מוחק את ה-hostState של המשחק הישן ואת המצביע ברגע שמתחילים משחק חדש (firstEntry בכניסה ללובי), ומסתיר הצעת-שחזור ישנה. כך כל התחלת משחק חדש נקייה עם ההגדרות הנוכחיות. השחזור ("חזרה למשחק") נשמר למקרה-אסון אמיתי שבו לא מתחילים משחק חדש. אומת: node --check + איזון-תגיות.
   v151.9 - תיקון ניסוח: "אין מדידת-זמן" היה שגוי (הזמן כן נמדד — יש טיימר). שונה ל"אין בונוס על מהירות / קחו את הזמן שאתם צריכים" בקופסת-הלובי וברמז-השאלה. (באג-הסנכרון של מסך-ההכנה — אבחון נמסר, תיקון בנפרד כי נוגע במנגנון-השחזור.) אומת: node --check + איזון-תגיות.
   v151.8 - אריזה אחת של 4 תיקונים: (1) קופסת "אין מדידת-זמן" בלובי — קופסה ברורה עם מסגרת טורקיז וכתב 20px מודגש (במקום שורה דקה); מופיעה כשבונוס-המהירות כבוי. (2) ניקוי מסך-השאלה במצב-הקראה — כשהקראת-תלמידים דלוקה, רמז-השאלה מצומצם ל"לחיצה אחת = תשובה" בלבד; למשתתפים רגילים (בונוס כבוי ידנית) הרמז "אין מדידת-זמן" נשאר. (3) באג חזרה-מעריכה — updateSttsDesc נקרא בכניסה ל-pregame, כך שאם שינו זמן בעריכה וחזרו, הערת-30 ונעילת-המהירות מתעדכנות. (4) פס שחור — גישה חדשה: html::before קבוע (position:fixed; inset:0; z-index:-1) שצובע כחול-כהה מתחת לכל אזור לא-מכוסה, כולל אזורי-בטיחות ב-iOS. אומת: node --check + איזון-תגיות + רינדור.
@@ -512,7 +513,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.10</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.11</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -3815,6 +3816,13 @@ async function goPlay(){
   saveQuiz();
   flashSaved();   // הודעת ביטחון קצרה שהחידון נשמר
   role = 'host';
+  // v151.11: קריאת מתגי-ההכנה כבר עכשיו (בכניסה ללובי) — אחרת welcome לשחקן-מצטרף נשלח עם ערך ישן,
+  // כי המתגים נקראו רק ב-hostStart ("התחל שאלות") שקורה אחרי שהשחקן כבר הצטרף וקיבל welcome.
+  speedBonusOn = $('pg-speed-toggle') ? $('pg-speed-toggle').checked : true;
+  sttsHostOn = $('pg-stts-toggle') ? $('pg-stts-toggle').checked : false;
+  if (sttsHostOn) speedBonusOn = false;
+  roomTtsOn = $('pg-roomtts-toggle') ? $('pg-roomtts-toggle').checked : false;
+  ttsBtnOn = roomTtsOn;
   // אם כבר נוצר קוד משחק בסשן הזה (חזרה ללובי מ-pregame) — שומרים אותו ואת המצטרפים.
   // קוד חדש + ניקוי חדר נעשים רק בכניסה ראשונה, כדי שחזרה לשנות רקע/מוזיקה לא תזרוק את מי שכבר הצטרף.
   const firstEntry = !playCode;
