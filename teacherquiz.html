@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v151.14 - הוסר הרמז "לחיצה אחת = תשובה" מרמז-השאלה (מיותר, לא התבקש; נוסף ב-v151.8). הרמז עכשיו: בונוס דלוק → "מהירות שווה נקודות!"; בונוס כבוי (כולל מצב-הקראה) → "אין בונוס על מהירות, קחו את הזמן 🙂". בוטל גם הענף המיוחד של v151.8 למצב-הקראה. אומת: node --check + איזון-תגיות.
   v151.13 - החזרת מתג הקראת-התלמידים לסרגל-החי, אבל מותנה: המתג מופיע רק אם הקראת-תלמידים נבחרה במסך-ההכנה (sttsLiveAllowed נקבע בתחילת המשחק ב-hostStart/שחזור). אם נבחרה — המנחה יכול לכבות/להדליק באמצע (בטוח: הבונוס כבר כבוי והניקוד קבוע 1000, רק הטיימר חוזר לרגיל). אם לא נבחרה — אין מתג כלל (הפעלה באמצע הייתה שוברת בונוס/זמן). מתקן את v151.12 שהסיר את המתג לחלוטין. אומת: node --check + איזון-תגיות.
   v151.12 - שני תיקונים: (1) מתג הקראת-התלמידים הוסר מהסרגל-החי — הקראת-תלמידים נקבעת רק מראש במסך-ההכנה (מונע שינוי מצב/זמן/ניקוד באמצע משחק; מתג ההקראה-לחדר של המנחה, ערוץ 1, נשאר). (2) באג "קפיצה" ברמקול-הטלפון: speechSynthesis.cancel() (בלחיצת הפסק/הפעל) הפעיל את ה-onend של החלק המדובר, שקידם את השרשור לחלק הבא (שאלה→תשובות וכו') במקום לעצור. תוקן עם אסימון-הפעלה (_speakSeq): עצירה/הפעלה-חדשה מבטלות את השרשור הקודם, אז cancel באמת עוצר וההפעלה מתחילה נקייה. אומת: node --check + איזון-תגיות.
   v151.11 - תיקון השורש האמיתי לבאג-ההגדרות: ה-welcome נשלח לשחקן-מצטרף כבר בלובי (כשהוא סורק), אבל speedBonusOn (וגם sttsHostOn/roomTtsOn) נקראו מהמתגים רק ב-hostStart ("התחל שאלות") — שקורה אחרי שהשחקן הצטרף. אז ה-welcome נשלח עם הערך הישן/ברירת-המחדל, לא עם המתג הנוכחי. תוקן: מתגי-ההכנה נקראים כבר בכניסה ללובי (goPlay), כך שמה שבמתג = מה שהשחקן מקבל. hostStart קורא שוב (עקבי). השחזור לא מושפע (קורא מ-hostState). אומת: node --check + איזון-תגיות.
@@ -515,7 +516,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.13</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.14</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -5562,8 +5563,7 @@ function showPQ(m){
   if (m.num && m.total) $('pq-progress').textContent = 'שאלה ' + m.num + ' מתוך ' + m.total;
   else $('pq-progress').textContent = '';
   $('pq-text').textContent = m.text;
-  if (studentTtsOn){ $('pq-hint').textContent = 'לחיצה אחת = תשובה'; }   // v151.8: מצב-הקראה — מסך נקי, בלי רעש על זמן
-  else $('pq-hint').textContent = (m.speedOn === false) ? 'לחיצה אחת = תשובה · אין בונוס על מהירות, קחו את הזמן 🙂' : 'לחיצה אחת = תשובה. מהירות שווה נקודות!';   // v149/v151.6/v151.9
+  $('pq-hint').textContent = (m.speedOn === false) ? 'אין בונוס על מהירות, קחו את הזמן 🙂' : 'מהירות שווה נקודות!';   // v149/v151.6/v151.9/v151.14: הוסר "לחיצה אחת = תשובה" (מיותר)
   const grid=$('pq-grid'); grid.innerHTML='';
   m.options.forEach(o => {
     const b=document.createElement('button'); b.className='pbtn'; b.textContent=o.txt;
