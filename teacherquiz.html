@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v151.10 - תיקון באג-הסנכרון (אפשרות א): כשיוצאים ממשחק ב"סגירה" (לא דרך כפתור-יציאה) המשחק נשאר פעיל ב-Firebase, וההגדרות הישנות (בונוס/הקראה) נטענו מחדש בשחזור ודרסו שינויים חדשים. תוקן: discardStaleGame() מוחק את ה-hostState של המשחק הישן ואת המצביע ברגע שמתחילים משחק חדש (firstEntry בכניסה ללובי), ומסתיר הצעת-שחזור ישנה. כך כל התחלת משחק חדש נקייה עם ההגדרות הנוכחיות. השחזור ("חזרה למשחק") נשמר למקרה-אסון אמיתי שבו לא מתחילים משחק חדש. אומת: node --check + איזון-תגיות.
+  v151.9 - תיקון ניסוח: "אין מדידת-זמן" היה שגוי (הזמן כן נמדד — יש טיימר). שונה ל"אין בונוס על מהירות / קחו את הזמן שאתם צריכים" בקופסת-הלובי וברמז-השאלה. (באג-הסנכרון של מסך-ההכנה — אבחון נמסר, תיקון בנפרד כי נוגע במנגנון-השחזור.) אומת: node --check + איזון-תגיות.
   v151.8 - אריזה אחת של 4 תיקונים: (1) קופסת "אין מדידת-זמן" בלובי — קופסה ברורה עם מסגרת טורקיז וכתב 20px מודגש (במקום שורה דקה); מופיעה כשבונוס-המהירות כבוי. (2) ניקוי מסך-השאלה במצב-הקראה — כשהקראת-תלמידים דלוקה, רמז-השאלה מצומצם ל"לחיצה אחת = תשובה" בלבד; למשתתפים רגילים (בונוס כבוי ידנית) הרמז "אין מדידת-זמן" נשאר. (3) באג חזרה-מעריכה — updateSttsDesc נקרא בכניסה ל-pregame, כך שאם שינו זמן בעריכה וחזרו, הערת-30 ונעילת-המהירות מתעדכנות. (4) פס שחור — גישה חדשה: html::before קבוע (position:fixed; inset:0; z-index:-1) שצובע כחול-כהה מתחת לכל אזור לא-מכוסה, כולל אזורי-בטיחות ב-iOS. אומת: node --check + איזון-תגיות + רינדור.
   v151.7 - תיקון פס שחור בתחתית (מובייל, סרגל-כתובת גלוי): התגלה ש-background-color של body ושל .pbrand היו שקופים — כלל background:radial-gradient (shorthand) איפס את צבע-הרצפה שהוגדר ב-v147, אז אזורים לא-מכוסים (כולל אזור-הבטיחות מתחת לסרגל) נצבעו שחור ב-iOS. תוקן: נוסף background-color:var(--bg1) מוצק ל-body ול-.pbrand (longhand אחרי ה-shorthand). יחד עם viewport-fit=cover (v151.5). אומת: node --check + איזון-תגיות + רינדור.
   v151.6 - (1) האטת הקראת-תלמיד: rate 0.9→0.7 והפסקה בין-תשובות 140→220ms (לפי בדיקת-שמע). משך-הקראה משוער: שאלה קצרה ~7ש', בינונית ~11ש', ארוכה ~17ש' — נכנס ברצפת ה-30ש'. (2) שורת "אין מדידת-זמן": כשבונוס-המהירות כבוי (תמיד במצב הקראה), השחקן מקבל הודעה ברורה — במסך-ההמתנה (לובי) "אין מדידת-זמן על התשובות — קחו את הזמן" (speedOn נוסף למנת welcome), וגם רמז-השאלה משתנה ל"אין מדידת-זמן, ענו ברוגע". כך שהשחקנים יודעים מראש. אומת: node --check + איזון-תגיות.
@@ -510,7 +512,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.8</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.10</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -993,7 +995,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <div class="pbrand-title" id="pwait-greet">היי! 👋</div>
     <div class="pbrand-sub">עוד רגע מתחילים 🎯</div>
     <div class="pbrand-dim">ממתינים שהמנחה יתחיל…</div>
-    <div id="pwait-notime" style="display:none; margin:22px auto 0; max-width:400px; padding:16px 22px; background:rgba(46,196,182,.13); border:2px solid rgba(46,196,182,.5); border-radius:16px; color:#d8f5f0; font-size:20px; font-weight:700; line-height:1.5;">⏱️ אין מדידת-זמן על התשובות<br>קחו את הזמן שאתם צריכים 🙂</div>
+    <div id="pwait-notime" style="display:none; margin:22px auto 0; max-width:400px; padding:16px 22px; background:rgba(46,196,182,.13); border:2px solid rgba(46,196,182,.5); border-radius:16px; color:#d8f5f0; font-size:20px; font-weight:700; line-height:1.5;">⏱️ אין בונוס על מהירות<br>קחו את הזמן שאתם צריכים 🙂</div>
   </div>
 </div>
 
@@ -3816,7 +3818,11 @@ async function goPlay(){
   // אם כבר נוצר קוד משחק בסשן הזה (חזרה ללובי מ-pregame) — שומרים אותו ואת המצטרפים.
   // קוד חדש + ניקוי חדר נעשים רק בכניסה ראשונה, כדי שחזרה לשנות רקע/מוזיקה לא תזרוק את מי שכבר הצטרף.
   const firstEntry = !playCode;
-  if (firstEntry) playCode = await genUniqueCode();
+  if (firstEntry){
+    await discardStaleGame();   // v151.10: משחק חדש מבטל משחק-פעיל ישן (אפשרות א — שינויים תמיד נקלטים)
+    const rb = $('resume-banner'); if (rb) rb.style.display = 'none';   // מבטל הצעת-שחזור ישנה
+    playCode = await genUniqueCode();
+  }
   $('play-code').textContent = playCode;
   if ($('join-code-echo')) $('join-code-echo').textContent = playCode;
   $('lobby-title').textContent = quiz.title || 'החידון';
@@ -5098,6 +5104,18 @@ function clearActiveGamePointer(){
   if (!myStoreKey) return;
   try { fdb.ref('teachers/'+myStoreKey+'/activeGame').remove().catch(()=>{}); } catch(e){}
 }
+// v151.10: התחלת משחק חדש מבטלת משחק-פעיל ישן מסשן קודם — מוחק את ה-hostState (אחרת שחזור טוען הגדרות ישנות ודורס שינויים)
+async function discardStaleGame(){
+  if (!myStoreKey) return;
+  try {
+    const snap = await fdb.ref('teachers/'+myStoreKey+'/activeGame').once('value');
+    const a = snap.val();
+    if (a && a.code && a.code !== playCode){
+      await fdb.ref('games/'+a.code+'/hostState').remove().catch(()=>{});
+    }
+    await fdb.ref('teachers/'+myStoreKey+'/activeGame').remove().catch(()=>{});
+  } catch(e){}
+}
 // בטעינה (מורה מחובר): אם יש משחק פעיל שננטש וטרי — מציעים להמשיך. לא מציע אם כבר מארחים כאן.
 function maybeOfferResume(){
   if (!myStoreKey) return;
@@ -5528,7 +5546,7 @@ function showPQ(m){
   else $('pq-progress').textContent = '';
   $('pq-text').textContent = m.text;
   if (studentTtsOn){ $('pq-hint').textContent = 'לחיצה אחת = תשובה'; }   // v151.8: מצב-הקראה — מסך נקי, בלי רעש על זמן
-  else $('pq-hint').textContent = (m.speedOn === false) ? 'לחיצה אחת = תשובה · אין מדידת-זמן, ענו ברוגע 🙂' : 'לחיצה אחת = תשובה. מהירות שווה נקודות!';   // v149/v151.6
+  else $('pq-hint').textContent = (m.speedOn === false) ? 'לחיצה אחת = תשובה · אין בונוס על מהירות, קחו את הזמן 🙂' : 'לחיצה אחת = תשובה. מהירות שווה נקודות!';   // v149/v151.6/v151.9
   const grid=$('pq-grid'); grid.innerHTML='';
   m.options.forEach(o => {
     const b=document.createElement('button'); b.className='pbtn'; b.textContent=o.txt;
