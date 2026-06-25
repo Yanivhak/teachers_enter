@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v152 - הקראה לתלמידים מסוימים (קוד-הקראה נפרד): במסך-ההכנה, בבחירת הקראה, אפשר לבחור "כל המשתתפים" (הקיים) או "תלמידים מסוימים בלבד". במצב "מסוימים": בלובי מופיע קוד-הקראה שני (games/{ttsCode}/meta={ttsFor:playCode}) לצד הקוד הרגיל; תלמיד שמצטרף עם קוד-ההקראה מופנה לאותו משחק ומסומן מקומית (iAmTtsStudent) — רק הוא מקבל אודיו+ויזואל-מוגבר. הפריבילגיה-לכל-המשחק (ttsStudents) נכתבת רק במצב 'all'; ב-'some' התלמיד מקבל פריבילגיה מקומית (המאזין: snap||iAmTtsStudent). זמן/בונוס/הודעה זהים בשני המצבים (sttsHostOn — 30+, בונוס מבוטל). אזהרת-אוזניות במסך-ההכנה. ניקוי קוד-ההקראה ב-endGameSession; ttsMode נשמר/משוחזר ב-hostState. אומת: node --check + איזון-תגיות.
+  v151.15 - שלב 1 מתוך הקראה-לתלמידים-מסוימים (v152 בבנייה): מסך-ההכנה — כשמדליקים "הקראה בטלפוני המשתתפים" מופיעה תת-בחירה: "כל המשתתפים" (ברירת-מחדל, המצב הקיים) או "תלמידים מסוימים בלבד" (קוד-הקראה נפרד), עם אזהרת-אוזניות. זהו רק ה-UI — מצב "מסוימים" עדיין לא מחובר לצד-השרת (כרגע מתנהג כמו "לכולם"); החיבור (קוד-הקראה + צד-תלמיד) הוא שלב 2. אומת: node --check + איזון-תגיות.
   v151.14 - הוסר הרמז "לחיצה אחת = תשובה" מרמז-השאלה (מיותר, לא התבקש; נוסף ב-v151.8). הרמז עכשיו: בונוס דלוק → "מהירות שווה נקודות!"; בונוס כבוי (כולל מצב-הקראה) → "אין בונוס על מהירות, קחו את הזמן 🙂". בוטל גם הענף המיוחד של v151.8 למצב-הקראה. אומת: node --check + איזון-תגיות.
   v151.13 - החזרת מתג הקראת-התלמידים לסרגל-החי, אבל מותנה: המתג מופיע רק אם הקראת-תלמידים נבחרה במסך-ההכנה (sttsLiveAllowed נקבע בתחילת המשחק ב-hostStart/שחזור). אם נבחרה — המנחה יכול לכבות/להדליק באמצע (בטוח: הבונוס כבר כבוי והניקוד קבוע 1000, רק הטיימר חוזר לרגיל). אם לא נבחרה — אין מתג כלל (הפעלה באמצע הייתה שוברת בונוס/זמן). מתקן את v151.12 שהסיר את המתג לחלוטין. אומת: node --check + איזון-תגיות.
   v151.12 - שני תיקונים: (1) מתג הקראת-התלמידים הוסר מהסרגל-החי — הקראת-תלמידים נקבעת רק מראש במסך-ההכנה (מונע שינוי מצב/זמן/ניקוד באמצע משחק; מתג ההקראה-לחדר של המנחה, ערוץ 1, נשאר). (2) באג "קפיצה" ברמקול-הטלפון: speechSynthesis.cancel() (בלחיצת הפסק/הפעל) הפעיל את ה-onend של החלק המדובר, שקידם את השרשור לחלק הבא (שאלה→תשובות וכו') במקום לעצור. תוקן עם אסימון-הפעלה (_speakSeq): עצירה/הפעלה-חדשה מבטלות את השרשור הקודם, אז cancel באמת עוצר וההפעלה מתחילה נקייה. אומת: node --check + איזון-תגיות.
@@ -516,7 +518,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.14</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -826,6 +828,19 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
         </span>
         <span class="spd-sw"><input type="checkbox" id="pg-stts-toggle" onchange="updateSttsDesc()"><span class="spd-track"></span></span>
       </label>
+      <!-- v152: תת-בחירה — מי מקבל את ההקראה (מופיע רק כשהמתג דלוק) -->
+      <div id="pg-stts-mode" style="display:none; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.1);">
+        <div style="font-size:13px; color:var(--ink-dim); margin-bottom:9px;">מי מקבל את ההקראה?</div>
+        <label style="display:flex; align-items:center; gap:9px; cursor:pointer; margin-bottom:10px; font-size:14px; color:var(--ink);">
+          <input type="radio" name="stts-mode" value="all" checked onchange="updateSttsDesc()" style="width:18px; height:18px; flex:none; accent-color:var(--gold);">
+          <span>כל המשתתפים</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:9px; cursor:pointer; font-size:14px; color:var(--ink);">
+          <input type="radio" name="stts-mode" value="some" onchange="updateSttsDesc()" style="width:18px; height:18px; flex:none; accent-color:var(--gold);">
+          <span>תלמידים מסוימים בלבד — עם קוד-הקראה נפרד</span>
+        </label>
+        <div id="pg-stts-earphone" style="display:none; margin-top:11px; padding:10px 13px; background:rgba(255,193,7,.12); border:1px solid rgba(255,193,7,.4); border-radius:10px; font-size:13px; color:#ffe08a; line-height:1.55;">🎧 התלמידים שיקבלו את קוד-ההקראה ישמעו קול מהטלפון — ודאו שיש להם אוזניות, אחרת ההקראה תפריע לכיתה.</div>
+      </div>
     </div>
 
     <!-- רקע ומוזיקה — לא חובה, מקופל, סגור כברירת מחדל. אותם handlers כמו בעורך -->
@@ -864,6 +879,12 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <p class="sub">המשתתפים מצטרפים באחת משלוש דרכים — בוחרים מה שנוח.</p>
     <div>קוד למשחק:</div>
     <span class="codepill" id="play-code">----</span>
+    <!-- v152: קוד-הקראה (מוצג רק במצב "תלמידים מסוימים") -->
+    <div id="tts-code-box" style="display:none; margin:16px auto 0; max-width:400px; padding:13px 18px; background:rgba(255,193,7,.1); border:1px solid rgba(255,193,7,.45); border-radius:14px; text-align:center;">
+      <div style="font-size:14px; color:#ffe08a; font-weight:700; margin-bottom:7px;">🎧 קוד-הקראה</div>
+      <span class="codepill" id="tts-play-code" style="background:rgba(255,193,7,.18);">----</span>
+      <div style="font-size:12.5px; color:var(--ink-dim); margin-top:8px; line-height:1.55;">תנו את הקוד הזה <b>רק</b> לתלמידים שצריכים הקראה (עם אוזניות). כל השאר — הקוד הרגיל למעלה.</div>
+    </div>
     <div class="qrbox" id="qrbox" style="background:#fff; padding:14px; border-radius:18px; display:none; margin:10px auto; width:max-content;">
       <img id="qr" alt="QR להצטרפות" style="display:block; width:190px; height:190px;">
     </div>
@@ -3801,7 +3822,10 @@ let bestMs = Infinity, bestName = '', maxStreak = 0, streakKing = '';
 let speedBonusOn = true;   // v149: בונוס-מהירות בניקוד — דלוק כברירת-מחדל; נקבע ב-hostStart מהמתג ב-pregame
 let roomTtsOn = false, ttsVoice = null, ttsBtnOn = false;   // v150/v150.3: off כברירת-מחדל; ttsVoice=הקול העברי/null; ttsBtnOn=מצב הכפתור החי (מתג-תפריט)
 let studentTtsOn = false, studentTtsActive = false, sttsHostOn = false;   // v151/v151.1: studentTtsActive=התלמיד הפעיל בנגיעה (חובה ב-iOS); sttsHostOn=הגדרת-המארח
-let sttsLiveAllowed = false;   // v151.13: האם הקראת-תלמידים נבחרה בהכנה — קובע אם מתג-ההקראה מופיע בסרגל-החי (אם לא נבחרה, הפעלה באמצע תשבור בונוס/זמן)
+let sttsLiveAllowed = false;
+let ttsMode = 'all';   // v152: 'all'=לכולם, 'some'=תלמידים מסוימים (קוד-הקראה נפרד)
+let iAmTtsStudent = false;   // v152: צד-תלמיד — הצטרפתי עם קוד-הקראה
+let ttsCode = null;   // v152: צד-מארח — קוד-ההקראה השני (במצב 'some')   // v151.13: האם הקראת-תלמידים נבחרה בהכנה — קובע אם מתג-ההקראה מופיע בסרגל-החי (אם לא נבחרה, הפעלה באמצע תשבור בונוס/זמן)
 let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
 
@@ -3827,6 +3851,7 @@ async function goPlay(){
   if (sttsHostOn) speedBonusOn = false;
   roomTtsOn = $('pg-roomtts-toggle') ? $('pg-roomtts-toggle').checked : false;
   ttsBtnOn = roomTtsOn;
+  { const _r = document.querySelector('input[name="stts-mode"][value="some"]'); ttsMode = (sttsHostOn && _r && _r.checked) ? 'some' : 'all'; }   // v152
   // אם כבר נוצר קוד משחק בסשן הזה (חזרה ללובי מ-pregame) — שומרים אותו ואת המצטרפים.
   // קוד חדש + ניקוי חדר נעשים רק בכניסה ראשונה, כדי שחזרה לשנות רקע/מוזיקה לא תזרוק את מי שכבר הצטרף.
   const firstEntry = !playCode;
@@ -3837,6 +3862,19 @@ async function goPlay(){
   }
   $('play-code').textContent = playCode;
   if ($('join-code-echo')) $('join-code-echo').textContent = playCode;
+  // v152: מצב "תלמידים מסוימים" — קוד-הקראה שני שמצביע לאותו משחק
+  const _ttsBox = $('tts-code-box');
+  if (sttsHostOn && ttsMode === 'some'){
+    if (!ttsCode){
+      ttsCode = await genUniqueCode();
+      fdb.ref('games/'+ttsCode+'/meta').set({ ttsFor: playCode, title: quiz.title || '' }).catch(()=>{});
+    }
+    if ($('tts-play-code')) $('tts-play-code').textContent = ttsCode;
+    if (_ttsBox) _ttsBox.style.display = 'block';
+  } else {
+    if (ttsCode){ fdb.ref('games/'+ttsCode).remove().catch(()=>{}); ttsCode = null; }
+    if (_ttsBox) _ttsBox.style.display = 'none';
+  }
   $('lobby-title').textContent = quiz.title || 'החידון';
   const baseUrl = location.origin.startsWith('http') ? (location.origin + location.pathname) : '';
   // הקישור המלא — כולל קוד המשחק. מועתק דרך הכפתור (הוסר טקסט הכתובת הארוכה — היה רעש ויזואלי).
@@ -3959,7 +3997,7 @@ function listenGame(code, onReady, skipBefore){
       }
     });
     _sttsWatchRef = fdb.ref('games/'+code+'/ttsStudents');
-    _sttsWatchHandler = _sttsWatchRef.on('value', snap => { applyStudentTts(snap.val() === true); });
+    _sttsWatchHandler = _sttsWatchRef.on('value', snap => { applyStudentTts(snap.val() === true || iAmTtsStudent); });   // v152: מצב 'some' — תלמיד-הקראה מקבל פריבילגיה מקומית
   }
   if (onReady) setTimeout(onReady, 400);
 }
@@ -4122,6 +4160,9 @@ function studentSpeak(m){
 function updateSttsDesc(){
   const t = $('pg-stts-toggle'), d = $('pg-stts-desc'); if (!d) return;
   const sp = $('pg-speed-toggle');
+  const modeBox = $('pg-stts-mode'), ear = $('pg-stts-earphone');   // v152
+  const someR = document.querySelector('input[name="stts-mode"][value="some"]');   // v152
+  const someOn = !!(someR && someR.checked);   // v152
   if (t && t.checked){
     if (quiz && quiz.time < 30) d.textContent = 'הטלפון של כל משתתף יקריא שאלה ותשובות. שימו לב: זמן-התשובה יעלה ל-30 שניות — ההקראה לוקחת זמן, וזה כדי לא לפגוע בחווית-המשחק של כבדי-הראייה.';
     else d.textContent = 'הטלפון של כל משתתף יקריא את השאלה והתשובות';
@@ -4130,6 +4171,8 @@ function updateSttsDesc(){
     d.textContent = 'אין הקראה בטלפונים';
     if (sp){ sp.disabled = false; }   // v151.4: שחרור המתג
   }
+  if (modeBox) modeBox.style.display = (t && t.checked) ? 'block' : 'none';   // v152: הצגת תת-הבחירה
+  if (ear) ear.style.display = (t && t.checked && someOn) ? 'block' : 'none';   // v152: אזהרת-אוזניות במצב "מסוימים"
   if (typeof updateSpeedDesc === 'function') updateSpeedDesc();
 }
 function writeStudentTts(on){ try { if (playCode) fdb.ref('games/'+playCode+'/ttsStudents').set(!!on); } catch(e){} }
@@ -4199,12 +4242,13 @@ function hostStart(){
   sttsHostOn = $('pg-stts-toggle') ? $('pg-stts-toggle').checked : false;   // v151 (נקרא מוקדם)
   if (sttsHostOn) speedBonusOn = false;   // v151.4: הקראת-תלמידים דלוקה → בונוס-מהירות כבוי תמיד
   sttsLiveAllowed = sttsHostOn;   // v151.13: נקבע בתחילת המשחק — מתג-הקראה בסרגל רק אם נבחרה הקראה
+  { const _r = document.querySelector('input[name="stts-mode"][value="some"]'); ttsMode = (sttsHostOn && _r && _r.checked) ? 'some' : 'all'; }   // v152
   roomTtsOn = $('pg-roomtts-toggle') ? $('pg-roomtts-toggle').checked : false;   // v150
   ttsBtnOn = roomTtsOn;   // v150.3
   refreshHostSpeakBtn();   // v150
   saveHostSnapshot();   // v127: צילום החידון + מצביע "משחק פעיל" לשחזור מכל מכשיר
   setupHostAlive(playCode);   // v129: סימון "המארח חי" לתלמידים
-  writeStudentTts(sttsHostOn);   // v151 (sttsHostOn נקרא מוקדם ב-hostStart)
+  writeStudentTts(sttsHostOn && ttsMode === 'all');   // v152: פריבילגיה-לכל-המשחק רק במצב 'all' (ב-'some' רק בעלי קוד-ההקראה, מקומית)
   refreshSttsHostToggle();   // v151
   $('host-menu').style.display = 'flex';
   $('host-menu').classList.remove('open');   // התפריט מתחיל סגור — מסך נקי בזמן המשחק
@@ -5068,6 +5112,7 @@ function endGameSession(){
   clearActiveGamePointer();
   teardownHostAlive();   // v129
   if (playCode) fdb.ref('games/'+playCode+'/hostState').remove().catch(()=>{});
+  if (ttsCode){ fdb.ref('games/'+ttsCode).remove().catch(()=>{}); ttsCode = null; }   // v152: ניקוי קוד-ההקראה
   playCode = null; navStack = []; detachGameListeners(); detachPresence();
 }   // v118: ניקוי מאזינים ביציאה ממשחק
 function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); renderEditor(); show('editor'); }
@@ -5099,6 +5144,7 @@ function saveHostSnapshot(){
     fdb.ref('games/'+playCode+'/hostState/speedBonusOn').set(speedBonusOn).catch(()=>{});   // v149
     fdb.ref('games/'+playCode+'/hostState/roomTtsOn').set(roomTtsOn).catch(()=>{});   // v150
     fdb.ref('games/'+playCode+'/hostState/ttsStudents').set(sttsHostOn).catch(()=>{});   // v151
+    fdb.ref('games/'+playCode+'/hostState/ttsMode').set(ttsMode).catch(()=>{});   // v152
     fdb.ref('teachers/'+myStoreKey+'/activeGame').set({ code: playCode, title: (quiz && quiz.title) || 'החידון', ts: Date.now() }).catch(()=>{});
   } catch(e){}
 }
@@ -5195,7 +5241,8 @@ function resumeHostGame(code){
     sttsHostOn = !!hs.ttsStudents;   // v151
     if (sttsHostOn) speedBonusOn = false;   // v151.4: הקראה דלוקה → בונוס-מהירות כבוי
     sttsLiveAllowed = sttsHostOn;   // v151.13: שחזור — מתג-הקראה בסרגל לפי מצב-המשחק
-    writeStudentTts(sttsHostOn);   // v151
+    ttsMode = hs.ttsMode || 'all';   // v152: שחזור המצב (לכולם/מסוימים)
+    writeStudentTts(sttsHostOn && ttsMode === 'all');   // v152: פריבילגיה-לכל-המשחק רק ב-'all'
     refreshSttsHostToggle();   // v151
     players = pr.players || {};
     seq = pr.seq || 0;
@@ -5514,18 +5561,17 @@ function maybeLoadTeams(){
 }
 
 function joinGame(){
-  const code = $('j-code').value.trim();
+  const enteredCode = $('j-code').value.trim();
   myName = $('j-name').value.trim();
-  if (!/^\d{4}$/.test(code)){ $('j-msg').textContent='קוד המשחק הוא 4 ספרות.'; return; }
+  if (!/^\d{4}$/.test(enteredCode)){ $('j-msg').textContent='קוד המשחק הוא 4 ספרות.'; return; }
   if (!myName){ $('j-msg').textContent='הזינו שם.'; return; }
   // נעילת הכפתור + חיווי "מתחבר" כדי שהתלמיד לא ילחץ שוב ולא יחשוב שנתקע
   const btn = $('j-btn');
   const resetBtn = ()=>{ if(btn){ btn.disabled=false; btn.textContent='כניסה 🚀'; } };
   if (btn){ btn.disabled=true; btn.textContent='מתחברים למשחק…'; }
   $('j-msg').textContent='';
-  fdb.ref('games/'+code+'/meta').once('value').then(s=>{
-    const meta = s.val();
-    if (!meta){ $('j-msg').textContent='לא נמצא משחק פעיל עם הקוד הזה.'; resetBtn(); return; }
+  // v152: ממשיכים אחרי שזיהינו את הקוד האמיתי (אחרי הפניה אם זה קוד-הקראה)
+  function proceed(code, meta){
     if (meta.teamCount>0 && myTeam<0){ $('j-msg').textContent='בחרו קבוצה.'; resetBtn(); return; }
     role='player';
     _hostWasAlive = false; _playerGameEnded = false;   // v129: איפוס מצב-המתנה בהצטרפות חדשה
@@ -5544,6 +5590,22 @@ function joinGame(){
         send({ t:'join', id:myId, name:myName, team:myTeam });
       },1500);
     });
+  }
+  fdb.ref('games/'+enteredCode+'/meta').once('value').then(s=>{
+    const meta = s.val();
+    if (!meta){ $('j-msg').textContent='לא נמצא משחק פעיל עם הקוד הזה.'; resetBtn(); return; }
+    if (meta.ttsFor){   // v152: זהו קוד-הקראה → מצביע למשחק האמיתי + מסמן תלמיד-הקראה
+      iAmTtsStudent = true;
+      const realCode = meta.ttsFor;
+      fdb.ref('games/'+realCode+'/meta').once('value').then(s2=>{
+        const realMeta = s2.val();
+        if (!realMeta){ $('j-msg').textContent='לא נמצא משחק פעיל עם הקוד הזה.'; resetBtn(); return; }
+        proceed(realCode, realMeta);
+      }).catch(()=>{ $('j-msg').textContent='תקלת חיבור. בדקו את האינטרנט ונסו שוב.'; resetBtn(); });
+    } else {
+      iAmTtsStudent = false;
+      proceed(enteredCode, meta);
+    }
   }).catch(()=>{ $('j-msg').textContent='תקלת חיבור. בדקו את האינטרנט ונסו שוב.'; resetBtn(); });
 }
 
