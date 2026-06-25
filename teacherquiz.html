@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v151.4 - רצפת זמן-תשובה בהקראת-תלמידים: ההקראה לוקחת זמן, אז כשהקראת-התלמידים דלוקה וזמן-התשובה שנבחר קטן מ-30 שניות → הזמן בפועל עולה ל-30 לכל הכיתה (הטיימר אחיד), כדי לא לפגוע בכבדי-הראייה. בלי אפשרות-ביטול (נגישות אינה אופציונלית). אם נבחר 30+ — לא משתנה. effAnswerTime() מחיל את הרצפה על תצוגת-הטיימר, הספירה-לאחור, ה-dur לטלפונים, וחישוב-המהירות. החידון השמור לא משתנה (רק הריצה). ההערה מתחת למתג מופיעה רק אם הזמן הנבחר < 30. בנוסף: כשהקראת-תלמידים דלוקה, בונוס-המהירות כבוי תמיד והמנחה לא יכול להפעיל אותו (מתג-המהירות ב-pregame ננעל ומתרוקן, ו-speedBonusOn נכפה כבוי ב-hostStart/שחזור/מתג-חי) — כדי לא להעניש את מי שמאזין להקראה. סולו לא מושפע. אומת: node --check + איזון-תגיות.
+  v151.3 - תיקון קצב הקראת-התלמיד: התשובות נשמעו דבוקות ("גמלכלבחתולדג") כי \n בין התשובות לא נתן הפסקה במכשיר. תוקן — כל חלק (שאלה, "התשובות הן:", וכל תשובה בנפרד) נאמר כמשפט נפרד עם הפסקה אמיתית ביניהם (onend-שרשור עם guard נגד תקיעה אם onend לא נורה), והמהירות הואטה ל-0.9. אומת: node --check + איזון-תגיות.
   v151.2 - תיקון: כפתור-ההקראה של התלמיד לא הופיע כלל. הסיבה: כלל-CSS #stts-mute{display:none}, והפונקציה ניסתה להציג עם display='' — ש'' לא מבטל כלל-CSS (רק inline). תוקן ל-display='block' מפורש. בנוסף refreshSttsMuteBtn נקרא בכל showPQ לחיזוק. אומת: node --check + איזון-תגיות.
   v151.1 - תיקון הקראת-תלמיד לנייד (אייפון/אנדרואיד): באייפון getVoices ריק עד אינטראקציה ואפל חוסמת הקראה-אוטומטית בלי נגיעה — אז הכפתור הוסתר ושום דבר לא הוקרא. תוקן: (א) כפתור-הרמקול תמיד מופיע כשההקראה דלוקה (בלי תלות בזיהוי-קול מראש); (ב) דגם "נגיעה-להפעלה" — נגיעה אחת מעירה את הקול ומקריאה את השאלה הנוכחית (עוקף חסימת-אפל), ומאז כל שאלה אוטומטית; נגיעה נוספת משתיקה (studentTtsActive); (ג) הקול נבחר בזמן-אמת עם נפילה ל-lang=he-IL; (ד) unlockSpeech שקט (volume 0) בנגיעה לפתיחת-אודיו ב-iOS. אנדרואיד עובד חלק עוד יותר (אין חסימה). אצל המארח — ללא שינוי. דורש אימות-מכשיר. אומת: node --check + איזון-תגיות.
   v151 - ערוץ 2: הקראה בטלפון-התלמיד + מצב-קריאוּת-מוגברת (מצב "לכולם"). מתג-מארח חדש (pregame + תפריט-חי) "📱 הקראה בטלפוני המשתתפים" כותב games/{code}/ttsStudents; כל טלפון-תלמיד מאזין (תבנית hostAlive). נדלק → (א) הקראה אוטומטית בכל שאלה: "השאלה היא: [...]. התשובות הן: [...]" (cancel+השהיה כמו ערוץ 1, רק אם יש קול עברי במכשיר); (ב) מצב-קריאוּת-מוגברת אוטומטי (body.tts-student): שאלה 28px, תשובות 23px עם גבול בהיר, מילוי בהיר יותר, ריווח גדול, וסימון ✓ לנבחר; (ג) כפתור-השתקה גדול לתלמיד (מקומי — משתיק אודיו, הוויזואל נשאר); (ד) הודעה ויזואלית + רטט אם נתמך. נשמר ב-hostState לשחזור. v152 בנפרד: קוד-הקראה לתלמידים ספציפיים + אזהרת-אוזניות. אומת: node --check + איזון-תגיות.
@@ -496,7 +498,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.2</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.4</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -3994,6 +3996,7 @@ function toggleHostMenu(){
 function updateSpeedDesc(){   // v149: עדכון תיאור המתג לפי מצבו
   const t = $('pg-speed-toggle'), d = $('pg-speed-desc');
   if (!t || !d) return;
+  if (t.disabled){ d.textContent = 'כבוי אוטומטית בזמן הקראה לתלמידים — כדי לא להעניש את מי שמאזין'; return; }   // v151.4
   d.textContent = t.checked ? 'תשובה מהירה מזכה בניקוד גבוה יותר' : 'אין בונוס על מהירות — כל תשובה נכונה שווה ניקוד מלא';
 }
 function updateRoomTtsDesc(){   // v150: תיאור מתג ההקראה-לחדר
@@ -4056,30 +4059,52 @@ function toggleStudentSpeak(){
 function studentSpeak(m){
   if (!window.speechSynthesis || !m) return;
   try {
-    const opts = (m.options || []).map(function(o){ return o.txt; });
-    let text = 'השאלה היא: ' + (m.text || '');
-    if (opts.length) text += '\nהתשובות הן:\n' + opts.join('\n');
     const synth = window.speechSynthesis;
     let v = ttsVoice;
     if (!v){ try { v = (synth.getVoices()||[]).find(function(x){ return (x.lang||'').toLowerCase().indexOf('he')===0; }) || null; } catch(e){} }
+    // v151.3: כל חלק כמשפט נפרד — הפסקה אמיתית בין התשובות (\n לא נתן הפסקה במכשיר)
+    const parts = ['השאלה היא: ' + (m.text || '')];
+    const opts = (m.options || []).map(function(o){ return o.txt; });
+    if (opts.length){ parts.push('התשובות הן:'); opts.forEach(function(a){ parts.push(a); }); }
     synth.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'he-IL'; if (v) u.voice = v;
-    setTimeout(function(){ try { synth.speak(u); } catch(e){} }, 80);
+    let i = 0, guard = null;
+    function step(){
+      clearTimeout(guard);
+      if (i >= parts.length) return;
+      const idx = i;
+      const u = new SpeechSynthesisUtterance(parts[idx]);
+      u.lang = 'he-IL'; if (v) u.voice = v; u.rate = 0.9;
+      u.onend = function(){ if (i === idx){ i++; setTimeout(step, 140); } };
+      u.onerror = function(){ if (i === idx){ i++; setTimeout(step, 140); } };
+      guard = setTimeout(function(){ if (i === idx){ i++; step(); } }, Math.max(2600, parts[idx].length * 230));
+      try { synth.speak(u); } catch(e){ if (i === idx){ i++; setTimeout(step, 140); } }
+    }
+    setTimeout(step, 80);
   } catch(e){}
 }
 // v151: צד-מארח — מתג ה-pregame, כתיבה ל-Firebase, ומתג-התפריט החי
 function updateSttsDesc(){
   const t = $('pg-stts-toggle'), d = $('pg-stts-desc'); if (!d) return;
-  d.textContent = (t && t.checked) ? 'הטלפון של כל משתתף יקריא את השאלה והתשובות' : 'אין הקראה בטלפונים';
+  const sp = $('pg-speed-toggle');
+  if (t && t.checked){
+    if (quiz && quiz.time < 30) d.textContent = 'הטלפון של כל משתתף יקריא שאלה ותשובות. שימו לב: זמן-התשובה יעלה ל-30 שניות — ההקראה לוקחת זמן, וזה כדי לא לפגוע בחווית-המשחק של כבדי-הראייה.';
+    else d.textContent = 'הטלפון של כל משתתף יקריא את השאלה והתשובות';
+    if (sp){ sp.checked = false; sp.disabled = true; }   // v151.4: הקראה → בונוס-מהירות כבוי ונעול
+  } else {
+    d.textContent = 'אין הקראה בטלפונים';
+    if (sp){ sp.disabled = false; }   // v151.4: שחרור המתג
+  }
+  if (typeof updateSpeedDesc === 'function') updateSpeedDesc();
 }
 function writeStudentTts(on){ try { if (playCode) fdb.ref('games/'+playCode+'/ttsStudents').set(!!on); } catch(e){} }
-function toggleStudentTts(){ sttsHostOn = !sttsHostOn; writeStudentTts(sttsHostOn); refreshSttsHostToggle(); }
+function toggleStudentTts(){ sttsHostOn = !sttsHostOn; if (sttsHostOn) speedBonusOn = false; writeStudentTts(sttsHostOn); refreshSttsHostToggle(); }
 function refreshSttsHostToggle(){
   const m = $('stts-host-toggle'); if (!m) return;
   m.style.display = '';
   m.textContent = sttsHostOn ? '🔇 בטל הקראת-תלמידים' : '🔊 הקראת-תלמידים';
 }
+// v151.4: זמן-התשובה בפועל — רצפת 30 שניות כשהקראת-תלמידים דלוקה (ההקראה לוקחת זמן)
+function effAnswerTime(){ return (sttsHostOn && quiz && quiz.time < 30) ? 30 : (quiz ? quiz.time : 20); }
 // v150.3: מתג חי בתפריט-הבקרה — מכבה/מדליק את כפתורי-ההקראה תוך כדי משחק
 function toggleTtsBtn(){
   ttsBtnOn = !ttsBtnOn;
@@ -4135,13 +4160,14 @@ function hostSpeakRoom(){
 if (window.speechSynthesis){ loadTtsVoice(); speechSynthesis.onvoiceschanged = loadTtsVoice; }
 function hostStart(){
   speedBonusOn = $('pg-speed-toggle') ? $('pg-speed-toggle').checked : true;   // v149: קריאת המתג לפני הצילום
+  sttsHostOn = $('pg-stts-toggle') ? $('pg-stts-toggle').checked : false;   // v151 (נקרא מוקדם)
+  if (sttsHostOn) speedBonusOn = false;   // v151.4: הקראת-תלמידים דלוקה → בונוס-מהירות כבוי תמיד
   roomTtsOn = $('pg-roomtts-toggle') ? $('pg-roomtts-toggle').checked : false;   // v150
   ttsBtnOn = roomTtsOn;   // v150.3
   refreshHostSpeakBtn();   // v150
   saveHostSnapshot();   // v127: צילום החידון + מצביע "משחק פעיל" לשחזור מכל מכשיר
   setupHostAlive(playCode);   // v129: סימון "המארח חי" לתלמידים
-  sttsHostOn = $('pg-stts-toggle') ? $('pg-stts-toggle').checked : false;   // v151
-  writeStudentTts(sttsHostOn);   // v151
+  writeStudentTts(sttsHostOn);   // v151 (sttsHostOn נקרא מוקדם ב-hostStart)
   refreshSttsHostToggle();   // v151
   $('host-menu').style.display = 'flex';
   $('host-menu').classList.remove('open');   // התפריט מתחיל סגור — מסך נקי בזמן המשחק
@@ -4482,15 +4508,16 @@ function nextQ(){
   $('hq-text').textContent = curQ.text;
   $('hq-answered').textContent = '0';
   $('hq-total').textContent = Object.keys(players).length;
-  $('hq-timer').textContent = quiz.time;
+  const eff = effAnswerTime();   // v151.4: רצפת-30 שניות כשהקראת-תלמידים דלוקה
+  $('hq-timer').textContent = eff;
   $('hq-timer').classList.remove('low');
   $('hq-bar').style.transition='none'; $('hq-bar').style.width='100%';
-  requestAnimationFrame(()=>{ $('hq-bar').style.transition='width '+quiz.time+'s linear'; $('hq-bar').style.width='0%'; });
+  requestAnimationFrame(()=>{ $('hq-bar').style.transition='width '+eff+'s linear'; $('hq-bar').style.width='0%'; });
   show('hq');
   // שולחים לשחקנים: טקסט + תשובות (מעורבבות לתצוגה אבל עם אינדקס מקורי)
-  send({ t:'q', i:seq, text:curQ.text, dur:quiz.time, options: opts.map(o=>({txt:o.a, idx:o.i})), correct: curQ.correct, total: quiz.questions.length, num: qIndex+1, speedOn: speedBonusOn });   // v149: speedOn → רמז-השחקן
+  send({ t:'q', i:seq, text:curQ.text, dur:eff, options: opts.map(o=>({txt:o.a, idx:o.i})), correct: curQ.correct, total: quiz.questions.length, num: qIndex+1, speedOn: speedBonusOn });   // v149: speedOn → רמז-השחקן
   saveHostCheckpoint();   // v127: נקודת-ביקורת לשחזור (הניקוד כפי שהיה בתחילת השאלה — מונע ספירה כפולה)
-  let t = quiz.time;
+  let t = eff;
   clearInterval(hostTimer);
   hostTimer = setInterval(()=>{
     t--; $('hq-timer').textContent = Math.max(0,t);
@@ -4737,7 +4764,7 @@ function revealQ(){
     const p = players[id];
     if (p && a.pick === curQ.correct){
       // ניקוד: בסיס + בונוס מהירות + בונוס רצף
-      const speed = Math.max(0, 1 - (a.dt/(quiz.time*1000)));
+      const speed = Math.max(0, 1 - (a.dt/(effAnswerTime()*1000)));   // v151.4: ביחס לזמן בפועל (אחרי רצפת-30)
       const pts = speedBonusOn ? Math.round(500 + 500*speed) : 1000;   // v149: כבוי ← ניקוד מלא קבוע
       p.streak++;
       const streakBonus = Math.min(p.streak-1,5)*50;
@@ -5117,6 +5144,7 @@ function resumeHostGame(code){
     ttsBtnOn = roomTtsOn;   // v150.3
     refreshHostSpeakBtn();
     sttsHostOn = !!hs.ttsStudents;   // v151
+    if (sttsHostOn) speedBonusOn = false;   // v151.4: הקראה דלוקה → בונוס-מהירות כבוי
     writeStudentTts(sttsHostOn);   // v151
     refreshSttsHostToggle();   // v151
     players = pr.players || {};
