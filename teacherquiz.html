@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v152.1 - קוד-ההקראה עבר למסך-ההכנה (פרטי): קודם הוצג בלובי (חשוף לכל הכיתה על המקרן) — באג. עכשיו: כשבוחרים "תלמידים מסוימים", מספר קוד-ההקראה מוצג במסך-ההכנה בלבד (פרטי, לפני שיתוף-המסך), בלי שום כתיבה ל-Firebase שם (רק מספר — אפס נגיעה במנגנון-הזיכרון/discardStaleGame). הקישור ל-Firebase (games/{ttsCode}/meta={ttsFor:playCode}) נכתב רק כשהמשחק מתחיל (בלובי). הקוד-הרגיל מובטח שונה מקוד-ההקראה. ניקוי: releaseTtsCode ביציאה ממסך-ההכנה (דרך show, choke-point יחיד) ובהחלפת-מצב, ו-endGameSession. בלובי מוצג רק הקוד-הרגיל. אומת: node --check + איזון-תגיות.
   v152 - הקראה לתלמידים מסוימים (קוד-הקראה נפרד): במסך-ההכנה, בבחירת הקראה, אפשר לבחור "כל המשתתפים" (הקיים) או "תלמידים מסוימים בלבד". במצב "מסוימים": בלובי מופיע קוד-הקראה שני (games/{ttsCode}/meta={ttsFor:playCode}) לצד הקוד הרגיל; תלמיד שמצטרף עם קוד-ההקראה מופנה לאותו משחק ומסומן מקומית (iAmTtsStudent) — רק הוא מקבל אודיו+ויזואל-מוגבר. הפריבילגיה-לכל-המשחק (ttsStudents) נכתבת רק במצב 'all'; ב-'some' התלמיד מקבל פריבילגיה מקומית (המאזין: snap||iAmTtsStudent). זמן/בונוס/הודעה זהים בשני המצבים (sttsHostOn — 30+, בונוס מבוטל). אזהרת-אוזניות במסך-ההכנה. ניקוי קוד-ההקראה ב-endGameSession; ttsMode נשמר/משוחזר ב-hostState. אומת: node --check + איזון-תגיות.
   v151.15 - שלב 1 מתוך הקראה-לתלמידים-מסוימים (v152 בבנייה): מסך-ההכנה — כשמדליקים "הקראה בטלפוני המשתתפים" מופיעה תת-בחירה: "כל המשתתפים" (ברירת-מחדל, המצב הקיים) או "תלמידים מסוימים בלבד" (קוד-הקראה נפרד), עם אזהרת-אוזניות. זהו רק ה-UI — מצב "מסוימים" עדיין לא מחובר לצד-השרת (כרגע מתנהג כמו "לכולם"); החיבור (קוד-הקראה + צד-תלמיד) הוא שלב 2. אומת: node --check + איזון-תגיות.
   v151.14 - הוסר הרמז "לחיצה אחת = תשובה" מרמז-השאלה (מיותר, לא התבקש; נוסף ב-v151.8). הרמז עכשיו: בונוס דלוק → "מהירות שווה נקודות!"; בונוס כבוי (כולל מצב-הקראה) → "אין בונוס על מהירות, קחו את הזמן 🙂". בוטל גם הענף המיוחד של v151.8 למצב-הקראה. אומת: node --check + איזון-תגיות.
@@ -518,7 +519,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152.1</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -840,6 +841,12 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
           <span>תלמידים מסוימים בלבד — עם קוד-הקראה נפרד</span>
         </label>
         <div id="pg-stts-earphone" style="display:none; margin-top:11px; padding:10px 13px; background:rgba(255,193,7,.12); border:1px solid rgba(255,193,7,.4); border-radius:10px; font-size:13px; color:#ffe08a; line-height:1.55;">🎧 התלמידים שיקבלו את קוד-ההקראה ישמעו קול מהטלפון — ודאו שיש להם אוזניות, אחרת ההקראה תפריע לכיתה.</div>
+        <!-- v152.1: קוד-ההקראה מוצג כאן בפרטיות (רק המורה, לפני שיתוף-המסך) -->
+        <div id="pg-tts-code-box" style="display:none; margin-top:11px; padding:12px 14px; background:rgba(46,196,182,.12); border:1px solid rgba(46,196,182,.45); border-radius:12px; text-align:center;">
+          <div style="font-size:13px; color:var(--ink-dim); margin-bottom:7px;">קוד-ההקראה (פרטי — רק אתם רואים אותו כאן):</div>
+          <span id="pg-tts-code" style="font-size:27px; font-weight:800; letter-spacing:3px; color:var(--teal); font-family:'Heebo';">----</span>
+          <div style="font-size:12px; color:var(--ink-dim); margin-top:8px; line-height:1.55;">תנו אותו <b>רק</b> לתלמידים שצריכים הקראה (עם אוזניות). הקוד <b>לא</b> יופיע במסך-המשחק.</div>
+        </div>
       </div>
     </div>
 
@@ -879,12 +886,6 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <p class="sub">המשתתפים מצטרפים באחת משלוש דרכים — בוחרים מה שנוח.</p>
     <div>קוד למשחק:</div>
     <span class="codepill" id="play-code">----</span>
-    <!-- v152: קוד-הקראה (מוצג רק במצב "תלמידים מסוימים") -->
-    <div id="tts-code-box" style="display:none; margin:16px auto 0; max-width:400px; padding:13px 18px; background:rgba(255,193,7,.1); border:1px solid rgba(255,193,7,.45); border-radius:14px; text-align:center;">
-      <div style="font-size:14px; color:#ffe08a; font-weight:700; margin-bottom:7px;">🎧 קוד-הקראה</div>
-      <span class="codepill" id="tts-play-code" style="background:rgba(255,193,7,.18);">----</span>
-      <div style="font-size:12.5px; color:var(--ink-dim); margin-top:8px; line-height:1.55;">תנו את הקוד הזה <b>רק</b> לתלמידים שצריכים הקראה (עם אוזניות). כל השאר — הקוד הרגיל למעלה.</div>
-    </div>
     <div class="qrbox" id="qrbox" style="background:#fff; padding:14px; border-radius:18px; display:none; margin:10px auto; width:max-content;">
       <img id="qr" alt="QR להצטרפות" style="display:block; width:190px; height:190px;">
     </div>
@@ -1169,6 +1170,8 @@ function showInfo(ev, text){
 function closeInfo(){ const p = $('active-info'); if (p) p.remove(); }
 document.addEventListener('click', closeInfo);
 function show(id){
+  // v152.1: יציאה ממסך-ההכנה בלי התחלת-משחק (לא ללובי) → שחרור קוד-ההקראה (אין יתומים)
+  if (id !== 'pregame' && id !== 'lobby' && $('pregame') && $('pregame').classList.contains('on')) releaseTtsCode();
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
   $(id).classList.add('on');
   updateNavMenu();
@@ -3859,21 +3862,13 @@ async function goPlay(){
     await discardStaleGame();   // v151.10: משחק חדש מבטל משחק-פעיל ישן (אפשרות א — שינויים תמיד נקלטים)
     const rb = $('resume-banner'); if (rb) rb.style.display = 'none';   // מבטל הצעת-שחזור ישנה
     playCode = await genUniqueCode();
+    while (ttsCode && playCode === ttsCode){ playCode = await genUniqueCode(); }   // v152.1: הקוד-הרגיל חייב להיות שונה מקוד-ההקראה
   }
   $('play-code').textContent = playCode;
   if ($('join-code-echo')) $('join-code-echo').textContent = playCode;
-  // v152: מצב "תלמידים מסוימים" — קוד-הקראה שני שמצביע לאותו משחק
-  const _ttsBox = $('tts-code-box');
-  if (sttsHostOn && ttsMode === 'some'){
-    if (!ttsCode){
-      ttsCode = await genUniqueCode();
-      fdb.ref('games/'+ttsCode+'/meta').set({ ttsFor: playCode, title: quiz.title || '' }).catch(()=>{});
-    }
-    if ($('tts-play-code')) $('tts-play-code').textContent = ttsCode;
-    if (_ttsBox) _ttsBox.style.display = 'block';
-  } else {
-    if (ttsCode){ fdb.ref('games/'+ttsCode).remove().catch(()=>{}); ttsCode = null; }
-    if (_ttsBox) _ttsBox.style.display = 'none';
+  // v152.1: קושרים את קוד-ההקראה (שכבר הוצג למורה במסך-ההכנה, פרטי) למשחק. בלובי לא מציגים אותו.
+  if (sttsHostOn && ttsMode === 'some' && ttsCode){
+    fdb.ref('games/'+ttsCode+'/meta').set({ ttsFor: playCode, title: quiz.title || '' }).catch(()=>{});
   }
   $('lobby-title').textContent = quiz.title || 'החידון';
   const baseUrl = location.origin.startsWith('http') ? (location.origin + location.pathname) : '';
@@ -4173,9 +4168,32 @@ function updateSttsDesc(){
   }
   if (modeBox) modeBox.style.display = (t && t.checked) ? 'block' : 'none';   // v152: הצגת תת-הבחירה
   if (ear) ear.style.display = (t && t.checked && someOn) ? 'block' : 'none';   // v152: אזהרת-אוזניות במצב "מסוימים"
+  syncPregameTtsCode();   // v152.1: יצירת/הסתרת מספר קוד-ההקראה הפרטי
   if (typeof updateSpeedDesc === 'function') updateSpeedDesc();
 }
 function writeStudentTts(on){ try { if (playCode) fdb.ref('games/'+playCode+'/ttsStudents').set(!!on); } catch(e){} }
+// v152.1: שחרור קוד-ההקראה (מוחק מ-Firebase אם נקשר, ומאפס) — נקרא ביציאה ממסך-ההכנה ובהחלפת-מצב
+function releaseTtsCode(){ if (ttsCode){ try { fdb.ref('games/'+ttsCode).remove().catch(()=>{}); } catch(e){} ttsCode = null; } }
+let _ttsGenLock = false;
+// v152.1: במצב "מסוימים" — מייצר מספר קוד-הקראה (בלי כתיבה ל-Firebase!) ומציג אותו בפרטיות; אחרת מסתיר ומשחרר
+async function syncPregameTtsCode(){
+  const t = $('pg-stts-toggle');
+  const someR = document.querySelector('input[name=\"stts-mode\"][value=\"some\"]');
+  const wantSome = !!(t && t.checked && someR && someR.checked);
+  const box = $('pg-tts-code-box');
+  if (wantSome){
+    if (!ttsCode && !_ttsGenLock){
+      _ttsGenLock = true;
+      try { ttsCode = await genUniqueCode(); } catch(e){}
+      _ttsGenLock = false;
+    }
+    if (ttsCode && $('pg-tts-code')) $('pg-tts-code').textContent = ttsCode;
+    if (box) box.style.display = ttsCode ? 'block' : 'none';
+  } else {
+    releaseTtsCode();
+    if (box) box.style.display = 'none';
+  }
+}
 function toggleStudentTts(){ sttsHostOn = !sttsHostOn; if (sttsHostOn) speedBonusOn = false; writeStudentTts(sttsHostOn); refreshSttsHostToggle(); }
 function refreshSttsHostToggle(){
   const m = $('stts-host-toggle'); if (!m) return;
