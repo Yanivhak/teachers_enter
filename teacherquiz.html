@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v152.6 - (1) תיקון "המשחק נקטע" (✕) ששתק בשני המצבים — אותו שורש בדיוק כמו הקראת-הסיום (v152.5): ה-handler קרא להקראה ואז מיד show('pcut'), ושורת-ה-cancel של show ("יציאה ממסך-שאלה → עצירת הקראה", v152.2) דרסה את ההקראה. תוקן: ההקראה עברה ל*אחרי* show('pcut') ועטופה ב-setTimeout(160). show() עצמו לא נגעתי — הקראת-השאלה ממשיכה להיפסק במעבר כרגיל; רק ההודעה הקצרה רצה אחרי ה-cancel. (2) הוסר הקירור (5 דק') לבקשת-המשתמש — כל הודעת-אמצע (חזרה-ממסך / מנחה-יצא / נקטע) מוקראת בכל פעם, בלי טיימר. speakMiddleOnce פושט (גודר ב-studentTtsOn בלבד); _ttsCooldowns הוסר. טרייד-אוף מודע: רשת מקרטעת עלולה להשמיע הודעת-אמצע כמה פעמים — מקובל (משחק כזה ממילא ייפסק). אומת: node --check + איזון-תגיות. דורש אימות-מכשיר.
   v152.5 - תיקון שני שורשים בהקראות-הנגישות (v152.4): (1) מסך-פתיחה לא הופיע במצב "לכולם" — הוא נקרא רק ב-applyStudentTts (כשהמנחה מתחיל), והשאלה הראשונה דרסה אותו מיד. תוקן: הודעת welcome נושאת כעת ttsAll=(sttsHostOn && ttsMode==='all'); התלמיד מציג את מסך-הפתיחה כבר בלובי אם iAmTtsStudent (ספציפי) או m.ttsAll (כללי) — בדיוק כמו שספציפי כבר עבד. (2) הקראת-הסיום שתקה בשני המצבים — היא נקראה לפני show('pfin'), ושורת-ה-cancel של show ("יציאה ממסך-שאלה → עצירת הקראה", v152.2) דרסה את ההקראה שזה-עתה התחילה. תוקן: speakText של הסיום עבר ל*אחרי* show('pfin') ועטוף ב-setTimeout(160) — ה-cancel של show רץ קודם, ואז הסיום מוקרא נקי. אובחן מול דיווח: "המנחה יצא" עבד (הולך ל-showPlayerWait ישירות, לא דרך show) בעוד הסיום שתק — מה שהצביע על show כאשם. מצב רגיל/בלי-הקראה: ללא שינוי. אומת: node --check + איזון-תגיות. דורש אימות-מכשיר.
   v152.4 - הקראות-נגישות לתלמיד-הקראה (לכולם + ספציפי): (1) מסך-פתיחה — overlay גדול "געו במסך כדי להפעיל את ההקראה ⭐" עם אנימציית-אצבע (👆 פועם ב-CSS). מופיע בספציפי בהצטרפות (welcome+iAmTtsStudent), ב-'all' כשההקראה מופעלת (applyStudentTts). נגיעה → פותחת אודיו (studentTtsActive, חובה ב-iOS) ומקריאה "היי <שם>, אין בונוס על מהירות, אין צורך למהר". יורד בנגיעה / אחרי 6ש' / כשמגיעה שאלה (showPQ). once-guard. (2) הקראת-סיום — "תודה רבה <שם>, היה כיף, נתראה במשחק הבא" ב-showPFin. (3) שלוש הקראות-אמצע, כל אחת עם קירור 5 דק' עצמאי (לא קשורות זו לזו): "עוד רגע תחזרו" (חזרה-ממסך-כבוי), "עוד רגע המנחה יחזור" (מנחה נפל), "המשחק נקטע" (✕). מנוע: speakText (utterance בודד, קול עברי, rate 0.85) + speakMiddleOnce (מפתח+חותמת-זמן). מחמאות נשארו ויזואליות (הקראתן הייתה מתנגשת עם הקראת-השאלה). מצב רגיל/בלי-הקראה: אפס שינוי (הכל מגודר ב-studentTtsOn / speechSynthesis). אומת: node --check + איזון-תגיות. דורש אימות-מכשיר: כל ההקראות + הנגיעה לפתיחת-אודיו ב-iOS לא נבדקות בסביבה.
   v152.3 - תיקון מצב-הקראה "ספציפי": מתג-ההקראה החי של המנחה לא השפיע על תלמידי-הקוד — כיבוי לא כיבה אותם (כי המאזין היה snap||iAmTtsStudent, וה-iAmTtsStudent המקומי החזיק אותם דלוקים תמיד), והדלקה-מחדש הייתה מדליקה את כולם (ttsStudents=true). תוקן בדגל-Firebase שני: writeStudentTts מפצל לפי ttsMode — 'all'→ttsStudents (כל המשתתפים), 'some'→ttsStudentsSome (רק תלמידי-הקוד). מאזין-התלמיד שומע את שני הדגלים ומחשב: הקראה = ttsStudents || (iAmTtsStudent && ttsStudentsSome). כך המתג שולט גם בספציפיים: כיבוי מכבה אותם, הדלקה מדליקה רק אותם. נקודות-הקריאה (hostStart/שחזור) מעבירות את המצב הגולמי. מצב 'all' לא הושפע (הנוסחה זהה: ttsStudentsSome תמיד false שם). ניקוי המאזין השני ב-detachGameListeners. אומת: node --check + איזון-תגיות. דורש אימות-מכשיר: הזרימה החיה לא נבדקת בסביבה.
@@ -535,7 +536,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152.5</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152.6</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -3849,7 +3850,7 @@ let iAmTtsStudent = false;   // v152: צד-תלמיד — הצטרפתי עם ק
 let _ttsAllFlag = false, _ttsSomeFlag = false;   // v152.3: שני דגלי-Firebase — 'all' (כל המשתתפים) ו-'some' (רק תלמידי-הקוד)
 // v152.3: הקראה דולקת אם הדגל-לכולם דלוק, או (אני תלמיד-קוד וגם הדגל-לספציפיים דלוק) — כך מתג-המנחה שולט גם בספציפיים
 function recomputeStudentTts(){ applyStudentTts(_ttsAllFlag || (iAmTtsStudent && _ttsSomeFlag)); }
-let _ttsOpeningDone = false, _ttsOpeningTimer = null, _spokeClosing = false, _ttsCooldowns = {};   // v152.4: מסך-פתיחה + הקראות פתיחה/סיום/אמצע (קירור עצמאי לכל הודעה)
+let _ttsOpeningDone = false, _ttsOpeningTimer = null, _spokeClosing = false;   // v152.4/v152.6: מסך-פתיחה + הקראות פתיחה/סיום/אמצע (הקירור הוסר ב-v152.6)
 let ttsCode = null;   // v152: צד-מארח — קוד-ההקראה השני (במצב 'some')   // v151.13: האם הקראת-תלמידים נבחרה בהכנה — קובע אם מתג-ההקראה מופיע בסרגל-החי (אם לא נבחרה, הפעלה באמצע תשבור בונוס/זמן)
 let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
@@ -4203,11 +4204,9 @@ function speakText(txt){
   } catch(e){}
 }
 // v152.4: הקראת הודעת-אמצע עם קירור 5 דק' עצמאי לכל מפתח (wake/hostgone/cut) — רק לתלמיד-הקראה פעיל
+// v152.6: הקירור (5 דק') הוסר לבקשת-המשתמש — כל הודעת-אמצע מוקראת בכל פעם. key נשמר לתאימות-קריאה אך אינו בשימוש.
 function speakMiddleOnce(key, txt){
   if (!studentTtsOn) return;
-  const now = Date.now();
-  if (_ttsCooldowns[key] && (now - _ttsCooldowns[key]) < 300000) return;
-  _ttsCooldowns[key] = now;
   speakText(txt);
 }
 // v152.4: מסך-פתיחה לתלמיד-הקראה — נגיעה פותחת אודיו (חובה ב-iOS) ומקריאה "אין צורך למהר"
@@ -5717,7 +5716,7 @@ function playerMsg(m){
   if (m.t==='rev'){ showFeedback(m); }
   if (m.t==='end'){ _playerGameEnded = true; clearTimeout(_hostGoneTimer); hidePlayerWait(); showPFin(m); }
   if (m.t==='welcomeback' && m.id===myId && m.msg){ showReinforceToast(m.msg, '👋'); }
-  if (m.t==='interrupted'){ _playerGameEnded = true; clearTimeout(_hostGoneTimer); hidePlayerWait(); speakMiddleOnce('cut', 'המשחק נקטע, תודה ששיחקתם'); show('pcut'); }   // v131/v152.4: המנחה לחץ ✕ + הקראה
+  if (m.t==='interrupted'){ _playerGameEnded = true; clearTimeout(_hostGoneTimer); hidePlayerWait(); show('pcut'); setTimeout(() => speakMiddleOnce('cut', 'המשחק נקטע, תודה ששיחקתם'), 160); }   // v131/v152.4/v152.6: ✕ — הקראה אחרי show('pcut') + השהיה (אחרת show דרס אותה, כמו הסיום ב-v152.5)
 }
 
 function showPQ(m){
