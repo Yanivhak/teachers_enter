@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v152.3 - תיקון מצב-הקראה "ספציפי": מתג-ההקראה החי של המנחה לא השפיע על תלמידי-הקוד — כיבוי לא כיבה אותם (כי המאזין היה snap||iAmTtsStudent, וה-iAmTtsStudent המקומי החזיק אותם דלוקים תמיד), והדלקה-מחדש הייתה מדליקה את כולם (ttsStudents=true). תוקן בדגל-Firebase שני: writeStudentTts מפצל לפי ttsMode — 'all'→ttsStudents (כל המשתתפים), 'some'→ttsStudentsSome (רק תלמידי-הקוד). מאזין-התלמיד שומע את שני הדגלים ומחשב: הקראה = ttsStudents || (iAmTtsStudent && ttsStudentsSome). כך המתג שולט גם בספציפיים: כיבוי מכבה אותם, הדלקה מדליקה רק אותם. נקודות-הקריאה (hostStart/שחזור) מעבירות את המצב הגולמי. מצב 'all' לא הושפע (הנוסחה זהה: ttsStudentsSome תמיד false שם). ניקוי המאזין השני ב-detachGameListeners. אומת: node --check + איזון-תגיות. דורש אימות-מכשיר: הזרימה החיה לא נבדקת בסביבה.
   v152.2 - שלושה תיקונים: (1) רמז-המהירות במסך-השאלה ריק כשהבונוס כבוי (כולל מצב-הקראה, לכולם וספציפי) — קודם הופיע "אין בונוס על מהירות" שחזר בטעות ב-v151.14 (הוסר ב-v151.8, ראה שם); אותו מידע כבר בקופסת-הלובי. נשאר "מהירות שווה נקודות!" רק כשהבונוס דלוק. (2) הקראת-התלמיד נעצרת ביציאה ממסך-השאלה (נקודה אחת ב-show: _speakSeq++ + cancel) — קודם המשיכה למסך הבא בעת תשובה/מעבר-שאלה/יציאה. (3) חזרה אחרי כיבוי-מסך: handler ל-visibilitychange — כשהמסך חוזר לפעולה והתלמיד באמצע משחק (ולא על מסך-שאלה פעיל), מוצג מסך-המתנה "עוד רגע תחזור למשחק" (שימוש-חוזר ב-player-wait מ-v129, עם הודעה ייעודית דרך pw-sub), שיורד אוטומטית כשמגיעה השאלה הבאה (showPQ) או הסיום (end) — בלי שחזור-מצב ובלי נגיעה בזרימת-ההודעות. אומת: node --check + איזון-תגיות. דורש אימות-מכשיר: הזרימה החיה (Firebase/אודיו) לא נבדקת בסביבה.
   v152.1 - קוד-ההקראה עבר למסך-ההכנה (פרטי): קודם הוצג בלובי (חשוף לכל הכיתה על המקרן) — באג. עכשיו: כשבוחרים "תלמידים מסוימים", מספר קוד-ההקראה מוצג במסך-ההכנה בלבד (פרטי, לפני שיתוף-המסך), בלי שום כתיבה ל-Firebase שם (רק מספר — אפס נגיעה במנגנון-הזיכרון/discardStaleGame). הקישור ל-Firebase (games/{ttsCode}/meta={ttsFor:playCode}) נכתב רק כשהמשחק מתחיל (בלובי). הקוד-הרגיל מובטח שונה מקוד-ההקראה. ניקוי: releaseTtsCode ביציאה ממסך-ההכנה (דרך show, choke-point יחיד) ובהחלפת-מצב, ו-endGameSession. בלובי מוצג רק הקוד-הרגיל. אומת: node --check + איזון-תגיות.
   v152 - הקראה לתלמידים מסוימים (קוד-הקראה נפרד): במסך-ההכנה, בבחירת הקראה, אפשר לבחור "כל המשתתפים" (הקיים) או "תלמידים מסוימים בלבד". במצב "מסוימים": בלובי מופיע קוד-הקראה שני (games/{ttsCode}/meta={ttsFor:playCode}) לצד הקוד הרגיל; תלמיד שמצטרף עם קוד-ההקראה מופנה לאותו משחק ומסומן מקומית (iAmTtsStudent) — רק הוא מקבל אודיו+ויזואל-מוגבר. הפריבילגיה-לכל-המשחק (ttsStudents) נכתבת רק במצב 'all'; ב-'some' התלמיד מקבל פריבילגיה מקומית (המאזין: snap||iAmTtsStudent). זמן/בונוס/הודעה זהים בשני המצבים (sttsHostOn — 30+, בונוס מבוטל). אזהרת-אוזניות במסך-ההכנה. ניקוי קוד-ההקראה ב-endGameSession; ttsMode נשמר/משוחזר ב-hostState. אומת: node --check + איזון-תגיות.
@@ -520,7 +521,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152.2</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152.3</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -3831,6 +3832,9 @@ let studentTtsOn = false, studentTtsActive = false, sttsHostOn = false;   // v15
 let sttsLiveAllowed = false;
 let ttsMode = 'all';   // v152: 'all'=לכולם, 'some'=תלמידים מסוימים (קוד-הקראה נפרד)
 let iAmTtsStudent = false;   // v152: צד-תלמיד — הצטרפתי עם קוד-הקראה
+let _ttsAllFlag = false, _ttsSomeFlag = false;   // v152.3: שני דגלי-Firebase — 'all' (כל המשתתפים) ו-'some' (רק תלמידי-הקוד)
+// v152.3: הקראה דולקת אם הדגל-לכולם דלוק, או (אני תלמיד-קוד וגם הדגל-לספציפיים דלוק) — כך מתג-המנחה שולט גם בספציפיים
+function recomputeStudentTts(){ applyStudentTts(_ttsAllFlag || (iAmTtsStudent && _ttsSomeFlag)); }
 let ttsCode = null;   // v152: צד-מארח — קוד-ההקראה השני (במצב 'some')   // v151.13: האם הקראת-תלמידים נבחרה בהכנה — קובע אם מתג-ההקראה מופיע בסרגל-החי (אם לא נבחרה, הפעלה באמצע תשבור בונוס/זמן)
 let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
@@ -3922,7 +3926,8 @@ function detachGameListeners(){
   try { if (_presenceCountRef && _presenceCountHandler) _presenceCountRef.off('value', _presenceCountHandler); } catch(e){}
   try { if (_hostAliveWatchRef && _hostAliveWatchHandler) _hostAliveWatchRef.off('value', _hostAliveWatchHandler); } catch(e){}
   try { if (_sttsWatchRef && _sttsWatchHandler) _sttsWatchRef.off('value', _sttsWatchHandler); } catch(e){}
-  _gameMsgHandler = null; _presenceCountHandler = null; _hostAliveWatchHandler = null; _sttsWatchHandler = null;
+  try { if (_sttsSomeRef && _sttsSomeHandler) _sttsSomeRef.off('value', _sttsSomeHandler); } catch(e){}   // v152.3
+  _gameMsgHandler = null; _presenceCountHandler = null; _hostAliveWatchHandler = null; _sttsWatchHandler = null; _sttsSomeHandler = null;   // v152.3
 }
 // v125: האם כל המחוברים-כעת ענו? (במקום כל מי שהצטרף — תלמיד מנותק לא חוסם את החשיפה)
 function allPresentAnswered(){
@@ -3937,6 +3942,7 @@ function allPresentAnswered(){
 let _hostAliveConnRef = null, _hostAliveConnHandler = null, _hostAliveNodeRef = null;
 let _hostAliveWatchRef = null, _hostAliveWatchHandler = null;
 let _sttsWatchRef = null, _sttsWatchHandler = null;   // v151
+let _sttsSomeRef = null, _sttsSomeHandler = null;   // v152.3: המאזין לדגל-הספציפיים
 let _hostWasAlive = false, _playerGameEnded = false, _hostGoneTimer = null;   // v130: השהיה למסך-ההמתנה
 // המארח מסמן "אני חי" עם onDisconnect שמסיר אוטומטית כשהחיבור נופל (מתחדש בכל חיבור חוזר).
 function setupHostAlive(code){
@@ -4004,7 +4010,9 @@ function listenGame(code, onReady, skipBefore){
       }
     });
     _sttsWatchRef = fdb.ref('games/'+code+'/ttsStudents');
-    _sttsWatchHandler = _sttsWatchRef.on('value', snap => { applyStudentTts(snap.val() === true || iAmTtsStudent); });   // v152: מצב 'some' — תלמיד-הקראה מקבל פריבילגיה מקומית
+    _sttsWatchHandler = _sttsWatchRef.on('value', snap => { _ttsAllFlag = (snap.val() === true); recomputeStudentTts(); });   // v152.3: דגל 'all' (כל המשתתפים)
+    _sttsSomeRef = fdb.ref('games/'+code+'/ttsStudentsSome');
+    _sttsSomeHandler = _sttsSomeRef.on('value', snap => { _ttsSomeFlag = (snap.val() === true); recomputeStudentTts(); });   // v152.3: דגל 'some' — חל רק על תלמיד-קוד
   }
   if (onReady) setTimeout(onReady, 400);
 }
@@ -4183,7 +4191,15 @@ function updateSttsDesc(){
   syncPregameTtsCode();   // v152.1: יצירת/הסתרת מספר קוד-ההקראה הפרטי
   if (typeof updateSpeedDesc === 'function') updateSpeedDesc();
 }
-function writeStudentTts(on){ try { if (playCode) fdb.ref('games/'+playCode+'/ttsStudents').set(!!on); } catch(e){} }
+function writeStudentTts(on){
+  // v152.3: on = "ההקראה פעילה" (sttsHostOn). מפצלים לפי מצב: 'all' → ttsStudents (כל המשתתפים), 'some' → ttsStudentsSome (רק תלמידי-הקוד).
+  // כך מתג-המנחה החי שולט גם בספציפיים: כיבוי מכבה אותם, הדלקה מדליקה רק אותם (לא את כולם).
+  if (!playCode) return;
+  const _allOn  = (on && ttsMode === 'all');
+  const _someOn = (on && ttsMode === 'some');
+  try { fdb.ref('games/'+playCode+'/ttsStudents').set(!!_allOn); } catch(e){}
+  try { fdb.ref('games/'+playCode+'/ttsStudentsSome').set(!!_someOn); } catch(e){}
+}
 // v152.1: שחרור קוד-ההקראה (מוחק מ-Firebase אם נקשר, ומאפס) — נקרא ביציאה ממסך-ההכנה ובהחלפת-מצב
 function releaseTtsCode(){ if (ttsCode){ try { fdb.ref('games/'+ttsCode).remove().catch(()=>{}); } catch(e){} ttsCode = null; } }
 let _ttsGenLock = false;
@@ -4278,7 +4294,7 @@ function hostStart(){
   refreshHostSpeakBtn();   // v150
   saveHostSnapshot();   // v127: צילום החידון + מצביע "משחק פעיל" לשחזור מכל מכשיר
   setupHostAlive(playCode);   // v129: סימון "המארח חי" לתלמידים
-  writeStudentTts(sttsHostOn && ttsMode === 'all');   // v152: פריבילגיה-לכל-המשחק רק במצב 'all' (ב-'some' רק בעלי קוד-ההקראה, מקומית)
+  writeStudentTts(sttsHostOn);   // v152.3: הפונקציה מפצלת לפי מצב (ttsStudents ל-'all' / ttsStudentsSome ל-'some')
   refreshSttsHostToggle();   // v151
   $('host-menu').style.display = 'flex';
   $('host-menu').classList.remove('open');   // התפריט מתחיל סגור — מסך נקי בזמן המשחק
@@ -5272,7 +5288,7 @@ function resumeHostGame(code){
     if (sttsHostOn) speedBonusOn = false;   // v151.4: הקראה דלוקה → בונוס-מהירות כבוי
     sttsLiveAllowed = sttsHostOn;   // v151.13: שחזור — מתג-הקראה בסרגל לפי מצב-המשחק
     ttsMode = hs.ttsMode || 'all';   // v152: שחזור המצב (לכולם/מסוימים)
-    writeStudentTts(sttsHostOn && ttsMode === 'all');   // v152: פריבילגיה-לכל-המשחק רק ב-'all'
+    writeStudentTts(sttsHostOn);   // v152.3: הפונקציה מפצלת לפי מצב
     refreshSttsHostToggle();   // v151
     players = pr.players || {};
     seq = pr.seq || 0;
