@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v151.1 - תיקון הקראת-תלמיד לנייד (אייפון/אנדרואיד): באייפון getVoices ריק עד אינטראקציה ואפל חוסמת הקראה-אוטומטית בלי נגיעה — אז הכפתור הוסתר ושום דבר לא הוקרא. תוקן: (א) כפתור-הרמקול תמיד מופיע כשההקראה דלוקה (בלי תלות בזיהוי-קול מראש); (ב) דגם "נגיעה-להפעלה" — נגיעה אחת מעירה את הקול ומקריאה את השאלה הנוכחית (עוקף חסימת-אפל), ומאז כל שאלה אוטומטית; נגיעה נוספת משתיקה (studentTtsActive); (ג) הקול נבחר בזמן-אמת עם נפילה ל-lang=he-IL; (ד) unlockSpeech שקט (volume 0) בנגיעה לפתיחת-אודיו ב-iOS. אנדרואיד עובד חלק עוד יותר (אין חסימה). אצל המארח — ללא שינוי. דורש אימות-מכשיר. אומת: node --check + איזון-תגיות.
   v151 - ערוץ 2: הקראה בטלפון-התלמיד + מצב-קריאוּת-מוגברת (מצב "לכולם"). מתג-מארח חדש (pregame + תפריט-חי) "📱 הקראה בטלפוני המשתתפים" כותב games/{code}/ttsStudents; כל טלפון-תלמיד מאזין (תבנית hostAlive). נדלק → (א) הקראה אוטומטית בכל שאלה: "השאלה היא: [...]. התשובות הן: [...]" (cancel+השהיה כמו ערוץ 1, רק אם יש קול עברי במכשיר); (ב) מצב-קריאוּת-מוגברת אוטומטי (body.tts-student): שאלה 28px, תשובות 23px עם גבול בהיר, מילוי בהיר יותר, ריווח גדול, וסימון ✓ לנבחר; (ג) כפתור-השתקה גדול לתלמיד (מקומי — משתיק אודיו, הוויזואל נשאר); (ד) הודעה ויזואלית + רטט אם נתמך. נשמר ב-hostState לשחזור. v152 בנפרד: קוד-הקראה לתלמידים ספציפיים + אזהרת-אוזניות. אומת: node --check + איזון-תגיות.
   v150.4 - מיקום כפתור-ההקראה במסך-החשיפה: היה גבוה (מתחת לתשובה הנכונה). הועבר לתחתית, לשורה אחת עם "ממשיכים" — 🔊 משמאל, "ממשיכים" מימין, שניהם ממורכזים כזוג ברוחב הפסים (לפי משוב + צילום-מסך). כשההקראה כבויה, "ממשיכים" ממורכז לבד כמו קודם. אומת: node --check + איזון-תגיות.
   v150.3 - הקראה-לחדר: כפתור בכל מסך + הקראת-מנצח + מתג חי. (1) כפתור-ההקראה הוצא מהסרגל-התחתון (היה רחוק/מהצד) ונוסף כפתור בתוך כל מסך שיש בו הקראה — מסך-שאלה (מקריא שאלה), מסך-חשיפה (מקריא תשובה נכונה), ומסך-סיום (חדש). (2) במסך-הסיום מקריא רק את המנצח — הקבוצה המנצחת במשחק קבוצות, או המקום-הראשון ביחידים (תיקו/אפס-ניקוד מטופלים). (3) פריט בתפריט-הבקרה (☰): "🔇 בטל הקראה / 🔊 הפעל הקראה" — מכבה/מדליק את כל כפתורי-ההקראה תוך כדי משחק (ttsBtnOn), נפרד ממתג-ה-pregame. כל הכפתורים .hspk-btn מנוהלים יחד. אומת: node --check + איזון-תגיות. דורש בדיקת-אודיו + בדיקת-מיקום של יניב.
@@ -494,7 +495,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.1</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -988,7 +989,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <p class="pstatement" id="pq-text"></p>
     <p class="phint" id="pq-hint"></p>
     <div class="grid" id="pq-grid"></div>
-    <button id="stts-mute" onclick="toggleStudentMute()">🔊 השמעה דלוקה</button>
+    <button id="stts-mute" onclick="toggleStudentSpeak()">🔊 הפעלת הקראה</button>
   </div>
 </div>
 
@@ -3776,7 +3777,7 @@ let players = {}, seq = 0, curQ = null, answers = {}, revealed = false, hostTime
 let bestMs = Infinity, bestName = '', maxStreak = 0, streakKing = '';
 let speedBonusOn = true;   // v149: בונוס-מהירות בניקוד — דלוק כברירת-מחדל; נקבע ב-hostStart מהמתג ב-pregame
 let roomTtsOn = false, ttsVoice = null, ttsBtnOn = false;   // v150/v150.3: off כברירת-מחדל; ttsVoice=הקול העברי/null; ttsBtnOn=מצב הכפתור החי (מתג-תפריט)
-let studentTtsOn = false, studentTtsMuted = false, sttsHostOn = false;   // v151: ערוץ 2 — studentTtsOn=הופעל לתלמיד; studentTtsMuted=התלמיד השתיק מקומית; sttsHostOn=הגדרת-המארח
+let studentTtsOn = false, studentTtsActive = false, sttsHostOn = false;   // v151/v151.1: studentTtsActive=התלמיד הפעיל בנגיעה (חובה ב-iOS); sttsHostOn=הגדרת-המארח
 let intermissionDone = new Set();
 let cleanAnswers = q => (q.answers.map((a,i)=>({a,i})).filter(o=>o.a.trim()));
 
@@ -4022,10 +4023,10 @@ function applyStudentTts(on){
   if (on){
     document.body.classList.add('tts-student');
     refreshSttsMuteBtn();
-    showReinforceToast('אפשר להאזין לשאלה', '🔊');
+    showReinforceToast('אפשר להאזין — געו ברמקול', '🔊');
     try { if (navigator.vibrate) navigator.vibrate(200); } catch(e){}
-    if (!studentTtsMuted && curQ && $('pq') && $('pq').classList.contains('on')) studentSpeak(curQ);
   } else {
+    studentTtsActive = false;
     document.body.classList.remove('tts-student');
     refreshSttsMuteBtn();
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(e){}
@@ -4034,27 +4035,35 @@ function applyStudentTts(on){
 }
 function refreshSttsMuteBtn(){
   const b = $('stts-mute'); if (!b) return;
-  const show = studentTtsOn && ttsVoice && window.speechSynthesis;
-  b.style.display = show ? '' : 'none';
-  b.textContent = studentTtsMuted ? '🔇 השמעה מושתקת' : '🔊 השמעה דלוקה';
+  b.style.display = (studentTtsOn && window.speechSynthesis) ? '' : 'none';
+  b.textContent = studentTtsActive ? '🔇 השתקת הקראה' : '🔊 הפעלת הקראה';
 }
-function toggleStudentMute(){
-  studentTtsMuted = !studentTtsMuted;
-  if (studentTtsMuted){ try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(e){} }
-  else if (curQ && $('pq') && $('pq').classList.contains('on')) studentSpeak(curQ);
+function unlockSpeech(){
+  try { if (!window.speechSynthesis) return; const u = new SpeechSynthesisUtterance(' '); u.volume = 0; u.lang = 'he-IL'; speechSynthesis.speak(u); } catch(e){}
+}
+function toggleStudentSpeak(){
+  studentTtsActive = !studentTtsActive;
+  if (studentTtsActive){
+    unlockSpeech();
+    if (curQ && $('pq') && $('pq').classList.contains('on')) studentSpeak(curQ);
+  } else {
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch(e){}
+  }
   refreshSttsMuteBtn();
 }
 // v151: הקראה אוטומטית בטלפון-התלמיד — חיווי 'השאלה היא' / 'התשובות הן'
 function studentSpeak(m){
-  if (!window.speechSynthesis || !ttsVoice || !m) return;
+  if (!window.speechSynthesis || !m) return;
   try {
     const opts = (m.options || []).map(function(o){ return o.txt; });
     let text = 'השאלה היא: ' + (m.text || '');
     if (opts.length) text += '\nהתשובות הן:\n' + opts.join('\n');
     const synth = window.speechSynthesis;
+    let v = ttsVoice;
+    if (!v){ try { v = (synth.getVoices()||[]).find(function(x){ return (x.lang||'').toLowerCase().indexOf('he')===0; }) || null; } catch(e){} }
     synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'he-IL'; u.voice = ttsVoice;
+    u.lang = 'he-IL'; if (v) u.voice = v;
     setTimeout(function(){ try { synth.speak(u); } catch(e){} }, 80);
   } catch(e){}
 }
@@ -5494,7 +5503,7 @@ function showPQ(m){
   requestAnimationFrame(()=>{ $('pq-bar').style.transition='width '+m.dur+'s linear'; $('pq-bar').style.width='0%'; });
   clearTimeout(pTimer);
   pTimer=setTimeout(()=>{ if(!sentThisQ){ sentThisQ=true; $('pq-grid').querySelectorAll('button').forEach(b=>b.disabled=true); } }, m.dur*1000);
-  if (studentTtsOn && !studentTtsMuted) studentSpeak(m);   // v151: הקראה אוטומטית בטלפון-התלמיד
+  if (studentTtsOn && studentTtsActive) studentSpeak(m);   // v151.1: אוטומטי רק אחרי שהתלמיד הפעיל בנגיעה
   show('pq');
 }
 
