@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v151.7 - תיקון פס שחור בתחתית (מובייל, סרגל-כתובת גלוי): התגלה ש-background-color של body ושל .pbrand היו שקופים — כלל background:radial-gradient (shorthand) איפס את צבע-הרצפה שהוגדר ב-v147, אז אזורים לא-מכוסים (כולל אזור-הבטיחות מתחת לסרגל) נצבעו שחור ב-iOS. תוקן: נוסף background-color:var(--bg1) מוצק ל-body ול-.pbrand (longhand אחרי ה-shorthand). יחד עם viewport-fit=cover (v151.5). אומת: node --check + איזון-תגיות + רינדור.
   v151.6 - (1) האטת הקראת-תלמיד: rate 0.9→0.7 והפסקה בין-תשובות 140→220ms (לפי בדיקת-שמע). משך-הקראה משוער: שאלה קצרה ~7ש', בינונית ~11ש', ארוכה ~17ש' — נכנס ברצפת ה-30ש'. (2) שורת "אין מדידת-זמן": כשבונוס-המהירות כבוי (תמיד במצב הקראה), השחקן מקבל הודעה ברורה — במסך-ההמתנה (לובי) "אין מדידת-זמן על התשובות — קחו את הזמן" (speedOn נוסף למנת welcome), וגם רמז-השאלה משתנה ל"אין מדידת-זמן, ענו ברוגע". כך שהשחקנים יודעים מראש. אומת: node --check + איזון-תגיות.
   v151.5 - (1) הגדלת מסכי-התלמיד לכולם: ארבעת מסכי-המותג (פתיחה "היי", המתנה "המנחה יצא", סיום "תודה רבה", נקטע) — הכותרת 26→clamp(32-42), תת-הכותרת 17→clamp(19-24), העמום 13→16. מסך-ההצטרפות (הקלדת-שם אחרי סריקה): כותרת/תוויות/שדות-קלט/כפתור-כניסה הוגדלו (scoped ל-#join בלבד — לא נוגע במסכי-המארח). (2) ניסיון תיקון פס-שחור בתחתית: נוסף viewport-fit=cover + theme-color #05080f כדי שהרקע יתפרש עד קצוות-המסך (אזורי-בטיחות). אם נשאר פס — ייתכן שזהו סרגל-הניווט של המערכת (אנדרואיד), שדף-web רגיל לא מסיר. אומת: node --check + איזון-תגיות.
   v151.4 - רצפת זמן-תשובה בהקראת-תלמידים: ההקראה לוקחת זמן, אז כשהקראת-התלמידים דלוקה וזמן-התשובה שנבחר קטן מ-30 שניות → הזמן בפועל עולה ל-30 לכל הכיתה (הטיימר אחיד), כדי לא לפגוע בכבדי-הראייה. בלי אפשרות-ביטול (נגישות אינה אופציונלית). אם נבחר 30+ — לא משתנה. effAnswerTime() מחיל את הרצפה על תצוגת-הטיימר, הספירה-לאחור, ה-dur לטלפונים, וחישוב-המהירות. החידון השמור לא משתנה (רק הריצה). ההערה מתחת למתג מופיעה רק אם הזמן הנבחר < 30. בנוסף: כשהקראת-תלמידים דלוקה, בונוס-המהירות כבוי תמיד והמנחה לא יכול להפעיל אותו (מתג-המהירות ב-pregame ננעל ומתרוקן, ו-speedBonusOn נכפה כבוי ב-hostStart/שחזור/מתג-חי) — כדי לא להעניש את מי שמאזין להקראה. סולו לא מושפע. אומת: node --check + איזון-תגיות.
@@ -158,7 +159,7 @@
 }
 *{box-sizing:border-box;}
 html,body{margin:0; padding:0; min-height:100%; background:var(--bg1);}  /* v147: רצפת מוצקת = תחתית הגרדיאנט (אזור ה-home-indicator לא נצבע שחור ב-iOS) */
-body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); color:var(--ink); min-height:100vh;}
+body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); background-color:var(--bg1); color:var(--ink); min-height:100vh;}   /* v151.7: רצפת-צבע מוצקת (ה-shorthand איפס לשקוף, גרם לפס שחור) */
 .screen{display:none; min-height:100vh; min-height:100dvh; padding:24px; flex-direction:column; align-items:center; justify-content:center; text-align:center; position:relative; z-index:2;}  /* v136: 100dvh ממרכז את ההודעות בטלפון (100vh כלל את האזור שמאחורי שורת-הכתובת והוריד אותן לשליש התחתון) */
 .screen.on{display:flex;}
 .wrap{width:100%; max-width:680px;}
@@ -442,6 +443,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     radial-gradient(640px 460px at 16% 92%, rgba(46,196,182,.10), transparent 62%),
     radial-gradient(520px 440px at 50% 52%, rgba(141,141,242,.07), transparent 70%),
     radial-gradient(1200px 800px at 50% 0%, #131f3a 0%, var(--bg2) 45%, var(--bg1) 100%);
+  background-color:var(--bg1);   /* v151.7: רצפת-צבע מוצקת נגד פס שחור בתחתית */
 }
 .pbrand::before{
   content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
@@ -506,7 +508,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.6</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.7</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
