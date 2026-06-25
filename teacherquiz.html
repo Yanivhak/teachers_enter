@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v151.6 - (1) האטת הקראת-תלמיד: rate 0.9→0.7 והפסקה בין-תשובות 140→220ms (לפי בדיקת-שמע). משך-הקראה משוער: שאלה קצרה ~7ש', בינונית ~11ש', ארוכה ~17ש' — נכנס ברצפת ה-30ש'. (2) שורת "אין מדידת-זמן": כשבונוס-המהירות כבוי (תמיד במצב הקראה), השחקן מקבל הודעה ברורה — במסך-ההמתנה (לובי) "אין מדידת-זמן על התשובות — קחו את הזמן" (speedOn נוסף למנת welcome), וגם רמז-השאלה משתנה ל"אין מדידת-זמן, ענו ברוגע". כך שהשחקנים יודעים מראש. אומת: node --check + איזון-תגיות.
+  v151.5 - (1) הגדלת מסכי-התלמיד לכולם: ארבעת מסכי-המותג (פתיחה "היי", המתנה "המנחה יצא", סיום "תודה רבה", נקטע) — הכותרת 26→clamp(32-42), תת-הכותרת 17→clamp(19-24), העמום 13→16. מסך-ההצטרפות (הקלדת-שם אחרי סריקה): כותרת/תוויות/שדות-קלט/כפתור-כניסה הוגדלו (scoped ל-#join בלבד — לא נוגע במסכי-המארח). (2) ניסיון תיקון פס-שחור בתחתית: נוסף viewport-fit=cover + theme-color #05080f כדי שהרקע יתפרש עד קצוות-המסך (אזורי-בטיחות). אם נשאר פס — ייתכן שזהו סרגל-הניווט של המערכת (אנדרואיד), שדף-web רגיל לא מסיר. אומת: node --check + איזון-תגיות.
   v151.4 - רצפת זמן-תשובה בהקראת-תלמידים: ההקראה לוקחת זמן, אז כשהקראת-התלמידים דלוקה וזמן-התשובה שנבחר קטן מ-30 שניות → הזמן בפועל עולה ל-30 לכל הכיתה (הטיימר אחיד), כדי לא לפגוע בכבדי-הראייה. בלי אפשרות-ביטול (נגישות אינה אופציונלית). אם נבחר 30+ — לא משתנה. effAnswerTime() מחיל את הרצפה על תצוגת-הטיימר, הספירה-לאחור, ה-dur לטלפונים, וחישוב-המהירות. החידון השמור לא משתנה (רק הריצה). ההערה מתחת למתג מופיעה רק אם הזמן הנבחר < 30. בנוסף: כשהקראת-תלמידים דלוקה, בונוס-המהירות כבוי תמיד והמנחה לא יכול להפעיל אותו (מתג-המהירות ב-pregame ננעל ומתרוקן, ו-speedBonusOn נכפה כבוי ב-hostStart/שחזור/מתג-חי) — כדי לא להעניש את מי שמאזין להקראה. סולו לא מושפע. אומת: node --check + איזון-תגיות.
   v151.3 - תיקון קצב הקראת-התלמיד: התשובות נשמעו דבוקות ("גמלכלבחתולדג") כי \n בין התשובות לא נתן הפסקה במכשיר. תוקן — כל חלק (שאלה, "התשובות הן:", וכל תשובה בנפרד) נאמר כמשפט נפרד עם הפסקה אמיתית ביניהם (onend-שרשור עם guard נגד תקיעה אם onend לא נורה), והמהירות הואטה ל-0.9. אומת: node --check + איזון-תגיות.
   v151.2 - תיקון: כפתור-ההקראה של התלמיד לא הופיע כלל. הסיבה: כלל-CSS #stts-mute{display:none}, והפונקציה ניסתה להציג עם display='' — ש'' לא מבטל כלל-CSS (רק inline). תוקן ל-display='block' מפורש. בנוסף refreshSttsMuteBtn נקרא בכל showPQ לחיזוק. אומת: node --check + איזון-תגיות.
@@ -128,7 +130,8 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05080f">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -453,10 +456,15 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
 .pbrand .pwrap{position:relative; z-index:1;}
 .pbrand-lock{margin:0 0 30px;}
 .pbrand-top{font-size:14px; color:var(--ink-dim); margin:0 0 14px; letter-spacing:.02em;}
-.pbrand-title{font-family:'Secular One'; font-size:26px; color:var(--ink); margin:0 0 12px; line-height:1.3;}
-.pbrand-sub{font-size:17px; color:var(--ink); font-weight:600; line-height:1.5; margin:0;}
-.pbrand-dim{margin-top:22px; font-size:13px; color:#6c7798;}
+.pbrand-title{font-family:'Secular One'; font-size:clamp(32px,7.5vw,42px); color:var(--ink); margin:0 0 14px; line-height:1.25;}   /* v151.5: הוגדל */
+.pbrand-sub{font-size:clamp(19px,4.8vw,24px); color:var(--ink); font-weight:600; line-height:1.5; margin:0;}   /* v151.5: הוגדל */
+.pbrand-dim{margin-top:24px; font-size:16px; color:#6c7798;}   /* v151.5: הוגדל */
 .pbrand-foot{margin-top:30px; font-size:12px; color:#6c7798; letter-spacing:.04em;}
+/* v151.5: הגדלת מסך-ההצטרפות (הקלדת-שם אחרי סריקה) — לכולם, רק #join */
+#join h2{font-size:clamp(30px,6.5vw,44px);}
+#join .field label{font-size:18px;}
+#join input[type=text], #join input[type=number]{font-size:21px; padding:15px 18px;}
+#join .btn{font-size:23px; padding:17px 36px;}
 
 .leadrow{display:flex; justify-content:space-between; background:var(--card); border-radius:12px; padding:12px 18px; margin-bottom:8px; font-size:18px; max-width:520px; width:100%;}
 .leadrow .rank{color:var(--gold); font-weight:900; margin-left:10px;}
@@ -498,7 +506,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.4</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.6</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -981,6 +989,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <div class="pbrand-title" id="pwait-greet">היי! 👋</div>
     <div class="pbrand-sub">עוד רגע מתחילים 🎯</div>
     <div class="pbrand-dim">ממתינים שהמנחה יתחיל…</div>
+    <div class="pbrand-dim" id="pwait-notime" style="display:none; margin-top:14px; color:#9be6dc;">⏱️ אין מדידת-זמן על התשובות — קחו את הזמן 🙂</div>
   </div>
 </div>
 
@@ -3965,7 +3974,7 @@ function hostMsg(m){
         send({ t:'welcomeback', id:m.id, msg: pickReinforce('welcome') });
       }
     }
-    send({ t:'welcome', id:m.id });
+    send({ t:'welcome', id:m.id, speedOn: speedBonusOn });   // v151.6: כדי שהשחקן יידע בלובי אם נמדד זמן
   }
   if (m.t === 'ans' && m.i === seq && !revealed){
     if (players[m.id] && !answers[m.id]){
@@ -4073,11 +4082,11 @@ function studentSpeak(m){
       if (i >= parts.length) return;
       const idx = i;
       const u = new SpeechSynthesisUtterance(parts[idx]);
-      u.lang = 'he-IL'; if (v) u.voice = v; u.rate = 0.9;
-      u.onend = function(){ if (i === idx){ i++; setTimeout(step, 140); } };
-      u.onerror = function(){ if (i === idx){ i++; setTimeout(step, 140); } };
+      u.lang = 'he-IL'; if (v) u.voice = v; u.rate = 0.7;   // v151.6: הואט מ-0.9
+      u.onend = function(){ if (i === idx){ i++; setTimeout(step, 220); } };
+      u.onerror = function(){ if (i === idx){ i++; setTimeout(step, 220); } };
       guard = setTimeout(function(){ if (i === idx){ i++; step(); } }, Math.max(2600, parts[idx].length * 230));
-      try { synth.speak(u); } catch(e){ if (i === idx){ i++; setTimeout(step, 140); } }
+      try { synth.speak(u); } catch(e){ if (i === idx){ i++; setTimeout(step, 220); } }
     }
     setTimeout(step, 80);
   } catch(e){}
@@ -5498,7 +5507,7 @@ function joinGame(){
 }
 
 function playerMsg(m){
-  if (m.t==='welcome' && m.id===myId){ joined=true; if($('pwait-greet')) $('pwait-greet').textContent = myName ? ('היי, '+myName+'! 👋') : 'היי! 👋'; show('pwait'); }
+  if (m.t==='welcome' && m.id===myId){ joined=true; if($('pwait-greet')) $('pwait-greet').textContent = myName ? ('היי, '+myName+'! 👋') : 'היי! 👋'; if($('pwait-notime')) $('pwait-notime').style.display = (m.speedOn === false) ? 'block' : 'none'; show('pwait'); }
   if (m.t==='q'){ showPQ(m); }
   if (m.t==='look'){ show('plook'); }
   if (m.t==='rev'){ showFeedback(m); }
@@ -5513,7 +5522,7 @@ function showPQ(m){
   if (m.num && m.total) $('pq-progress').textContent = 'שאלה ' + m.num + ' מתוך ' + m.total;
   else $('pq-progress').textContent = '';
   $('pq-text').textContent = m.text;
-  $('pq-hint').textContent = (m.speedOn === false) ? 'לחיצה אחת = תשובה. קחו את הזמן.' : 'לחיצה אחת = תשובה. מהירות שווה נקודות!';   // v149
+  $('pq-hint').textContent = (m.speedOn === false) ? 'לחיצה אחת = תשובה · אין מדידת-זמן, ענו ברוגע 🙂' : 'לחיצה אחת = תשובה. מהירות שווה נקודות!';   // v149/v151.6
   const grid=$('pq-grid'); grid.innerHTML='';
   m.options.forEach(o => {
     const b=document.createElement('button'); b.className='pbtn'; b.textContent=o.txt;
