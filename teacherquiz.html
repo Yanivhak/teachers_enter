@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v151.8 - אריזה אחת של 4 תיקונים: (1) קופסת "אין מדידת-זמן" בלובי — קופסה ברורה עם מסגרת טורקיז וכתב 20px מודגש (במקום שורה דקה); מופיעה כשבונוס-המהירות כבוי. (2) ניקוי מסך-השאלה במצב-הקראה — כשהקראת-תלמידים דלוקה, רמז-השאלה מצומצם ל"לחיצה אחת = תשובה" בלבד; למשתתפים רגילים (בונוס כבוי ידנית) הרמז "אין מדידת-זמן" נשאר. (3) באג חזרה-מעריכה — updateSttsDesc נקרא בכניסה ל-pregame, כך שאם שינו זמן בעריכה וחזרו, הערת-30 ונעילת-המהירות מתעדכנות. (4) פס שחור — גישה חדשה: html::before קבוע (position:fixed; inset:0; z-index:-1) שצובע כחול-כהה מתחת לכל אזור לא-מכוסה, כולל אזורי-בטיחות ב-iOS. אומת: node --check + איזון-תגיות + רינדור.
   v151.7 - תיקון פס שחור בתחתית (מובייל, סרגל-כתובת גלוי): התגלה ש-background-color של body ושל .pbrand היו שקופים — כלל background:radial-gradient (shorthand) איפס את צבע-הרצפה שהוגדר ב-v147, אז אזורים לא-מכוסים (כולל אזור-הבטיחות מתחת לסרגל) נצבעו שחור ב-iOS. תוקן: נוסף background-color:var(--bg1) מוצק ל-body ול-.pbrand (longhand אחרי ה-shorthand). יחד עם viewport-fit=cover (v151.5). אומת: node --check + איזון-תגיות + רינדור.
   v151.6 - (1) האטת הקראת-תלמיד: rate 0.9→0.7 והפסקה בין-תשובות 140→220ms (לפי בדיקת-שמע). משך-הקראה משוער: שאלה קצרה ~7ש', בינונית ~11ש', ארוכה ~17ש' — נכנס ברצפת ה-30ש'. (2) שורת "אין מדידת-זמן": כשבונוס-המהירות כבוי (תמיד במצב הקראה), השחקן מקבל הודעה ברורה — במסך-ההמתנה (לובי) "אין מדידת-זמן על התשובות — קחו את הזמן" (speedOn נוסף למנת welcome), וגם רמז-השאלה משתנה ל"אין מדידת-זמן, ענו ברוגע". כך שהשחקנים יודעים מראש. אומת: node --check + איזון-תגיות.
   v151.5 - (1) הגדלת מסכי-התלמיד לכולם: ארבעת מסכי-המותג (פתיחה "היי", המתנה "המנחה יצא", סיום "תודה רבה", נקטע) — הכותרת 26→clamp(32-42), תת-הכותרת 17→clamp(19-24), העמום 13→16. מסך-ההצטרפות (הקלדת-שם אחרי סריקה): כותרת/תוויות/שדות-קלט/כפתור-כניסה הוגדלו (scoped ל-#join בלבד — לא נוגע במסכי-המארח). (2) ניסיון תיקון פס-שחור בתחתית: נוסף viewport-fit=cover + theme-color #05080f כדי שהרקע יתפרש עד קצוות-המסך (אזורי-בטיחות). אם נשאר פס — ייתכן שזהו סרגל-הניווט של המערכת (אנדרואיד), שדף-web רגיל לא מסיר. אומת: node --check + איזון-תגיות.
@@ -159,7 +160,8 @@
 }
 *{box-sizing:border-box;}
 html,body{margin:0; padding:0; min-height:100%; background:var(--bg1);}  /* v147: רצפת מוצקת = תחתית הגרדיאנט (אזור ה-home-indicator לא נצבע שחור ב-iOS) */
-body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); background-color:var(--bg1); color:var(--ink); min-height:100vh;}   /* v151.7: רצפת-צבע מוצקת (ה-shorthand איפס לשקוף, גרם לפס שחור) */
+body{font-family:'Heebo',sans-serif; background:radial-gradient(1200px 700px at 75% -10%, #16223f 0%, var(--bg2) 45%, var(--bg1) 100%); background-color:var(--bg1); color:var(--ink); min-height:100vh;}   /* v151.7: רצפת-צבע מוצקת */
+html::before{content:''; position:fixed; inset:0; z-index:-1; background:var(--bg1); pointer-events:none;}   /* v151.8: רצפה קבועה על כל ה-viewport (כולל אזורי-בטיחות) — נגד פס שחור בתחתית ב-iOS */
 .screen{display:none; min-height:100vh; min-height:100dvh; padding:24px; flex-direction:column; align-items:center; justify-content:center; text-align:center; position:relative; z-index:2;}  /* v136: 100dvh ממרכז את ההודעות בטלפון (100vh כלל את האזור שמאחורי שורת-הכתובת והוריד אותן לשליש התחתון) */
 .screen.on{display:flex;}
 .wrap{width:100%; max-width:680px;}
@@ -508,7 +510,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.7</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v151.8</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -991,7 +993,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <div class="pbrand-title" id="pwait-greet">היי! 👋</div>
     <div class="pbrand-sub">עוד רגע מתחילים 🎯</div>
     <div class="pbrand-dim">ממתינים שהמנחה יתחיל…</div>
-    <div class="pbrand-dim" id="pwait-notime" style="display:none; margin-top:14px; color:#9be6dc;">⏱️ אין מדידת-זמן על התשובות — קחו את הזמן 🙂</div>
+    <div id="pwait-notime" style="display:none; margin:22px auto 0; max-width:400px; padding:16px 22px; background:rgba(46,196,182,.13); border:2px solid rgba(46,196,182,.5); border-radius:16px; color:#d8f5f0; font-size:20px; font-weight:700; line-height:1.5;">⏱️ אין מדידת-זמן על התשובות<br>קחו את הזמן שאתם צריכים 🙂</div>
   </div>
 </div>
 
@@ -2092,6 +2094,7 @@ function prePlay(){
   // עדכון שורות-הסטטוס של רקע/מוזיקה לפי מה שכבר נבחר
   updatePgMediaStatus();
   nav('pregame');
+  updateSttsDesc();   // v151.8: רענון הערת-30 ונעילת-מהירות גם בחזרה מעריכה (לא רק בלחיצת-מתג)
   previewBgIfPregame();   // אם כבר נבחר רקע — מדליק תצוגה מקדימה חיה מאחורי הכרטיסים
 }
 
@@ -5524,7 +5527,8 @@ function showPQ(m){
   if (m.num && m.total) $('pq-progress').textContent = 'שאלה ' + m.num + ' מתוך ' + m.total;
   else $('pq-progress').textContent = '';
   $('pq-text').textContent = m.text;
-  $('pq-hint').textContent = (m.speedOn === false) ? 'לחיצה אחת = תשובה · אין מדידת-זמן, ענו ברוגע 🙂' : 'לחיצה אחת = תשובה. מהירות שווה נקודות!';   // v149/v151.6
+  if (studentTtsOn){ $('pq-hint').textContent = 'לחיצה אחת = תשובה'; }   // v151.8: מצב-הקראה — מסך נקי, בלי רעש על זמן
+  else $('pq-hint').textContent = (m.speedOn === false) ? 'לחיצה אחת = תשובה · אין מדידת-זמן, ענו ברוגע 🙂' : 'לחיצה אחת = תשובה. מהירות שווה נקודות!';   // v149/v151.6
   const grid=$('pq-grid'); grid.innerHTML='';
   m.options.forEach(o => {
     const b=document.createElement('button'); b.className='pbtn'; b.textContent=o.txt;
