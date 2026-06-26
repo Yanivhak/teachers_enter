@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v156 - מפתח-אחסון ייחודי לחידון (תיקון דריסה-שקטה, אובחן בסריקה): כל חידון נשמר תחת מפתח בן 4 ספרות ב-teachers/{myStoreKey}/{editCode}. המפתח הונפק ע"י genUniqueCode — שבודק games/+shared/ (נכון לקוד-משחק) אבל *לא* את teachers/{myStoreKey}/. כך, נדיר אך אמיתי, חידון חדש יכול לקבל editCode הזהה לחידון קיים של אותו משתמש, וה-set() דורס אותו — אובדן-נתונים בשקט. (בדיקת shared/ הייתה ממילא שריד מת: shareId הוא 'sh_…', לעולם לא 4 ספרות, אז לא יכול להתאים ל-editCode.) השורש: genUniqueCode נבנתה לקודי-משחק ומוחזרה גם למפתחות-אחסון, שתי דרישות-ייחודיות שונות בפונקציה אחת. התיקון: פונקציה ייעודית genUniqueStoreKey() שבודקת את teachers/{myStoreKey}/{code}, עם פולבק דטרמיניסטי — אם 25 ניסיונות אקראיים נכשלים (ארון כמעט-מלא), סורקת את המפתחות הקיימים ובוחרת ראשון פנוי; מאחר שלמשתמש תמיד פחות מ-9000 חידונים, תא פנוי תמיד יימצא, אז דריסה הופכת *בלתי-אפשרית* (לא רק נדירה). אורח (myStoreKey ריק) → מחזיר קוד בלי בדיקה (לא נשמר ל-Firebase ממילא). שלושת הקוראים הוסבו: newQuiz, duplicateQuiz, confirmAddShared. קודי-המשחק (goPlay, ttsCode) נשארו על genUniqueCode עם המחזור של v155 — לא נגעתי. אומת: node --check + איזון-תגיות.
+  v155 - מחזור-קודים (SYNC-2, אובחן בסריקה): קוד-המשחק שהתלמיד מקליד (games/{code}) הוא משאב גלובלי בן 4 ספרות — ~9000 משותפים לכל המנחים (לא פר-מייל; פר-המייל זה רק קוד-אחסון-החידון, teachers/{מייל}/{קוד}). עד כה games/{code} לא נמחק לעולם אחרי שמשחק הסתיים, אז הקודים הצטברו לצמיתות. הסיכון האמיתי אינו אחסון (כ-40MB לשנת-לימודים מול תקרה של 1GB — שנים) אלא מיצוי-מרחב-הקודים: genUniqueCode בודק 25 קודים אקראיים, וכשהמרחב מתמלא (~95%, ~8500 משחקים-שאי-פעם-שוחקו) הלולאה מתחילה להיכשל וה-fallback מחזיר קוד מתנגש (שני משחקים על קוד אחד). בקנה-המידה הנוכחי זה רחוק שנים, אך התיקון הופך את המרחב לאינסופי: כל משחק שמסתיים הקוד שלו בטוח למחיקה (החידון שמור בנפרד ב-teachers/, games/{code} לא שומר כלום) ובר-שימוש-חוזר. המנגנון: (1) חותמת createdAt ב-meta של המשחק — גם הראשי וגם קוד-ההקראה (קריטי: בלי חותמת על קוד-ההקראה הוא היה ממוחזר בעודו חי). (2) genUniqueCode ממחזר — קוד פנוי אם אין שם משחק, או שהמשחק בן 24 שעות+ (מת ודאית), או בלי חותמת (משחק מלפני המנגנון); קורא רק games/{code}/meta/createdAt (זול מקריאת הצומת כולו). ה-remove() שכבר קיים ב-goPlay מוחק את המשחק-המת לפני שהחדש מתחיל. למה זה בטוח ל-reconnect (החשש שנשמר): המחזור נוגע רק במשחקים בני 24ש'+ — רחוק פי-32 מחלון-השחזור (45 דק', v127), בלי שחקנים פעילים, מת לחלוטין — בטוח יותר מ"מחיקה-ביציאה" כי לא נוגע במסלולי-היציאה החיים כלל, רק ב-genUniqueCode על משחקים מתים-ודאית. הערה: genUniqueCode משמש ב-6 מקומות — קודי-משחק (goPlay, ttsCode) וגם מפתחות-אחסון (newQuiz, duplicateQuiz, confirmAddShared); המחזור בטוח למפתחות-אחסון (נתיב teachers/ נפרד, ורק מגדיל מעט את מאגר-הפנויים). קצוות-קצה זניחים שהתקבלו: חלון-פריסה (משחק חי מלקוח-ישן בלי חותמת עלול להימחק — חד-פעמי, ~0.02% לקריאה בקנה-המידה הזה); רענון-טאב-תקוע ל-24ש'+ שמצטרף-מחדש לקוד-ממוחזר (דורש טאב פתוח יממה — זניח). אומת: node --check + איזון-תגיות.
+  v154 - מערכת-החיזוקים: מודל-גלים אינסופי במקום תקרת-החיים-של-2 (לב selectReinforcements). הבעיה (אובחנה בסריקה): התקרה כרכה שני דברים נפרדים — פיזור ונפח. ברגע שכל הנוכחים הגיעו ל-2 חיזוקים (סביב שאלה 10) אזלה הברֵכה והמערכת *נאלמה לחלוטין* — בחידון 30 שאלות, אפס חיזוקים בכל החצי-האחורי (גם הישגים אמיתיים — רצף/שיפור — נפלו בשקט). זו לא הייתה כוונת v63 (היעד "~2 לכל אחד" כּוּון לחידונים קצרים, ~14 שאלות). התיקון: הסרת התקרה, והכללת עקרון-הברֵכות לאינסוף. זכאי = נוכח שמעולם לא קיבל (פעם-ראשונה תמיד מותרת) או שעבר MIN_GAP מאז (מרווח קדוש, v65). מיון: מי-שקיבל-הכי-פחות-עד-כה קודם — זה ה"גל" (כולם לרמה N לפני שמישהו ל-N+1), והוא מאזן אנטי-קטיפה *באופן פעיל* (חזק שקיבל הרבה יורד לסוף-התור — חזק יותר מתקרה קהה, שומר על מטרת v63 "בלי שהחזקים יקטפו הכל"); ואז רעננות (שובר-שוויון דטרמיניסטי) ואז אקראי (כמעט אף-פעם לא מגיע). המרווח הוא מסנן-קשיח לפני המיון — הגל "דולף" רמה אחת לכל היותר אם כל הנמוכים חסומים, כדי לא לבזבז quota. אומת בסימולציה (30 משתתפים): מרווח-גלים מקסימלי=1 בכל אורך (אף אחד אף-פעם לא יותר מרמה אחת מעל המינימום), אפס הפרות-מרווח, ואין שתיקה — חידון 14ש' ~2 לאדם (כמו קודם), 20ש' ~2.8, 30ש' ~4.2 מפוזרים שווה (במקום 2 ואז שתיקה). DIVISOR=5 ו-MIN_GAP=3 ללא שינוי; כל ששת סוגי-החיזוק וכל שכבת-הניסוח ללא שינוי (השינוי בשכבת-הבחירה בלבד). אומת: node --check + איזון-תגיות + סימולציה.
+  v153 - אצוות תיקונים בטוחים (אחרי סריקה עמוקה + הצלבה מול כל היומן): ארבעה תיקונים שהוצלבו פריט-פריט מול ההיסטוריה כדי לא לדרוס תיקון מכוון, ואומתו ברמת-פונקציה. (1) XSS — השלמת סבב-האבטחה של v123 שפספס נקודה אחת: שם-שחקן (bestName) זרם גולמי דרך fireworks→innerHTML בבאנר "שיא מהירות חדש" (~4988), כך ששחקן ששמו מכיל HTML ועונה הכי מהר היה מריץ קוד על מסך-המנחה (ה-maxlength הוא צד-לקוח בלבד, עקיף דרך כתיבה ישירה ל-Firebase). עכשיו escapeHtml(bestName), כמו כל שאר נקודות-הרינדור ב-v123. שאר נתיבי-השם כבר היו בטוחים (addBanner=textContent, funCard=escapeHtml, showIntermission=textContent). (2) XSS משני — escapeHtml על bgLabel (שם-קובץ-רקע שהמנחה מעלה) בשורת-הסטטוס של pregame (~4390); היה צד-עצמי בלבד (שובר פריסה אם השם מכיל <), נוסף ב-v98 ונשמט מסבב-v123. (3) הקראה — איפוס מצב-הקראה מקומי בהצטרפות-ידנית טרייה (proceed): _ttsOpeningDone/_spokeClosing/studentTtsOn/studentTtsActive + הסרת tts-student. מתקן משחק-שני באותה טעינת-דף שבו מסך-הפתיחה והקראת-הסיום לא חזרו (ה-once-guards מעולם לא אופסו). כירורגי במכוון: לא נוגע ב-iAmTtsStudent (דגל-הניתוב לכולם/חלק, נקבע ב-joinGame מעל) ולא ב-ttsVoice — אז שליטת-המנחה החיה והניתוב נשמרים, והמאזין משחזר studentTtsOn מיד. רץ רק בהצטרפות-ידנית (לא ב-reconnect האוטומטי דרך setupPresence, ולא ב-restart שבו התלמיד לא מצטרף-מחדש). עקבי עם v129 שכבר קבע את proceed כנקודת-איפוס-בהצטרפות. (4) תיעוד — ה-doc-comment מעל selectReinforcements תיאר מודל-סבב ישן (roundReceived) שלא תאם את הקוד (מודל שתי-הברֵכות מ-v63); הוחלף לתיאור המדויק. אפס שינוי-ריצה. לא נכנסו לאצווה (דורסים החלטה מכוונת — נשארו לדיון): שינוי תקרת-החיזוקים (v63/v132 — היעד "~2 לכל אחד" מכוון, ושינויו פותח-מחדש את עקרון "בלי שהחזקים יקטפו הכל"), ומחיקת games/{code} בצד-לקוח (v127/v128/v151.10 — השחזור/reconnect/restart צריכים את הצומת; הפתרון = TTL בצד-שרת). אומת: node --check + איזון-תגיות.
   v152.9 - עדכון תיאור-השיתוף (og/twitter/meta description): התיאור בכרטיס-השיתוף שונה ל-"צרו חוויות אינטראקטיביות שמחברות אנשים. מהר ליצור. קל להפעיל. כיף להשתתף." (במקום "הופכים רעיון... צרו חידונים בעזרת AI..."). הכותרת (QuizPlay · חידונים אינטראקטיביים) נשארה — היא נושאת את הספציפיות, אז התיאור חופשי להיות הפיץ׳ הרגשי. אומת: איזון-תגיות.
   v152.8 - תמונת-תצוגה לשיתוף (og:image): נוספה תמונת-שיתוף ממותגת (og-quizplay.png, 1200×630 — לוגו QuizPlay על נייבי עם זוהר עדין כמו ה-hero) שהשלימה את תגיות ה-Open Graph מ-v124 (טרם נוספה שם תמונה). נוספו og:image + og:image:width/height + og:image:alt + twitter:image, ו-twitter:card שודרג מ-summary ל-summary_large_image (תצוגת-תמונה גדולה בכרטיס). דורש העלאת og-quizplay.png ל-repo. אומת: איזון-תגיות.
   v152.7 - בנק-החיזוקים: ניקוי מאגר persist. השורש: persist הוא המאגר היחיד שנשלח למי שטעה (מי שצדק בלי טריגר מקבל correct), אך הכיל ניסוחי-שבח ("ממשיכים, כל הכבוד", "יופי, ממשיכים ככה", "ממשיכים יפה" ועוד) שנחתו על תלמיד שראה זה-עתה את טעותו. מעבר למביכות — שבח-על-טעות שוחק את אמינות כל מערכת-החיזוקים (אם "כל הכבוד" מגיע גם בטעות, הוא מאבד ערך בהצלחה). תוקן: שמונת הניסוחים עם "יפה/יופי/כל הכבוד" (כולל "ממשיכים בכיף", לבקשת-המשתמש) הוחלפו בעידוד-קדימה ניטרלי בלשון "ביחד". ארבעת מאגרי מי-שצדק (streak/hard/improve/correct) ו-welcome לא נגעתי. אומת: node --check + איזון-תגיות.
@@ -544,7 +548,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152.9</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v156</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -1322,15 +1326,22 @@ function legacyCopy(text){
   } catch(e){}
 }
 // מגריל קוד 4 ספרות שעדיין לא תפוס (בודק גם בחידונים המשותפים וגם במשחקים הפעילים)
+// v155: מחזור-קודים. קוד-משחק (games/{code}) הוא משאב גלובלי בן 4 ספרות (~9000) — בלי מחזור הוא מצטבר לצמיתות.
+// קוד נחשב פנוי אם אין שם משחק, או שהמשחק שם בן 24 שעות+ (מת ודאית — חלון-השחזור הוא 45 דק'), או בלי חותמת
+// (משחק מלפני המנגנון). ה-remove() ב-goPlay מנקה את המת לפני שהחדש מתחיל. קוד-שיתוף (shared/) לעולם לא ממוחזר.
 async function genUniqueCode(){
+  const RECYCLE_MS = 24*60*60*1000;
   for (let attempt = 0; attempt < 25; attempt++){
     const code = genCode();
     try {
-      const [sharedSnap, gameSnap] = await Promise.all([
+      const [sharedSnap, createdSnap] = await Promise.all([
         fdb.ref('shared/'+code).once('value'),
-        fdb.ref('games/'+code).once('value')
+        fdb.ref('games/'+code+'/meta/createdAt').once('value')
       ]);
-      if (!sharedSnap.exists() && !gameSnap.exists()) return code;
+      if (sharedSnap.exists()) continue;   // קוד-שיתוף תפוס — דלג
+      const created = createdSnap.val();
+      if (created == null || (Date.now() - created) >= RECYCLE_MS) return code;   // אין משחק / ישן → פנוי
+      // אחרת — משחק חי וטרי, הקוד תפוס; מנסים קוד אחר
     } catch(e){
       // אם הבדיקה נכשלה (רשת) — מחזירים קוד אקראי כדי לא לתקוע את המשתמש
       return code;
@@ -1338,6 +1349,28 @@ async function genUniqueCode(){
   }
   // גיבוי נדיר מאוד: אם לא נמצא קוד פנוי אחרי 25 ניסיונות
   return genCode();
+}
+// v156: מפתח-אחסון ייחודי לחידון. genUniqueCode בודק games/+shared/ (נכון לקוד-משחק), אבל מפתח-אחסון
+// חייב להיות ייחודי ב*ארון של המשתמש* (teachers/{myStoreKey}/), אחרת חידון חדש דורס חידון קיים בשקט.
+// הפולבק דטרמיניסטי → דריסה בלתי-אפשרית (למשתמש תמיד פחות מ-9000 חידונים).
+async function genUniqueStoreKey(){
+  if (!myStoreKey) return genCode();   // אורח/לא-מחובר — לא נשמר ל-Firebase, אין התנגשות
+  for (let attempt = 0; attempt < 25; attempt++){
+    const code = genCode();
+    try {
+      const snap = await fdb.ref('teachers/'+myStoreKey+'/'+code).once('value');
+      if (!snap.exists()) return code;   // התא פנוי בארון שלך
+    } catch(e){
+      return code;   // כשל-רשת — לא תוקעים את המשתמש
+    }
+  }
+  // פולבק דטרמיניסטי (רק אחרי 25 כישלונות — ארון כמעט-מלא): סורק את המפתחות הקיימים ובוחר ראשון פנוי
+  try {
+    const snap = await fdb.ref('teachers/'+myStoreKey).once('value');
+    const used = snap.val() || {};
+    for (let n = 1000; n <= 9999; n++){ const c = String(n); if (!used[c]) return c; }   // מובטח להימצא
+  } catch(e){}
+  return genCode();   // מוצא-אחרון תיאורטי בלבד (ארון מלא לגמרי / כשל-רשת)
 }
 function emailToKey(e){ return e.trim().toLowerCase().replace(/[.#$\[\]\/@]/g, '_'); }
 function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
@@ -1795,7 +1828,7 @@ function toggleDraftFromList(code, q){
 async function duplicateQuiz(code, q){
   if (!myStoreKey){ showToast('התחברו עם Google כדי לשכפל את החידון.'); return; }
   try{
-    const newCode = await genUniqueCode();
+    const newCode = await genUniqueStoreKey();
     const newDisplay = await genDisplayCode();
     const copy = {
       title: (q.title || 'חידון') + ' - עותק',
@@ -2067,7 +2100,7 @@ function _openLibraryOverlayCore(){
 }
 
 async function newQuiz(){
-  editCode = await genUniqueCode();
+  editCode = await genUniqueStoreKey();
   const displayCode = await genDisplayCode();   // קוד-תצוגה אנושי קבוע, נוצר פעם אחת
   quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], displayCode: displayCode, originalAuthor: (myAuthName || myEmail || ''), isDraft:false, share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
   resetAiMeta();             // חידון חדש — בחירות AI מתאפסות (פריט 1)
@@ -3696,7 +3729,7 @@ function confirmAddShared(shareId, data, ov, isUpdate){
   const errLabel = isUpdate ? '✓ שמור את הגרסה המעודכנת' : '✓ הוספה לחידונים שלי';
 
   const createCopy = () => {
-    genUniqueCode().then(async newCode => {
+    genUniqueStoreKey().then(async newCode => {
       const newDisplayCode = await genDisplayCode();   // עותק חדש — קוד-תצוגה משלו
       const copy = {
         title: (src.title || data.title || 'חידון') + suffix,
@@ -3899,7 +3932,7 @@ async function goPlay(){
   if ($('join-code-echo')) $('join-code-echo').textContent = playCode;
   // v152.1: קושרים את קוד-ההקראה (שכבר הוצג למורה במסך-ההכנה, פרטי) למשחק. בלובי לא מציגים אותו.
   if (sttsHostOn && ttsMode === 'some' && ttsCode){
-    fdb.ref('games/'+ttsCode+'/meta').set({ ttsFor: playCode, title: quiz.title || '' }).catch(()=>{});
+    fdb.ref('games/'+ttsCode+'/meta').set({ ttsFor: playCode, title: quiz.title || '', createdAt: Date.now() }).catch(()=>{});
   }
   $('lobby-title').textContent = quiz.title || 'החידון';
   const baseUrl = location.origin.startsWith('http') ? (location.origin + location.pathname) : '';
@@ -3932,7 +3965,7 @@ async function goPlay(){
     players = {}; $('joined-list').innerHTML=''; $('joined-n').textContent='0'; $('go-btn').disabled=true;
     // ניקוי חדר קודם אם נשאר, ופרסום מטא של המשחק (שמות קבוצות) כדי שהשחקנים יוכלו לבחור קבוצה
     fdb.ref('games/'+playCode).remove().catch(()=>{});
-    fdb.ref('games/'+playCode+'/meta').set({ teamCount: quiz.teamCount, teamNames: quiz.teamNames || [], title: quiz.title || '' });
+    fdb.ref('games/'+playCode+'/meta').set({ teamCount: quiz.teamCount, teamNames: quiz.teamNames || [], title: quiz.title || '', createdAt: Date.now() });   // v155: חותמת-זמן למחזור-קודים
     listenGame(playCode);
   } else {
     // חזרה ללובי — מרעננים את תצוגת המצטרפים הקיימים (הם עדיין רשומים)
@@ -4387,7 +4420,7 @@ function updatePgMediaStatus(){
   try { _bg = bgUrl; _music = musicList; } catch(e){ return; }   // הגנה מפני TDZ אם נקרא מוקדם בטעינה
   const bs = $('pg-bg-status');
   if (bs){
-    if (_bg){ bs.innerHTML = '✓ נבחר: ' + (bgLabel || 'רקע') + ' · <a href="javascript:void(0)" onclick="clearBg()" style="color:var(--coral); text-decoration:underline;">הסרה</a>'; bs.style.color='var(--teal)'; }
+    if (_bg){ bs.innerHTML = '✓ נבחר: ' + escapeHtml(bgLabel || 'רקע') + ' · <a href="javascript:void(0)" onclick="clearBg()" style="color:var(--coral); text-decoration:underline;">הסרה</a>'; bs.style.color='var(--teal)'; }
     else { bs.textContent = 'לא נבחר רקע'; bs.style.color='var(--ink-dim)'; }
   }
   const ms = $('pg-music-status');
@@ -4778,10 +4811,10 @@ const REINFORCE = {
   START_FRACTION: 0.15,  // התחלה: אחרי כ-15% מהשאלות (כדי שהתלמידים ייכנסו קודם)
   START_CAP: 2,          // ...אך לכל המאוחר מתחילים בשאלה 3 (qIdx 2 = השאלה השלישית)
   MIN_GAP: 3,            // מרווח אישי: לפחות כך הרבה שאלות בין קדחה לקדחה של אותו תלמיד (מונע פעמיים צמוד)
-  // מודל-מכסה: כל שאלה ממלאת עד quota מקומות. הבחירה לפי שני pools —
-  // קודם מי שלא קיבל אף פעם, ורק כשהם נגמרים מי שקיבל פעם; מי שקיבל פעמיים יורד.
-  // טריגרים אמיתיים קובעים את המסר אם התלמיד נבחר, לא את הבחירה.
-  // כך מובטח כיסוי ~100% בלי שהחזקים יקטפו הכל. כוונן DIVISOR ו-START אחרי הכיתה הראשונה.
+  // v154: מודל-גלים. כל שאלה ממלאת עד quota מקומות, נבחרים מי-שקיבל-הכי-פחות-עד-כה (גל):
+  // כולם מגיעים לרמה N לפני שמישהו עובר ל-N+1, בלי תקרה — אז אין שתיקה בחצי-האחורי של חידון ארוך.
+  // MIN_GAP מסנן (מרווח אישי קדוש). טריגרים אמיתיים קובעים את המסר אם נבחר, לא את הבחירה.
+  // כיסוי ~100% בלי שהחזקים יקטפו הכל (המיון-לפי-הכי-פחות מאזן פעיל). כוונן DIVISOR/START אחרי הכיתה הראשונה.
 };
 
 // מאגרי הודעות — אקראיות שומרת על גיוון לאורך הרבה חידונים.
@@ -4856,17 +4889,22 @@ function ensureReinforceFields(p){
   if (p.gotWelcome == null) p.gotWelcome = false;                  // ברוך-שובך — פעם אחת בלבד
 }
 
-/* הלב: מודל-מכסה. מחזיר מפה { id: message } של מי שמקבל חיזוק בשאלה זו.
+/* הלב: מודל-גלים אינסופי. מחזיר מפה { id: message } של מי שמקבל חיזוק בשאלה זו.
    קלט: eligibles — טריגרים אמיתיים שזוהו ב-revealQ ({ id, cat }).
    המודל:
-   1. מכסה לשאלה = מספר הנוכחים שענו, חלקי DIVISOR (בערך). תקרה, לא רצפה.
-   2. סבב נמדד בטריגרים, לא בשאלות: roundReceived = כמה חיזוקים קיבל בסבב הנוכחי.
-      כשכל הנוכחים שקיבלו אי-פעם הגיעו לאותה רמה — הסבב מתקדם מעצמו דרך המיון.
-   3. סדר מילוי: קודם הטריגרים האמיתיים (חיזוק כן), ואז משלימים את המכסה
-      ממי-שלא-קיבל-בסבב, בקרב הנוכחים בלבד, עם חיזוק התמדה.
-   4. מיון: מי שקיבל פחות בסבב הנוכחי קודם → אז מי שמזמן יותר → אז אקראי.
-   5. אם הטריגרים האמיתיים לבדם עולים על המכסה — חותכים אקראית למכסה.
-   6. ברוך-שובך מטופל בנפרד (welcomeback), לא עובר כאן. */
+   1. מכסה לשאלה = מספר הנוכחים שענו, חלקי DIVISOR (בערך). תקרה, לא רצפה, מינימום 1.
+   2. זכאי = נוכח שמעולם לא קיבל (פעם ראשונה תמיד מותרת), או שעבר MIN_GAP שאלות מאז
+      החיזוק האחרון. המרווח קדוש — מונע "מחמאה אחרי מחמאה" ששוחקת ערך (v65).
+   3. מיון הזכאים — מי-שקיבל-הכי-פחות-עד-כה קודם. זה ה"גל": כולם מגיעים לרמה N לפני
+      שמישהו עובר ל-N+1 (אין תקרה — ולכן אין שתיקה בחצי-האחורי של חידון ארוך, להבדיל
+      מתקרת-ה-2 הישנה). המיון-לפי-הכי-פחות גם מאזן אנטי-קטיפה באופן פעיל — חזק שקיבל
+      הרבה יורד לסוף-התור — חזק יותר מתקרה קהה (v63: כיסוי ~100% בלי שהחזקים יקטפו הכל).
+   4. שובר-שוויון: מי-שמזמן-יותר (רעננות, דטרמיניסטי) → אז אקראי (כמעט אף-פעם לא מגיע).
+   5. ממלאים את המכסה מראש-הרשימה (slice). הגל "דולף" רמה אחת לכל היותר אם כל הנמוכים
+      חסומים ע"י המרווח — המרווח קדוש, הגל גמיש.
+   6. המסר (לא הבחירה): אם היה טריגר אמיתי — מסר לפי סוגו; אחרת אם צדק — 'correct';
+      אם טעה — 'persist'. הטריגרים קובעים את הניסוח, לא מי נבחר.
+   7. ברוך-שובך מטופל בנפרד (welcomeback), לא עובר כאן. */
 function selectReinforcements(eligibles, qIdx, total){
   if (!reinforceOn) return {};
   const result = {};
@@ -4888,31 +4926,23 @@ function selectReinforcements(eligibles, qIdx, total){
   const trigMsg = {};
   eligibles.forEach(e=>{ if (answers[e.id] && players[e.id] && !trigMsg[e.id]) trigMsg[e.id]=e.cat; });
 
-  // שני pools לפי כמה חיזוקים קיבל עד כה:
-  // pool1 = עוד לא קיבל אף פעם (0). pool2 = קיבל פעם אחת (1).
-  // מי שקיבל פעמיים (2+) — יורד לגמרי, לא נכנס לשום שיקול (הגיע לתקרה).
-  const pool1 = present.filter(id => players[id].totalReinforcements === 0);
-  // pool2 כפוף למרווח אישי: לא נכנס שוב אלא אם עברו לפחות MIN_GAP שאלות מאז הקדחה הקודמת.
-  // זה מונע "פעמיים צמוד" כשתלמיד לבד ב-pool. על pool1 אין מרווח (פעם ראשונה תמיד מותרת).
-  const pool2 = present.filter(id =>
-    players[id].totalReinforcements === 1 &&
+  // v154: מודל-גלים אינסופי (מחליף את תקרת-ה-2 שהשתיקה את החצי-האחורי בחידון ארוך).
+  // זכאי = נוכח שמעולם לא קיבל (פעם ראשונה תמיד מותרת), או שעבר MIN_GAP שאלות מאז האחרון —
+  // המרווח קדוש, מונע "מחמאה אחרי מחמאה" ששוחקת ערך (v65).
+  const eligible = present.filter(id =>
+    players[id].lastReinforcementAt < 0 ||
     (qIdx - players[id].lastReinforcementAt) >= REINFORCE.MIN_GAP
   );
-
-  // מיון בתוך כל pool: מי שקיבל לאחרונה מזמן יותר קודם, ואז אקראי.
-  // (בתוך pool1 כולם על 0, אז המיון הוא לפי lastReinforcementAt ואז אקראי.)
-  const byRecency = (a,b)=>{
+  // מיון: (1) מי-שקיבל-הכי-פחות קודם — זה ה"גל": כולם מגיעים לרמה N לפני שמישהו עובר ל-N+1,
+  //       והוא מאזן אנטי-קטיפה באופן פעיל (חזק שקיבל הרבה יורד לסוף-התור) — חזק יותר מתקרה קהה (v63).
+  //       (2) מי-שמזמן-יותר — רעננות, שובר-שוויון דטרמיניסטי. (3) אקראי — כמעט אף-פעם לא מגיע.
+  eligible.sort((a,b)=>{
     const pa=players[a], pb=players[b];
+    if (pa.totalReinforcements !== pb.totalReinforcements) return pa.totalReinforcements - pb.totalReinforcements;
     if (pa.lastReinforcementAt !== pb.lastReinforcementAt) return pa.lastReinforcementAt - pb.lastReinforcementAt;
     return Math.random()-0.5;
-  };
-  pool1.sort(byRecency);
-  pool2.sort(byRecency);
-
-  // ממלאים את המכסה: קודם כל pool1, ורק כשהוא נגמר — pool2.
-  // זה מבטיח שאיש לא יקבל פעם שנייה לפני שכולם קיבלו פעם ראשונה.
-  const queue = pool1.concat(pool2);
-  const chosen = queue.slice(0, quota);
+  });
+  const chosen = eligible.slice(0, quota);
 
   chosen.forEach(id=>{
     const p = players[id];
@@ -4985,7 +5015,7 @@ function revealQ(){
   }
   if (newRecord && speedBonusOn){   // v149: מהירות כבויה ← אין באנר שיא-מהירות
     addBanner(banners, 'gold', '🚀 שיא מהירות חדש: ' + bestName + ' · ' + (bestMs/1000).toFixed(2) + ' שניות!');
-    fireworks('🚀 שיא מהירות חדש!<small>' + bestName + ' · ' + (bestMs/1000).toFixed(2) + ' שניות</small>');
+    fireworks('🚀 שיא מהירות חדש!<small>' + escapeHtml(bestName) + ' · ' + (bestMs/1000).toFixed(2) + ' שניות</small>');
     sfxRecord();
   }
   if (newStreakRecord && streakKing){
@@ -5682,6 +5712,7 @@ function joinGame(){
     if (meta.teamCount>0 && myTeam<0){ $('j-msg').textContent='בחרו קבוצה.'; resetBtn(); return; }
     role='player';
     _hostWasAlive = false; _playerGameEnded = false;   // v129: איפוס מצב-המתנה בהצטרפות חדשה
+    studentTtsOn = false; studentTtsActive = false; _ttsOpeningDone = false; _spokeClosing = false; document.body.classList.remove('tts-student');   // v153: איפוס מצב-הקראה מקומי בהצטרפות-ידנית טרייה. לא נוגע ב-iAmTtsStudent (דגל-הניתוב לכולם/חלק, נקבע ב-joinGame מעל) ולא ב-ttsVoice (הקול במטמון) — המאזין משחזר את studentTtsOn מיד לפי הדגלים החיים.
     myId = getStablePlayerId(code);   // מזהה יציב לאותו משחק — חזרה = אותו מזהה (פריט 6 + 10)
     setupPresence(code, myId);        // נוכחות שמשתחזרת אוטומטית בכל חיבור חוזר (מתקן מקרה כיבוי-מסך)
     listenGame(code, () => {
