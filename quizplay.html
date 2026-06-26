@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v166 - החזרת שורת "אין בונוס" מתחת לשאלה (יניב — היה ונעלם): השורה "אין בונוס על מהירות, קחו את הזמן 🙂" התקיימה מ-v149 עד v151.14 והוסרה ב-v152.2 (כי "אותו מידע כבר בקופסת-הלובי"). הוחזרה — אבל רק במצב רגיל ללא הקראה: בונוס דלוק → "מהירות שווה נקודות!"; בונוס כבוי + הקראה → ריק (לשחקן-ההקראה יש מסך-פתיחה+לובי); בונוס כבוי + רגיל → השורה. שלושה מקומות: רמז-השחקן האמיתי (m.speedOn + studentTtsOn), הטלפון-מוק ב-syncMockQuestion (m.speedOn + sttsHostOn), והמתג-החי בבדיקה (speedBonusOn + sttsHostOn). אומת: node --check + רינדור.
   v165 - תיקון מרכוז בטלפון-המוק (יניב): מסכי-המשתתף המשוכפלים איבדו את המרכוז כי .screen (שמרכזת: align-items+text-align+justify-center) הוחלפה ב-.mk-screen, ו-.mp-screen .pwrap מירכז רק אנכית. נוסף text-align:center ל-.mp-screen .pwrap — כך הטקסט, האימוג'ים (📨 "התשובה נקלטה", 👀 "הסתכלו ללוח"), השאלה והחיזוק ממורכזים אופקית, בלי לכווץ את רשת-הכפתורים (שנשארת ברוחב מלא). אומת: רינדור + צילומים.
   v164 - תיקון נוסח ההערה תחת כפתור-הבדיקה במסך-ההכנה: "הבדיקה מציגה את החידון עם הבחירות שבמסך הזה (למעט מוזיקה)" — כי מוזיקה לא מתנגנת בבדיקה (יניב).
   v163 - שני כיוונונים סביב מסך-ההכנה (לבקשת יניב): (1) ביטול תצוגת-הרקע במסך-ההכנה — previewBgIfPregame כבר לא מפעיל applyGameBg(true) על מסך-ההכנה (עכשיו applyGameBg(false) + הסתרת תווית-התצוגה), כי הרקע מוצג ממילא בבדיקה. שורת-הסטטוס ("רקע: נבחר") נשארת. (2) הערה מתחת לכפתור "בדיקה" במסך-ההכנה: "הבדיקה מציגה את החידון עם הבחירות שבמסך הזה — מוזיקה, רקע והקראה" — כדי שברור שהבחירות כאן משתקפות בבדיקה. אומת: node --check + איזון-תגיות + רינדור.
@@ -574,7 +575,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v165</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v166</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -4374,7 +4375,7 @@ function toggleStudentTts(){
     // v162: בבדיקה — מצב-קריאוּת חי: מגדיל טקסט בטלפון, מכבה/מחזיר את בונוס-המהירות (והרמז מתחת לשאלה), בלי Firebase
     speedBonusOn = sttsHostOn ? false : ($('pg-speed-toggle') ? $('pg-speed-toggle').checked : true);
     document.body.classList.toggle('tts-student', sttsHostOn);
-    if ($('mk-pq-hint')) $('mk-pq-hint').textContent = (speedBonusOn === false) ? '' : 'מהירות שווה נקודות!';
+    if ($('mk-pq-hint')) $('mk-pq-hint').textContent = (speedBonusOn !== false) ? 'מהירות שווה נקודות!' : (sttsHostOn ? '' : 'אין בונוס על מהירות, קחו את הזמן 🙂');
     refreshSttsHostToggle();
     return;
   }
@@ -5626,7 +5627,7 @@ function mockShow(id){
 function syncMockQuestion(m){
   if ($('mk-pq-progress')) $('mk-pq-progress').textContent = (m.num && m.total) ? ('שאלה ' + m.num + ' מתוך ' + m.total) : '';
   if ($('mk-pq-text')) $('mk-pq-text').textContent = m.text;
-  if ($('mk-pq-hint')) $('mk-pq-hint').textContent = (m.speedOn === false) ? '' : 'מהירות שווה נקודות!';
+  if ($('mk-pq-hint')) $('mk-pq-hint').textContent = (m.speedOn !== false) ? 'מהירות שווה נקודות!' : (sttsHostOn ? '' : 'אין בונוס על מהירות, קחו את הזמן 🙂');
   const grid = $('mk-pq-grid');
   if (grid){ grid.innerHTML='';
     m.options.forEach(o => { const b=document.createElement('button'); b.className='pbtn'; b.textContent=o.txt; b.style.pointerEvents='none'; grid.appendChild(b); });
@@ -5963,7 +5964,7 @@ function showPQ(m){
   if (m.num && m.total) $('pq-progress').textContent = 'שאלה ' + m.num + ' מתוך ' + m.total;
   else $('pq-progress').textContent = '';
   $('pq-text').textContent = m.text;
-  $('pq-hint').textContent = (m.speedOn === false) ? '' : 'מהירות שווה נקודות!';   // v149/v151.6/v151.9/v151.14/v152.2: ריק כשהבונוס כבוי (כולל הקראה) — אותו מידע כבר בקופסת-הלובי
+  $('pq-hint').textContent = (m.speedOn !== false) ? 'מהירות שווה נקודות!' : (studentTtsOn ? '' : 'אין בונוס על מהירות, קחו את הזמן 🙂');   // v166: בונוס דלוק → רמז-מהירות; כבוי+הקראה → ריק (כבר בלובי/מסך-פתיחה); כבוי+רגיל → שורת "קחו את הזמן" (הוחזר; ירד ב-v152.2)
   const grid=$('pq-grid'); grid.innerHTML='';
   m.options.forEach(o => {
     const b=document.createElement('button'); b.className='pbtn'; b.textContent=o.txt;
