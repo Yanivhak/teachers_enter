@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v164 - תיקון נוסח ההערה תחת כפתור-הבדיקה במסך-ההכנה: "הבדיקה מציגה את החידון עם הבחירות שבמסך הזה (למעט מוזיקה)" — כי מוזיקה לא מתנגנת בבדיקה (יניב).
+  v163 - שני כיוונונים סביב מסך-ההכנה (לבקשת יניב): (1) ביטול תצוגת-הרקע במסך-ההכנה — previewBgIfPregame כבר לא מפעיל applyGameBg(true) על מסך-ההכנה (עכשיו applyGameBg(false) + הסתרת תווית-התצוגה), כי הרקע מוצג ממילא בבדיקה. שורת-הסטטוס ("רקע: נבחר") נשארת. (2) הערה מתחת לכפתור "בדיקה" במסך-ההכנה: "הבדיקה מציגה את החידון עם הבחירות שבמסך הזה — מוזיקה, רקע והקראה" — כדי שברור שהבחירות כאן משתקפות בבדיקה. אומת: node --check + איזון-תגיות + רינדור.
+  v162 - ארבע תוספות סביב הבדיקה (לבקשת יניב): (1) מצב-קריאוּת בבדיקה — אם נבחרה הקראת-תלמידים בהכנה (pg-stts-toggle), הטלפון-מוק מציג את מצב-הקריאוּת (טקסט גדול — body.tts-student, שמשפיע על המוק דרך מחלקות משותפות .pstatement/.pbtn/.grid), ומופיע בתפריט-המנחה כפתור "בטל הקראת-תלמידים". toggleStudentTts קיבל הסתעפות-solo: מדליק/מכבה את הטקסט-הגדול חי, ומכבה/מחזיר את בונוס-המהירות (sttsHostOn→speedBonusOn=false; כיבוי→חוזר ל-pg-speed-toggle) — כך שהרמז "מהירות שווה נקודות!" מתחת לשאלה נעלם/חוזר בהתאם (הערת יניב). בלי Firebase (writeStudentTts ממילא no-op בלי playCode). ניקוי: hideMockPhone מסיר tts-student ביציאה. (2) חיזוק בולט יותר במצב-קריאוּת — body.tts-student .rtoast .rcard גדול/חזק יותר (פונט+padding+צל), והאימוג'י גדול יותר — אותו זמן בדיוק (לא מאריכים; יניב צדק שזה מסתיר טקסט). (3) כפתור "👁️ בדיקה" במסך-ההכנה ליד "התחל משחק" (previewQuiz('pregame')) — בודקים עם הבחירות של ההכנה (מוזיקה/תמונה/הקראה). (4) כפתור "← יציאה מהבדיקה" ברור (פינה ימנית-עליונה, כרום-בדיקה, לא חלק ממסך-המשחק) → exitPreview, שחוזר לעורך או להכנה לפי מאיפה הגענו (_previewReturn). אומת: node --check + איזון-תגיות + רינדור + סימולציה.
+  v161 - תיקוני-יישור (לבקשת יניב, גם במשחק האמיתי וגם בבדיקה): (1) מסך-החשיפה — הפסים-האפורים (טבלת-ההתפלגות) היו בגריד א-סימטרי (200px לשם, 64px למונה), מה שדחף את הפס עצמו ~68px שמאלה ממרכז-המסך, כך שהתשובה-הנכונה וכפתור-"ממשיכים" (שממורכזים למסך) לא התיישרו אליו. עכשיו עמודות-הצד סימטריות (200/1fr/200) — הפס מתמרכז, והכל מיושר אליו. (2) מסך-השאלה — ל-.statement לא היה text-align:center, אז שאלה רב-שורתית בעברית "נשענה" לצד ונראתה עקומה; נוסף מירכוז. שינויי-CSS בלבד. 
   v160 - סרגל-המנחה המלא בבדיקה (1:1, לבקשת יניב — בדיקה זהה לחלוטין למשחק): עד כה הבדיקה הסתירה את #host-menu והציגה סרגל מצומצם משלה (solo-bar). עכשיו previewQuiz מציג את #host-menu האמיתי עצמו (אותו רכיב — מתחזק את עצמו), עם כל הכפתורים: ⏭️ הבא, מוזיקה, רקע, הקראה-לחדר, חיזוקים, 🏁 סיום, ☰ תפריט. הסרגל-המצומצם (solo-bar) ירד. כדי שהכפתורים יעבדו בבדיקה בלי לגעת במשחק החי, הוספתי הסתעפות-solo בפונקציות-המנחה: nextQ→soloNextQ, hostSkip→soloReveal/soloNextQ, hostJumpFinish→soloFinish (כולן: `if (solo){…;return;}` בראש, אז המשחק החי לא מושפע). כך גם כפתור-ההמשך הוא ה-hr-next האמיתי ("ממשיכים ◂") במקום כפתור-סולו ייעודי. כפתורים שאין להם משמעות בבדיקה מסומנים: "📲 קוד חזרה" → showToast("פעיל רק במשחק אמיתי") + מעומעם (body.mock-on); presence-counter מוסתר (אין משתתפים). יציאה מהבדיקה: דרך 🏁 סיום → soloFinish → מסך-הסיום (hfin-solo-actions, חזרה/בדיקה-שוב) — 1:1 עם המשחק (גם הוא יוצא דרך הסיום), כי "← חזרה לעריכה" היה בסרגל-המצומצם שירד. הערה: כפתור הקראת-תלמידים (stts-host-toggle) נשאר מוסתר בבדיקה (אודיו-לתלמיד לא מדומה במוק) — אם יידרש, יוצג מסומן. אומת: node --check + איזון-תגיות + רינדור + סימולציה.
   v159 - הבדיקה הפכה ל"המשחק משחק את עצמו" (לבקשת יניב — הדמיה 1:1 אמיתית): המנחה מנהל מהצד שלו בלבד (לוחץ "לשאלה הבאה"), ולא עונה. לוח-התשובות-הידני שהיה מתחת למסך-המנחה — ירד. במקומו, כשעולה שאלה, השחקן-המדומה "עונה" לבד (_soloAutoAnswer) אחרי השהיה רנדומלית קצרה (1.5–3.7ש', כמו שחקן שחושב): הכפתור-בטלפון נצבע (.sel), הטלפון עובר ל"התשובה נקלטה", ואז חשיפה-אוטומטית — בדיוק כמו במשחק האמיתי, שבו allPresentAnswered→revealQ מפעיל חשיפה ~600ms אחרי שכולם ענו. כך מסך-המחשב נשאר 1:1 למסך-המנחה, הטלפון 1:1 למסך-השחקן, והמנחה צופה במשחק שלו רץ ומנהל את הקצב. הבחירה: נטייה קלה לנכון (~60%) במקום אקראי-אחיד — אחרת עם 4 אפשרויות זה כמעט תמיד טעות ולא היו נראים רצפים/זיקוקים/מגוון-חיזוקים; הניקוד/רצף/חיזוקים מחושבים על התשובה-הזו, אז יש מגוון אותנטי (לפעמים רצף וזיקוק, לפעמים טעות ואיפוס). כפתורי-הטלפון כבר לא disabled (נראים פעילים כמו אצל שחקן, רק לא לחיצים — המנחה לא לוחץ עליהם). טיימר-הזמן נשאר כרשת-ביטחון (חשיפה בתום הזמן אם משום-מה לא נענה). הערה: מסך-השחקן (pq) כולל סרגל-זמן משלו (pq-bar) — הוא מופיע בטלפון, 1:1; הסרגל-הגדול והטיימר-העגול הם של מסך-המנחה (במסך-המחשב, כבר 1:1). אומת: node --check + איזון-תגיות + רינדור + סימולציה מלאה עם צילומים.
   v158 - טלפון-מוק בבדיקה (פיצ'ר-דגל — אף בונה-חידונים ברשת לא מראה את צד-המשתתף לצד מסך-המנחה בזמן בדיקה): מסגרת-טלפון בצד-שמאל שמשקפת 1:1 את חוויית-המשתתף, בזמן שמסך-המנחה נשאר ראשי. הגישה (אפשרות א, "שלד מהאמיתי"): buildMockPhone משכפל (cloneNode) את מסכי-המשתתף האמיתיים — pq (שאלה), psent ("התשובה נקלטה"), plook ("הסתכלו ללוח"), ו-rtoast (חיזוק) — אל תוך המסגרת, עם קידומת mk- לכל id (למניעת כפילות), הסרת interactivity (תצוגה-בלבד). כך המבנה+העיצוב מסתנכרנים אוטומטית עם כל שינוי עתידי במסך-האמיתי; רק לוגיקת-המילוי (syncMockQuestion/syncMockReinforce) נפרדת, ומתועדת בבלוק-תחזוקה בולט בראש קוד-המוק (אם תשתנה לוגיקת-התצוגה — מוסרת הערה ידנית מה לעדכן). סנכרון צעד-צעד: שאלה→הטלפון מראה התקדמות+טיימר+טקסט+רמז+כפתורים; המנחה עונה במסך-הראשי→הטלפון מראה "התשובה נקלטה"; הפסקה (כל 4 שאלות, אותו תנאי כמו במשחק)→הטלפון מראה "הסתכלו ללוח" (soloNextQ פוצל ל-_soloRenderQ + שלב-הפסקה). חיזוקים אמיתיים: selectReinforcements קיבל פרמטר includeMe (ברירת-מחדל off — המשחק החי לא נגע, '_me' עדיין מסונן שם), וב-soloReveal רץ האלגוריתם האמיתי על השחקן-המדומה (eligibility זהה ל-revealQ: improve/streak) → הודעת-חיזוק נוחתת בטלפון בקצב הטבעי (START_CAP+MIN_GAP). הסתייגות כנה: סוגי-חיזוק שמשווים לשחקנים אחרים (hard וכו') לא יֵצאו עם שחקן יחיד; כל האישיים כן. בטוח לחלוטין: solo-בלבד, מסכים משוכפלים (ה-pq/psent/plook/rtoast האמיתיים לא נגעו), המוק נמחק ביציאה (endGameSession לכל מסלולי-העריכה/רשימה, ו-soloFinish לפודיום). אומת: node --check + איזון-תגיות + רינדור + צילומי-מסך של המוק בכל מצב.
@@ -246,6 +250,9 @@ input:focus{border-color:var(--gold); outline:none;}
 .rtoast .rcard{background:linear-gradient(135deg,#f7b733,#fc8b3a); color:#1a2342; font-family:'Heebo'; font-weight:800; font-size:clamp(20px,6vw,30px); text-align:center; padding:26px 34px; border-radius:24px; box-shadow:0 16px 48px rgba(0,0,0,.4); transform:scale(.85); transition:transform .3s; max-width:88%;}
 .rtoast.on .rcard{transform:scale(1);}
 .rtoast .remoji{font-size:clamp(34px,10vw,52px); display:block; margin-bottom:8px;}
+/* v162: במצב-קריאוּת — חיזוק בולט יותר (גדול/חזק), אותו זמן בדיוק (לא מאריכים — זה מסתיר טקסט) */
+body.tts-student .rtoast .rcard{ font-size:clamp(28px,7.5vw,44px); padding:34px 44px; box-shadow:0 18px 56px rgba(0,0,0,.55); }
+body.tts-student .rtoast .remoji{ font-size:clamp(46px,12vw,70px); margin-bottom:12px; }
 .adv-box summary::-webkit-details-marker{display:none;}
 .adv-box summary::after{content:'▾'; margin-inline-start:auto; transition:transform .2s; color:var(--ink-dim);}
 .adv-box[open] summary::after{transform:rotate(180deg);}
@@ -403,7 +410,7 @@ body.mock-on #return-code-btn{ opacity:.45; }
 .qnum{font-size:clamp(20px,2.4vw,28px); color:var(--ink-dim); font-weight:700;}
 .timerball{width:clamp(56px,7vw,84px); height:clamp(56px,7vw,84px); border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; font-family:'Secular One'; font-size:clamp(26px,3.4vw,40px); color:var(--gold);}
 .timerball.low{background:var(--coral); color:#fff;}
-.statement{font-family:'Secular One'; font-size:clamp(40px,6.5vw,76px); line-height:1.25; max-width:1200px; margin:30px 0; color:#fff; font-weight:900; text-shadow:0 3px 16px rgba(0,0,0,.9);}
+.statement{font-family:'Secular One'; font-size:clamp(40px,6.5vw,76px); line-height:1.25; max-width:1200px; margin:30px 0; color:#fff; font-weight:900; text-align:center; text-shadow:0 3px 16px rgba(0,0,0,.9);}
 .answeredline{font-size:clamp(26px,3vw,36px); color:#fff; font-weight:600; text-shadow:0 2px 10px rgba(0,0,0,.8);}
 .answeredline b{color:var(--teal); font-size:clamp(32px,3.6vw,44px);}
 .tbar{width:min(900px,92vw); height:14px; background:rgba(255,255,255,.12); border-radius:8px; overflow:hidden; margin-top:18px;}
@@ -412,13 +419,13 @@ body.mock-on #return-code-btn{ opacity:.45; }
 .opt-chip{background:var(--card); border-radius:14px; padding:16px 26px; font-size:clamp(22px,2.6vw,30px); font-weight:700;}
 .correct-line{font-size:clamp(28px,3.6vw,42px); color:#fff; margin-bottom:10px; font-weight:700; text-shadow:0 2px 10px rgba(0,0,0,.8);}
 .winner-name{font-family:'Secular One'; font-size:clamp(40px,6vw,72px); color:var(--teal); margin:6px 0 18px; text-shadow:0 4px 18px rgba(0,0,0,.9);}
-.bar{display:grid; grid-template-columns:200px 1fr 64px; align-items:center; gap:14px; font-size:clamp(20px,2.4vw,28px); margin-bottom:8px; max-width:760px; width:100%;}
+.bar{display:grid; grid-template-columns:200px 1fr 200px; align-items:center; gap:14px; font-size:clamp(20px,2.4vw,28px); margin-bottom:8px; max-width:820px; width:100%;}
 .bar .name{text-align:right; font-weight:700; color:#fff;}
 .bar .track{height:30px; background:rgba(255,255,255,.14); border-radius:8px; overflow:hidden;}
 .bar .fill{height:100%; width:0; background:var(--violet); border-radius:8px; transition:width .9s cubic-bezier(.2,.8,.2,1);}
 .bar.is-correct .fill{background:var(--teal);}
 .bar.is-correct .name{color:var(--gold);}
-.bar .n{color:#fff; text-align:left; font-weight:800;}
+.bar .n{color:#fff; text-align:right; font-weight:800;}
 .host-bar{position:fixed; bottom:14px; right:14px; z-index:80; display:flex; gap:8px;}
 /* סרגל מנחה במשחק — תפריט נגלל (כמו במונטאז'): שורה תמיד-גלויה (מונה + קוד-חזרה + כפתור תפריט), והרשימה נפתחת מעליה */
 #host-menu{position:fixed; bottom:14px; right:14px; z-index:80; display:flex; flex-direction:column; align-items:flex-end; gap:8px;}
@@ -566,7 +573,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v160</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v164</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -842,9 +849,11 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <div id="pg-preview-note" style="display:none; font-size:13px; color:var(--gold); background:rgba(255,209,102,.12); border:1px solid rgba(255,209,102,.4); border-radius:10px; padding:7px 14px; margin:0 auto 4px; max-width:340px;">👁️ זו תצוגה מקדימה — ככה הרקע ייראה במשחק</div>
 
     <!-- הפעולה הראשית — כפתור התחלה גדול ובולט -->
-    <div class="row" style="margin-top:22px;">
+    <div class="row" style="margin-top:22px; gap:12px;">
       <button class="btn teal" onclick="goPlay()" style="font-size:20px; padding:16px 36px;">▶️ התחל משחק</button>
+      <button class="btn" onclick="previewQuiz('pregame')" style="font-size:18px; padding:16px 26px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.22); color:var(--ink);">👁️ בדיקה</button>
     </div>
+    <p style="margin:10px auto 0; max-width:430px; font-size:13px; color:var(--ink-dim); line-height:1.5;">👁️ הבדיקה מציגה את החידון עם הבחירות שבמסך הזה (למעט מוזיקה).</p>
 
     <!-- v149: מתג בונוס-מהירות — הגדרת-משחק, דלוק כברירת-מחדל. נקרא ב-hostStart דרך #pg-speed-toggle. -->
     <div style="margin:20px auto 0; max-width:430px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:14px 18px; text-align:right;">
@@ -1158,6 +1167,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   <button onclick="backToEditor()">← חזרה לעריכה</button>
 </div>
 <div id="solo-badge" style="position:fixed; top:10px; left:14px; z-index:55; font-size:14px; font-weight:800; color:#1a2342; background:var(--gold); border-radius:10px; padding:6px 14px; display:none;">👁️ מצב בדיקה <span onclick="showSoloNote(event)" style="cursor:pointer; opacity:.8; margin-inline-start:3px; font-weight:900;">ⓘ</span></div>
+<button id="solo-exit" onclick="exitPreview()" style="position:fixed; top:10px; right:14px; z-index:55; font-family:'Heebo'; font-size:13px; font-weight:800; color:#fff; background:rgba(231,76,60,.92); border:none; border-radius:10px; padding:8px 16px; cursor:pointer; display:none;">← יציאה מהבדיקה</button>
 <!-- v158: טלפון-מוק בבדיקה (תצוגה-בלבד) — מסך-המשתתף משוכפל לכאן ב-buildMockPhone. מנותק מהמשחק החי. -->
 <div id="mock-phone" class="mock-phone"><div class="mp-notch"></div><div class="mp-screen" id="mp-screen"></div><div class="mp-cap">📱 מה שהמשתתף רואה</div></div>
 <div id="ingame-credit" style="position:fixed; bottom:10px; left:14px; z-index:55; font-size:13px; color:rgba(170,180,207,.55); display:none;">פותח על ידי ד״ר יניב חכים</div>
@@ -4357,7 +4367,18 @@ async function syncPregameTtsCode(){
     if (box) box.style.display = 'none';
   }
 }
-function toggleStudentTts(){ sttsHostOn = !sttsHostOn; if (sttsHostOn) speedBonusOn = false; writeStudentTts(sttsHostOn); refreshSttsHostToggle(); }
+function toggleStudentTts(){
+  sttsHostOn = !sttsHostOn;
+  if (solo){
+    // v162: בבדיקה — מצב-קריאוּת חי: מגדיל טקסט בטלפון, מכבה/מחזיר את בונוס-המהירות (והרמז מתחת לשאלה), בלי Firebase
+    speedBonusOn = sttsHostOn ? false : ($('pg-speed-toggle') ? $('pg-speed-toggle').checked : true);
+    document.body.classList.toggle('tts-student', sttsHostOn);
+    if ($('mk-pq-hint')) $('mk-pq-hint').textContent = (speedBonusOn === false) ? '' : 'מהירות שווה נקודות!';
+    refreshSttsHostToggle();
+    return;
+  }
+  if (sttsHostOn) speedBonusOn = false; writeStudentTts(sttsHostOn); refreshSttsHostToggle();
+}
 function refreshSttsHostToggle(){
   const m = $('stts-host-toggle'); if (!m) return;
   m.style.display = sttsLiveAllowed ? '' : 'none';   // v151.13: מופיע רק אם נבחרה הקראה בהכנה (אחרת הפעלה באמצע תשבור בונוס/זמן)
@@ -4472,11 +4493,11 @@ function updatePgMediaStatus(){
 // תצוגה מקדימה חיה: כשנמצאים במסך ההכנה (pregame), הרקע הנבחר נדלק מיד מאחורי הכרטיסים
 // — אותו אלמנט game-bg ואותו overlay כהה כמו במשחק, כך שהמורה רואה בדיוק מה יקרה לפני שהתחיל.
 function previewBgIfPregame(){
+  // v163: לא מציגים את הרקע במסך-ההכנה — הוא מוצג בבדיקה ממילא (לבקשת יניב). רק מעדכנים את שורת-הסטטוס.
   const onPregame = $('pregame') && $('pregame').classList.contains('on');
-  if (onPregame) applyGameBg(!!bgUrl);
-  // עדכון תווית התצוגה-המקדימה (מופיעה רק כשיש רקע פעיל)
+  if (onPregame) applyGameBg(false);
   const note = $('pg-preview-note');
-  if (note) note.style.display = (onPregame && bgUrl) ? 'block' : 'none';
+  if (note) note.style.display = 'none';
   updatePgMediaStatus();
 }
 // זיהוי קובץ HEIC/HEIF (תמונות אייפון) — דורש המרה ל-JPEG לפני הצגה (אחרת הדפדפן מציג שחור)
@@ -5296,6 +5317,14 @@ function endGameSession(){
   hideMockPhone();   // v158: סגירת טלפון-המוק ביציאה מהבדיקה
 }   // v118: ניקוי מאזינים ביציאה ממשחק
 function backToEditor(){ clearInterval(hostTimer); stopGameMusic(); applyGameBg(false); $('host-menu').style.display='none'; $('solo-bar').style.display='none'; $('solo-badge').style.display='none'; $('ingame-credit').style.display='none'; hideReturnQR(); endGameSession(); renderEditor(); show('editor'); }
+// v162: יציאה מהבדיקה דרך כפתור ברור — חוזרת לאן שהגענו ממנו (עורך/הכנה)
+function exitPreview(){
+  clearInterval(hostTimer); stopGameMusic(); applyGameBg(false);
+  $('host-menu').style.display='none'; $('solo-badge').style.display='none';
+  if ($('solo-exit')) $('solo-exit').style.display='none';
+  $('ingame-credit').style.display='none'; hideReturnQR(); solo=false; endGameSession();
+  if (_previewReturn === 'pregame'){ prePlay(); } else { renderEditor(); show('editor'); }
+}
 function restartGame(){
   // v126: "התחלה מחדש" = אותו חידון, אותם תלמידים שכבר מחוברים, הניקוד מתאפס — בלי קוד חדש ובלי הצטרפות מחדש.
   clearInterval(hostTimer);
@@ -5500,7 +5529,9 @@ function saveNow(){
 /* מצב בדיקה: מריץ משחק סולו אמיתי על מסכי המשחק עצמם, כדי שייראה בדיוק כמו החידון.
    המורה משחק לבד (בלי Firebase, בלי תלמידים), בוחר תשובות בעצמו ורואה חשיפה כרגיל. */
 let solo = false;
-function previewQuiz(){
+let _previewReturn = 'editor';   // v162: לאן חוזרים מהבדיקה ('editor' / 'pregame')
+function previewQuiz(from){
+  _previewReturn = (from === 'pregame') ? 'pregame' : 'editor';   // v162
   const noName = quizNameMissing();
   if (noName){ showToast(noName); return; }
   const err = quizReady();
@@ -5521,6 +5552,10 @@ function previewQuiz(){
   roomTtsOn = $('pg-roomtts-toggle') ? $('pg-roomtts-toggle').checked : false;
   ttsBtnOn = roomTtsOn;
   refreshHostSpeakBtn();
+  // v162: מצב-קריאוּת בבדיקה — אם נבחרה הקראת-תלמידים בהכנה: טקסט גדול בטלפון + כפתור-מתג בתפריט (בונוס-המהירות כבר כובה מעלה, אז הרמז יֵעלם)
+  sttsLiveAllowed = sttsHostOn;
+  document.body.classList.toggle('tts-student', sttsHostOn);
+  refreshSttsHostToggle();
   // v118: איפוס מצב-קול בין בדיקות (סולו)
   musicMuted = false; musicIdx = 0;
   if ($('solo-music-toggle')) $('solo-music-toggle').textContent = '🔇 השתקת מוזיקה';
@@ -5529,6 +5564,7 @@ function previewQuiz(){
   $('solo-bar').style.display='none';
   $('host-menu').style.display='flex'; $('host-menu').classList.remove('open');
   $('solo-badge').style.display='block';
+  if ($('solo-exit')) $('solo-exit').style.display='block';   // v162: כפתור-יציאה ברור מהבדיקה
   $('bg-toggle').style.display = bgUrl ? 'inline-block' : 'none';
   $('music-toggle').style.display = musicList.length ? 'inline-block' : 'none';
   if ($('presence-counter')) $('presence-counter').style.display='none';   // אין משתתפים אמיתיים בבדיקה
@@ -5608,7 +5644,7 @@ function syncMockReinforce(text, emoji){
   clearTimeout(_mkToastTimer);
   _mkToastTimer = setTimeout(()=>{ t.classList.remove('on'); }, 2600);
 }
-function hideMockPhone(){ const p=$('mock-phone'); if(p) p.classList.remove('on'); document.body.classList.remove('mock-on'); }
+function hideMockPhone(){ const p=$('mock-phone'); if(p) p.classList.remove('on'); document.body.classList.remove('mock-on'); document.body.classList.remove('tts-student'); }
 
 function soloNextQ(){
   revealed = false; answers = {};
