@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v165 - תיקון מרכוז בטלפון-המוק (יניב): מסכי-המשתתף המשוכפלים איבדו את המרכוז כי .screen (שמרכזת: align-items+text-align+justify-center) הוחלפה ב-.mk-screen, ו-.mp-screen .pwrap מירכז רק אנכית. נוסף text-align:center ל-.mp-screen .pwrap — כך הטקסט, האימוג'ים (📨 "התשובה נקלטה", 👀 "הסתכלו ללוח"), השאלה והחיזוק ממורכזים אופקית, בלי לכווץ את רשת-הכפתורים (שנשארת ברוחב מלא). אומת: רינדור + צילומים.
   v164 - תיקון נוסח ההערה תחת כפתור-הבדיקה במסך-ההכנה: "הבדיקה מציגה את החידון עם הבחירות שבמסך הזה (למעט מוזיקה)" — כי מוזיקה לא מתנגנת בבדיקה (יניב).
   v163 - שני כיוונונים סביב מסך-ההכנה (לבקשת יניב): (1) ביטול תצוגת-הרקע במסך-ההכנה — previewBgIfPregame כבר לא מפעיל applyGameBg(true) על מסך-ההכנה (עכשיו applyGameBg(false) + הסתרת תווית-התצוגה), כי הרקע מוצג ממילא בבדיקה. שורת-הסטטוס ("רקע: נבחר") נשארת. (2) הערה מתחת לכפתור "בדיקה" במסך-ההכנה: "הבדיקה מציגה את החידון עם הבחירות שבמסך הזה — מוזיקה, רקע והקראה" — כדי שברור שהבחירות כאן משתקפות בבדיקה. אומת: node --check + איזון-תגיות + רינדור.
   v162 - ארבע תוספות סביב הבדיקה (לבקשת יניב): (1) מצב-קריאוּת בבדיקה — אם נבחרה הקראת-תלמידים בהכנה (pg-stts-toggle), הטלפון-מוק מציג את מצב-הקריאוּת (טקסט גדול — body.tts-student, שמשפיע על המוק דרך מחלקות משותפות .pstatement/.pbtn/.grid), ומופיע בתפריט-המנחה כפתור "בטל הקראת-תלמידים". toggleStudentTts קיבל הסתעפות-solo: מדליק/מכבה את הטקסט-הגדול חי, ומכבה/מחזיר את בונוס-המהירות (sttsHostOn→speedBonusOn=false; כיבוי→חוזר ל-pg-speed-toggle) — כך שהרמז "מהירות שווה נקודות!" מתחת לשאלה נעלם/חוזר בהתאם (הערת יניב). בלי Firebase (writeStudentTts ממילא no-op בלי playCode). ניקוי: hideMockPhone מסיר tts-student ביציאה. (2) חיזוק בולט יותר במצב-קריאוּת — body.tts-student .rtoast .rcard גדול/חזק יותר (פונט+padding+צל), והאימוג'י גדול יותר — אותו זמן בדיוק (לא מאריכים; יניב צדק שזה מסתיר טקסט). (3) כפתור "👁️ בדיקה" במסך-ההכנה ליד "התחל משחק" (previewQuiz('pregame')) — בודקים עם הבחירות של ההכנה (מוזיקה/תמונה/הקראה). (4) כפתור "← יציאה מהבדיקה" ברור (פינה ימנית-עליונה, כרום-בדיקה, לא חלק ממסך-המשחק) → exitPreview, שחוזר לעורך או להכנה לפי מאיפה הגענו (_previewReturn). אומת: node --check + איזון-תגיות + רינדור + סימולציה.
@@ -297,7 +298,7 @@ body.tts-student .rtoast .remoji{ font-size:clamp(46px,12vw,70px); margin-bottom
 .mp-screen{position:absolute; inset:11px; border-radius:32px; overflow:hidden; background:radial-gradient(900px 600px at 50% -10%, #16223f 0%, var(--bg2) 50%, var(--bg1) 100%);}
 .mk-screen{display:none; position:absolute; inset:0; overflow-y:auto;}
 .mk-screen.on{display:block;}
-.mp-screen .pwrap{min-height:100%; box-sizing:border-box; padding:34px 18px; display:flex; flex-direction:column; justify-content:center;}
+.mp-screen .pwrap{min-height:100%; box-sizing:border-box; padding:34px 18px; display:flex; flex-direction:column; justify-content:center; text-align:center;}
 .mp-screen #mk-pq .pwrap{justify-content:flex-start; padding-top:24px;}
 /* v158: כשהטלפון פתוח — מסיטים את תוכן מסך-המנחה ימינה כך שלא ייחבא מאחורי הטלפון (כל הרוחב נשמר במסכים רחבים) */
 body.mock-on #hq, body.mock-on #hr{ padding-left:300px; }
@@ -573,7 +574,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v164</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v165</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
