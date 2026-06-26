@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v152.8 - תמונת-תצוגה לשיתוף (og:image): נוספה תמונת-שיתוף ממותגת (og-quizplay.png, 1200×630 — לוגו QuizPlay על נייבי עם זוהר עדין כמו ה-hero) שהשלימה את תגיות ה-Open Graph מ-v124 (טרם נוספה שם תמונה). נוספו og:image + og:image:width/height + og:image:alt + twitter:image, ו-twitter:card שודרג מ-summary ל-summary_large_image (תצוגת-תמונה גדולה בכרטיס). דורש העלאת og-quizplay.png ל-repo. אומת: איזון-תגיות.
   v152.7 - בנק-החיזוקים: ניקוי מאגר persist. השורש: persist הוא המאגר היחיד שנשלח למי שטעה (מי שצדק בלי טריגר מקבל correct), אך הכיל ניסוחי-שבח ("ממשיכים, כל הכבוד", "יופי, ממשיכים ככה", "ממשיכים יפה" ועוד) שנחתו על תלמיד שראה זה-עתה את טעותו. מעבר למביכות — שבח-על-טעות שוחק את אמינות כל מערכת-החיזוקים (אם "כל הכבוד" מגיע גם בטעות, הוא מאבד ערך בהצלחה). תוקן: שמונת הניסוחים עם "יפה/יופי/כל הכבוד" (כולל "ממשיכים בכיף", לבקשת-המשתמש) הוחלפו בעידוד-קדימה ניטרלי בלשון "ביחד". ארבעת מאגרי מי-שצדק (streak/hard/improve/correct) ו-welcome לא נגעתי. אומת: node --check + איזון-תגיות.
   v152.6 - (1) תיקון "המשחק נקטע" (✕) ששתק בשני המצבים — אותו שורש בדיוק כמו הקראת-הסיום (v152.5): ה-handler קרא להקראה ואז מיד show('pcut'), ושורת-ה-cancel של show ("יציאה ממסך-שאלה → עצירת הקראה", v152.2) דרסה את ההקראה. תוקן: ההקראה עברה ל*אחרי* show('pcut') ועטופה ב-setTimeout(160). show() עצמו לא נגעתי — הקראת-השאלה ממשיכה להיפסק במעבר כרגיל; רק ההודעה הקצרה רצה אחרי ה-cancel. (2) הוסר הקירור (5 דק') לבקשת-המשתמש — כל הודעת-אמצע (חזרה-ממסך / מנחה-יצא / נקטע) מוקראת בכל פעם, בלי טיימר. speakMiddleOnce פושט (גודר ב-studentTtsOn בלבד); _ttsCooldowns הוסר. טרייד-אוף מודע: רשת מקרטעת עלולה להשמיע הודעת-אמצע כמה פעמים — מקובל (משחק כזה ממילא ייפסק). אומת: node --check + איזון-תגיות. דורש אימות-מכשיר.
   v152.5 - תיקון שני שורשים בהקראות-הנגישות (v152.4): (1) מסך-פתיחה לא הופיע במצב "לכולם" — הוא נקרא רק ב-applyStudentTts (כשהמנחה מתחיל), והשאלה הראשונה דרסה אותו מיד. תוקן: הודעת welcome נושאת כעת ttsAll=(sttsHostOn && ttsMode==='all'); התלמיד מציג את מסך-הפתיחה כבר בלובי אם iAmTtsStudent (ספציפי) או m.ttsAll (כללי) — בדיוק כמו שספציפי כבר עבד. (2) הקראת-הסיום שתקה בשני המצבים — היא נקראה לפני show('pfin'), ושורת-ה-cancel של show ("יציאה ממסך-שאלה → עצירת הקראה", v152.2) דרסה את ההקראה שזה-עתה התחילה. תוקן: speakText של הסיום עבר ל*אחרי* show('pfin') ועטוף ב-setTimeout(160) — ה-cancel של show רץ קודם, ואז הסיום מוקרא נקי. אובחן מול דיווח: "המנחה יצא" עבד (הולך ל-showPlayerWait ישירות, לא דרך show) בעוד הסיום שתק — מה שהצביע על show כאשם. מצב רגיל/בלי-הקראה: ללא שינוי. אומת: node --check + איזון-תגיות. דורש אימות-מכשיר.
@@ -160,9 +161,14 @@
 <meta property="og:description" content="הופכים רעיון לפעילות אינטראקטיבית בתוך דקות. צרו חידונים בעזרת AI או בעצמכם והפעילו משתתפים בזמן אמת.">
 <meta property="og:url" content="https://yanivhak.github.io/yopoy/quizplay.html">
 <meta property="og:locale" content="he_IL">
-<meta name="twitter:card" content="summary">
+<meta property="og:image" content="https://yanivhak.github.io/yopoy/og-quizplay.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="QuizPlay">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="QuizPlay · חידונים אינטראקטיביים">
 <meta name="twitter:description" content="הופכים רעיון לפעילות אינטראקטיבית בתוך דקות.">
+<meta name="twitter:image" content="https://yanivhak.github.io/yopoy/og-quizplay.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Fredoka:wght@500;600;700&family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -537,7 +543,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152.7</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v152.8</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
