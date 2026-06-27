@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v170 - תיקון באג: מארח-אורח שנפל השאיר את המשתתפים על "תיכף נחזור" לנצח (הבטחה שקרית): מנגנון הנוכחות-החיה (setupHostAlive, v129) נכתב ללא תנאי גם למארח-אורח, אז כשאורח נופל ה-onDisconnect מסיר את hostAlive והמשתתפים רואים "תיכף נחזור" אחרי 8 שניות — אבל לאורח אין שחזור (resumeHostGame נשען על teachers/{uid}/activeGame, ולאורח אין uid), אז ההבטחה לא מתממשת והמשתתפים תקועים. התיקון (עקבי וכן — אורח לעולם לא חוזר): המארח כותב games/{code}/meta.hostIsGuest ביצירת החדר; כל משתתף קורא אותו בהצטרפות (_hostIsGuest); ב-handler המארח-נפל, אם המארח אורח ← המשתתף רואה "המשחק הסתיים" (מסך pcut הקיים) במקום "תיכף נחזור". מארח-מחובר — ללא שינוי (יכול לשחזר עד 45 דקות). בליפ-רשת קצר עדיין נספג ע"י 8 השניות (גם לאורח). saveHostSnapshot כבר היה מוגן לאורח (myStoreKey ריק ← return), אז אין כתיבת-זבל. אומת: node --check + איזון-תגיות + רינדור מסך-הסיום. דורש אימות-מכשיר: הזרימה החיה הרב-מכשירית (מארח-אורח נופל ← המשתתף רואה pcut) לא נבדקה בסביבה.
+  v169 - אחידות-מונח: כפתור הבדיקה בעורך (action-box) שינה תווית מ"תצוגה מקדימה" ל"בדיקה", כדי להתיישר עם כל שאר המקומות בכלי (מסך-ההכנה, רשימת החידונים, מסך-הסיום, תגית מצב-בדיקה) ועם מדריך-המשתמש. (תצוגה-מקדימה-של-רקע במסך-ההכנה נשארת "תצוגה מקדימה" — היא דבר אחר.) אומת: node --check.
   v168 - מסגור ה-ⓘ במצב-בדיקה (showSoloNote): השורה הראשונה הורחבה מ"ככה זה ירגיש במשחק אמיתי" ל"גם הדמיה וגם התכוננות למשחק... וכאן אפשר לתרגל את הצגת החידון ולהתנסות בכפתורים ובפונקציות לפני המפגש" — כדי שברור שהבדיקה היא לא רק תצוגה אלא גם מרחב-תרגול. שאר הפופ-אפ (✅/🟡/❌) ללא שינוי. אומת: node --check.
   v167 - שתי משימות (יניב): (1) שם מסך-ההכנה שונה מ"מוכנים להתחיל?" ל"🎬 הכנות למשחק" — להתאמה לפרק בלוג. (2) QR-לחזרה בהדמיה: עד כה לחיצה על "📲 קוד חזרה" בבדיקה החזירה toast בלבד ("פעיל רק במשחק אמיתי"); עכשיו מציגה את פאנל ה-QR-לחזרה המלא עם קוד-דוגמה 1974 — בדיוק כמו במשחק האמיתי, שבו הקוד בן 4-הספרות כבר מוצג מתחת ל-QR (genCode → 1000-9999). הוסר גם העמעום של כפתור קוד-החזרה בבדיקה (body.mock-on #return-code-btn) כי הוא פעיל עכשיו. אומת: node --check + רינדור.
   v166 - החזרת שורת "אין בונוס" מתחת לשאלה (יניב — היה ונעלם): השורה "אין בונוס על מהירות, קחו את הזמן 🙂" התקיימה מ-v149 עד v151.14 והוסרה ב-v152.2 (כי "אותו מידע כבר בקופסת-הלובי"). הוחזרה — אבל רק במצב רגיל ללא הקראה: בונוס דלוק → "מהירות שווה נקודות!"; בונוס כבוי + הקראה → ריק (לשחקן-ההקראה יש מסך-פתיחה+לובי); בונוס כבוי + רגיל → השורה. שלושה מקומות: רמז-השחקן האמיתי (m.speedOn + studentTtsOn), הטלפון-מוק ב-syncMockQuestion (m.speedOn + sttsHostOn), והמתג-החי בבדיקה (speedBonusOn + sttsHostOn). אומת: node --check + רינדור.
@@ -575,7 +577,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v168</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v170</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -816,7 +818,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <!-- ───── שורה 1: הפעלה ובדיקה ───── -->
     <div class="action-grid">
       <div class="action-box" onclick="prePlay()"><span class="ab-ico">▶️</span><span>התחל משחק</span></div>
-      <div class="action-box" onclick="previewQuiz()"><span class="ab-ico">👁️</span><span>תצוגה מקדימה</span></div>
+      <div class="action-box" onclick="previewQuiz()"><span class="ab-ico">👁️</span><span>בדיקה</span></div>
     </div>
 
     <!-- ───── שורה 2: שיתוף וספרייה (פותחים חלון צף) ───── -->
@@ -4017,7 +4019,7 @@ async function goPlay(){
     players = {}; $('joined-list').innerHTML=''; $('joined-n').textContent='0'; $('go-btn').disabled=true;
     // ניקוי חדר קודם אם נשאר, ופרסום מטא של המשחק (שמות קבוצות) כדי שהשחקנים יוכלו לבחור קבוצה
     fdb.ref('games/'+playCode).remove().catch(()=>{});
-    fdb.ref('games/'+playCode+'/meta').set({ teamCount: quiz.teamCount, teamNames: quiz.teamNames || [], title: quiz.title || '', createdAt: Date.now() });   // v155: חותמת-זמן למחזור-קודים
+    fdb.ref('games/'+playCode+'/meta').set({ teamCount: quiz.teamCount, teamNames: quiz.teamNames || [], title: quiz.title || '', createdAt: Date.now(), hostIsGuest: isGuest });   // v155: חותמת-זמן; דגל-אורח — המשתתפים יראו "המשחק הסתיים" אם מארח-אורח נופל (לאורח אין שחזור)
     listenGame(playCode);
   } else {
     // חזרה ללובי — מרעננים את תצוגת המצטרפים הקיימים (הם עדיין רשומים)
@@ -4053,6 +4055,7 @@ let _hostAliveWatchRef = null, _hostAliveWatchHandler = null;
 let _sttsWatchRef = null, _sttsWatchHandler = null;   // v151
 let _sttsSomeRef = null, _sttsSomeHandler = null;   // v152.3: המאזין לדגל-הספציפיים
 let _hostWasAlive = false, _playerGameEnded = false, _hostGoneTimer = null;   // v130: השהיה למסך-ההמתנה
+let _hostIsGuest = false;   // אם המארח אורח — נפילתו = "המשחק הסתיים" (עקבי: לאורח אין שחזור)
 // המארח מסמן "אני חי" עם onDisconnect שמסיר אוטומטית כשהחיבור נופל (מתחדש בכל חיבור חוזר).
 function setupHostAlive(code){
   teardownHostAlive();
@@ -4110,13 +4113,19 @@ function listenGame(code, onReady, skipBefore){
   }
   else {
     // v129: התלמיד מאזין ל"נוכחות-חיה" של המארח — נעלמה? "תיכף נחזור". חזרה? מורידים.
+    // קריאת דגל-האורח של המארח (חד-פעמית; נכתב ביצירת החדר, לפני שהמשתתף הצטרף)
+    fdb.ref('games/'+code+'/meta/hostIsGuest').once('value').then(snap => { _hostIsGuest = (snap.val() === true); }).catch(()=>{});
     _hostAliveWatchRef = fdb.ref('games/'+code+'/hostAlive');
     _hostAliveWatchHandler = _hostAliveWatchRef.on('value', snap => {
       if (snap.val()){ _hostWasAlive = true; clearTimeout(_hostGoneTimer); hidePlayerWait(); }
       else if (_hostWasAlive && !_playerGameEnded){
         clearTimeout(_hostGoneTimer);
         // v130: לא מקפיצים מיד — רק אם המארח נעדר מעבר ל~8 שניות (בליפ-רשת רגעי של המחשב/מקרן לא יקפיץ)
-        _hostGoneTimer = setTimeout(() => { if (!_playerGameEnded){ showPlayerWait(); speakMiddleOnce('hostgone', 'עוד רגע, המנחה יחזור'); } }, 8000);   // v152.4: הקראה + קירור 5 דק' עצמאי
+        _hostGoneTimer = setTimeout(() => {
+          if (_playerGameEnded) return;
+          if (_hostIsGuest){ _playerGameEnded = true; hidePlayerWait(); show('pcut'); speakMiddleOnce('cut', 'נראה שהמשחק נקטע, תודה ששיחקתם'); }   // מארח-אורח נפל → אין שחזור → "המשחק הסתיים" (עקבי וכן)
+          else { showPlayerWait(); speakMiddleOnce('hostgone', 'עוד רגע, המנחה יחזור'); }   // v152.4: מארח-מחובר — יכול לשחזר, אז "תיכף נחזור"
+        }, 8000);
       }
     });
     _sttsWatchRef = fdb.ref('games/'+code+'/ttsStudents');
@@ -5911,7 +5920,7 @@ function joinGame(){
   function proceed(code, meta){
     if (meta.teamCount>0 && myTeam<0){ $('j-msg').textContent='בחרו קבוצה.'; resetBtn(); return; }
     role='player';
-    _hostWasAlive = false; _playerGameEnded = false;   // v129: איפוס מצב-המתנה בהצטרפות חדשה
+    _hostWasAlive = false; _playerGameEnded = false; _hostIsGuest = false;   // v129: איפוס מצב-המתנה בהצטרפות חדשה
     studentTtsOn = false; studentTtsActive = false; _ttsOpeningDone = false; _spokeClosing = false; document.body.classList.remove('tts-student');   // v153: איפוס מצב-הקראה מקומי בהצטרפות-ידנית טרייה. לא נוגע ב-iAmTtsStudent (דגל-הניתוב לכולם/חלק, נקבע ב-joinGame מעל) ולא ב-ttsVoice (הקול במטמון) — המאזין משחזר את studentTtsOn מיד לפי הדגלים החיים.
     myId = getStablePlayerId(code);   // מזהה יציב לאותו משחק — חזרה = אותו מזהה (פריט 6 + 10)
     setupPresence(code, myId);        // נוכחות שמשתחזרת אוטומטית בכל חיבור חוזר (מתקן מקרה כיבוי-מסך)
