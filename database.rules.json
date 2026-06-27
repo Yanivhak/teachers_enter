@@ -1,0 +1,57 @@
+{
+  "rules": {
+    "teachers": {
+      ".read": "auth != null && auth.token.email_verified == true && auth.token.email === 'yaniv.hakim@mail.huji.ac.il'",
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email_verified == true && auth.token.email === 'yaniv.hakim@mail.huji.ac.il'))",
+        ".write": "auth != null && (auth.uid === $uid || (auth.token.email_verified == true && auth.token.email === 'yaniv.hakim@mail.huji.ac.il'))"
+      }
+    },
+    "teacher_emails": {
+      ".read": "auth != null && auth.token.email_verified == true && auth.token.email === 'yaniv.hakim@mail.huji.ac.il'",
+      "$k": {
+        ".write": "auth != null && (auth.uid === $k || (auth.token.email_verified == true && auth.token.email === 'yaniv.hakim@mail.huji.ac.il'))"
+      }
+    },
+    "teachers_meta": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || (auth.token.email_verified == true && auth.token.email === 'yaniv.hakim@mail.huji.ac.il'))",
+        ".write": "auth != null && (auth.uid === $uid || (auth.token.email_verified == true && auth.token.email === 'yaniv.hakim@mail.huji.ac.il'))"
+      }
+    },
+    "lib_user": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "sentence_bank": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "games": {
+      ".read": true,
+      ".write": true
+    },
+    "shared": {
+      "$id": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "codes": {
+      "$code": {
+        ".read": true,
+        ".write": "auth != null"
+      }
+    },
+    "library": {
+      ".read": true,
+      "$id": {
+        ".write": "auth != null"
+      }
+    }
+  }
+}
