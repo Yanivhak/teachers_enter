@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v167 - שתי משימות (יניב): (1) שם מסך-ההכנה שונה מ"מוכנים להתחיל?" ל"🎬 הכנות למשחק" — להתאמה לפרק בלוג. (2) QR-לחזרה בהדמיה: עד כה לחיצה על "📲 קוד חזרה" בבדיקה החזירה toast בלבד ("פעיל רק במשחק אמיתי"); עכשיו מציגה את פאנל ה-QR-לחזרה המלא עם קוד-דוגמה 1974 — בדיוק כמו במשחק האמיתי, שבו הקוד בן 4-הספרות כבר מוצג מתחת ל-QR (genCode → 1000-9999). הוסר גם העמעום של כפתור קוד-החזרה בבדיקה (body.mock-on #return-code-btn) כי הוא פעיל עכשיו. אומת: node --check + רינדור.
   v166 - החזרת שורת "אין בונוס" מתחת לשאלה (יניב — היה ונעלם): השורה "אין בונוס על מהירות, קחו את הזמן 🙂" התקיימה מ-v149 עד v151.14 והוסרה ב-v152.2 (כי "אותו מידע כבר בקופסת-הלובי"). הוחזרה — אבל רק במצב רגיל ללא הקראה: בונוס דלוק → "מהירות שווה נקודות!"; בונוס כבוי + הקראה → ריק (לשחקן-ההקראה יש מסך-פתיחה+לובי); בונוס כבוי + רגיל → השורה. שלושה מקומות: רמז-השחקן האמיתי (m.speedOn + studentTtsOn), הטלפון-מוק ב-syncMockQuestion (m.speedOn + sttsHostOn), והמתג-החי בבדיקה (speedBonusOn + sttsHostOn). אומת: node --check + רינדור.
   v165 - תיקון מרכוז בטלפון-המוק (יניב): מסכי-המשתתף המשוכפלים איבדו את המרכוז כי .screen (שמרכזת: align-items+text-align+justify-center) הוחלפה ב-.mk-screen, ו-.mp-screen .pwrap מירכז רק אנכית. נוסף text-align:center ל-.mp-screen .pwrap — כך הטקסט, האימוג'ים (📨 "התשובה נקלטה", 👀 "הסתכלו ללוח"), השאלה והחיזוק ממורכזים אופקית, בלי לכווץ את רשת-הכפתורים (שנשארת ברוחב מלא). אומת: רינדור + צילומים.
   v164 - תיקון נוסח ההערה תחת כפתור-הבדיקה במסך-ההכנה: "הבדיקה מציגה את החידון עם הבחירות שבמסך הזה (למעט מוזיקה)" — כי מוזיקה לא מתנגנת בבדיקה (יניב).
@@ -303,8 +304,6 @@ body.tts-student .rtoast .remoji{ font-size:clamp(46px,12vw,70px); margin-bottom
 .mp-screen #mk-pq .pwrap{justify-content:flex-start; padding-top:24px;}
 /* v158: כשהטלפון פתוח — מסיטים את תוכן מסך-המנחה ימינה כך שלא ייחבא מאחורי הטלפון (כל הרוחב נשמר במסכים רחבים) */
 body.mock-on #hq, body.mock-on #hr{ padding-left:300px; }
-/* v159: כפתורים שלא פעילים בבדיקה — מעומעמים (סימון "לא פעיל") */
-body.mock-on #return-code-btn{ opacity:.45; }
 
 /* כרטיס חידון ברשימה (מוערם — מותאם לנייד) */
 .qlcard{background:var(--card); border-radius:14px; padding:16px; text-align:right;}
@@ -575,7 +574,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v166</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v167</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -845,7 +844,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <div style="text-align:right; margin-bottom:6px;">
       <button onclick="goBack()" style="background:none; border:none; color:var(--ink-dim); font-family:'Heebo'; font-size:14px; cursor:pointer; padding:4px 0;">→ חזרה</button>
     </div>
-    <h2>מוכנים להתחיל?</h2>
+    <h2>🎬 הכנות למשחק</h2>
     <p class="sub" style="margin-bottom:8px;">החידון <b id="pregame-title" style="color:var(--gold);"></b> מוכן<span id="pregame-qcount"></span>. אפשר להתחיל מיד.</p>
     <!-- תווית תצוגה מקדימה — מופיעה רק כשיש רקע פעיל (נשלט מ-previewBgIfPregame) -->
     <div id="pg-preview-note" style="display:none; font-size:13px; color:var(--gold); background:rgba(255,209,102,.12); border:1px solid rgba(255,209,102,.4); border-radius:10px; padding:7px 14px; margin:0 auto 4px; max-width:340px;">👁️ זו תצוגה מקדימה — ככה הרקע ייראה במשחק</div>
@@ -5487,10 +5486,9 @@ function hideReturnQR(){ const c = $('return-qr-corner'); if (c) c.remove(); }
 // מתג QR-לחזרה: פינה קטנה בצד שמאל-למטה (הצד הנגדי לסרגל המנחה), בלי לכסות את המשחק.
 // לחיצה ראשונה מציגה, לחיצה נוספת מסתירה. השחקן שיצא סורק מהפינה וכולם ממשיכים לשחק.
 function showReturnQR(){
-  if (solo){ showToast('📲 קוד חזרה — פעיל רק במשחק אמיתי'); return; }   // v159: אין משתתפים בבדיקה
   const existing = $('return-qr-corner');
   if (existing){ existing.remove(); return; }   // מתג: אם פתוח — סוגרים
-  const code = playCode || topic;
+  const code = solo ? '1974' : (playCode || topic);   // v167: בהדמיה — קוד-דוגמה 1974, כדי שה-QR-לחזרה ייראה גם בבדיקה
   if (!code) return;
   const baseUrl = location.origin.startsWith('http') ? (location.origin + location.pathname) : '';
   const joinUrl = baseUrl ? (baseUrl + '?game=' + code) : '';
