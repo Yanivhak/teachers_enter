@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <!--
-  יומן גרסאות (teacherquiz):
+  יומן גרסאות (quizplay):
+  v177 - הסתרת קישורי-index לקראת פרסום-החידון-בלבד + נקודות-כניסה למדריך/לוג (עמוד-הבית עדיין לא מתפרסם): כל הקישורים ל-index.html הוחבאו (comment, הפיכים) כי עמוד-הבית יעלה רק אחרי המונטאז'. (1) במסך-הכניסה הוסתר "🏠 חזרה לתפריט הראשי", ובמקומו נוספו "📖 מדריך" ו-"🆕 מה חדש" (אותה-לשונית, מעטפת home-help-links) — נגישים בכל מצבי-ההתחברות לפני הכניסה לעורך, כך שאין סיכון לאובדן-עבודה לאורח. (2) "🎬 יציאה לבניית מצגת" הוסתר בתפריט-הניווט הפנימי וגם ב-teacher-library v15. (3) יעדי-החזרה תוקנו: teacher-guide v17 (כפתור-החזרה teacherquiz.html→quizplay.html, היה 404) ו-teacher-changelog (index.html→quizplay.html + התווית "חזרה לבחירת הכלים"→"חזרה ל-QuizPlay"). (4) קוד ה-embed מסתיר עכשיו את home-help-links במקום main-menu-link שהוסר. ניקוי: teachercombo.html (יתום-שבור, שריד שמות-ישן) למחיקה. אומת: node --check + איזון-תגיות.
+  ⚠️ ממתין לטיפול (כשעמוד-הבית יחזור): (א) להחזיר את כל קישורי-index המוחבאים (מסומנים בהערות בקוד). (ב) רק מסך-הכניסה אמור לקשר ל-index, לא מתוך החידון. (ג) פתוח: אין כרגע דרך לחזור החוצה מהחידון / למסך-הכניסה מתוך זרימת-העבודה — צריך פתרון ניווט עתידי.
   v176 - מסך-כניסה, סידור-מחדש: תיאור-המוצר ("הופכים רעיון לפעילות אינטראקטיבית בתוך דקות") הועבר מ*מעל* הכפתורים ל*מתחתיהם* (מעל שורת-ה-✓). אוויר מוגדל בין בלוק-המותג לכפתורים (.ho-cta margin 28→40) ובין הכפתורים לתיאור (.ho-tag margin 22→28). ההיגיון: מותג (לוגו+מנשר) → פעולה → תיאור+הוכחה. אומת: node --check + איזון-תגיות.
   v175 - שדרוג מסך-הכניסה (מצב לא-מחובר): (א) זוהר-רך רב-צבעי (כתום/טורקיז/סגול) נוסף מאחורי הכדורים — שכבת #auth-out::before בלבד, מוגבל למסך-הכניסה, בלי לגעת ברקע הגלובלי של שאר המסכים. (ב) מנשר-המותג נוסף מתחת ללוגו: "טכנולוגיה טובה לא מודדים במה שהיא עושה, אלא במה שהיא מאפשרת לאנשים לעשות יחד" + "נולד מתוך צורך. נבנה מניסיון" (.ho-mani, זהה למדריך). (ג) הסרת-עומס: ירדו תווית "בונה חידונים" (.ho-hero-teaser) והתיאור הארוך "צרו חידונים בעזרת AI..." (.ho-lede) — שחזרו על מה שהכותרת ושורת-ה-✓ כבר אומרות. ההיררכיה עכשיו: לוגו → מנשר → שורת-ערך → כפתורים → ✓.
   v174 - לוגו במסך-ההצטרפות (join): מסך-הכניסה של התלמיד (הקלדת קוד+שם אחרי סריקת ה-QR) קיבל את לוקאפ-המותג (yopoy מעל 🧠 + QuizPlay בזוהר זהב) בראש הטופס + רקע-זוהר (מחלקת pbrand), להשלמת אי-הסימטריה מול מסכי-הפרידה הממותגים (pwait/pfin/pcut) — כעת גם הכניסה וגם היציאה של התלמיד ממותגות, ומסכי-המשחק נשארים נקיים. אומת: node --check + איזון-תגיות + רינדור.
@@ -589,7 +591,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v176</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v177</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -696,8 +698,12 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
       </div>
     </div>
 
-    <div style="margin-top:12px;">
-      <a href="index.html" target="_top" id="main-menu-link" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a>
+    <div style="margin-top:12px;" id="home-help-links">
+      <!-- ⚠️ ממתין לטיפול: קישור-index מוסתר עד שעמוד-הבית (index.html) יתפרסם. כשהוא יעלה — להסיר את ההערה ולהחזיר. רק מסך-הכניסה הזה אמור לקשר ל-index (ראה v177 בראש הקובץ). -->
+      <!-- <a href="index.html" target="_top" id="main-menu-link" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🏠 חזרה לתפריט הראשי</a> -->
+      <a href="teacher-guide.html" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">📖 מדריך</a>
+      <span style="opacity:.35; margin:0 8px;">·</span>
+      <a href="teacher-changelog.html" style="color:var(--ink-dim); font-size:14px; text-decoration:none;">🆕 מה חדש</a>
     </div>
 
     <!-- אודות — מתקפל, סגור כברירת מחדל -->
@@ -1360,7 +1366,8 @@ function updateNavMenu(){
     html += '<button onclick="signOutToHome()">🚪 יציאה מהחשבון <span class=\'info-i\' onclick="event.stopPropagation(); showInfo(event, \'אפשר לצאת בכל רגע. כשתחזרו תמשיכו מאותה נקודה.\')">i</span></button>';
   }
   // יציאה למצגת — תמיד אחרונה ומובחנת (אלא אם בקומבו)
-  if (!isEmbed) html += '<a href="index.html" target="_top" class="nav-exit">🎬 יציאה לבניית מצגת</a>';
+  // ⚠️ ממתין לטיפול: "🎬 יציאה לבניית מצגת" מוסתר עד שעמוד-הבית (index.html) יתפרסם — אז להחזיר (ראה v177 בראש הקובץ).
+  // if (!isEmbed) html += '<a href="index.html" target="_top" class="nav-exit">🎬 יציאה לבניית מצגת</a>';
   list.innerHTML = html;
 }
 function setConn(on){ $('conn-dot').classList.toggle('on',on); $('conn-txt').textContent = on?'מחובר':'לא מחובר'; }
@@ -5840,11 +5847,11 @@ function prefillReturn(scannedCode){
 
 (function initJoinFromURL(){
   const params = new URLSearchParams(location.search);
-  // בתוך הקומבו (embed=1) מסתירים את הקישור לתפריט הראשי במסך הבית (לקומבו יש סרגל משלו).
-  // את היציאה-למצגת בתפריט הניווט מטפל updateNavMenu עצמו (בודק embed בעת בניית הרשימה).
+  // בתוך הקומבו (embed=1) מסתירים את קישורי-הבית (📖 מדריך / 🆕 מה חדש) במסך הבית — לקומבו יש סרגל משלו.
+  // (יציאה-למצגת מוסתרת כרגע בכל מצב — ראה v177; תחזור עם עמוד-הבית.)
   if (params.get('embed') === '1'){
-    const link = $('main-menu-link');
-    if (link) link.style.display = 'none';
+    const hl = $('home-help-links');
+    if (hl) hl.style.display = 'none';
   }
   const code = params.get('game');
   if (code && /^\d{4}$/.test(code)){

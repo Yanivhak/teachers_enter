@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   ספריית חידונים (yopoy) — changelog
+  v15 - הסתרת "🎬 יציאה לבניית מצגת" (קישור ל-index.html) — עמוד-הבית עדיין לא מתפרסם (החידון יוצא לבד, המונטאז' אחר-כך). הקישור הוחבא בהערה (הפיך): כשעמוד-הבית יעלה — להסיר ולהחזיר. חלק מצעד רב-קבצים זהה: quizplay v177, teacher-guide v17. אומת: node --check + איזון-תגיות.
   v14 - דיווחים עם סיבה + הסתרה במקום מחיקה (חלק ממערכת-מודרציה רב-קבצים): לחיצה על 🚩 פותחת חלון בחירת-סיבה (פוגעני / מידע שגוי / ספאם / איכות ירודה / אחר+הערה עד 120 תווים) במקום אישור כן/לא. הדיווח כותב זהות+סיבה לצומת lib_reports/{quizId}/{uid} — קריא-לאדמין-בלבד (אפס מיילים בנתון הציבורי, עקבי עם מודל-הפרטיות), ומגדיל מונה ציבורי library/{id}/reports (פעם-אחת-לכל-משתמש דרך השמירה ב-lib_user). המחיקה-האוטומטית ב-3 דיווחים הוסרה והוחלפה בהסתרה: renderList מסנן החוצה כל פריט עם hidden===true (הסתרה ידנית של אדמין) או reports>=3 (סף 3 מדווחים-שונים) — הפריט נעלם מהספרייה אך נשאר בבסיס-הנתונים, ואדמין יכול להשיבו. אומת: node --check + איזון-תגיות.
   v13 - תיקון "הפס למעלה": הכותרת והטקסט התנגשו עם התגים הצפים בראש העמוד (חותמת/שם-חשבון/תפריט), כי לא היה פס-עליון קבוע והתוכן התחיל גבוה מדי. נוסף .topbar (פס עליון מלא-רוחב, קבוע, רקע כמעט-אטום עם blur — זהה לחידון) + padding-top שמרחיק את התוכן מתחתיו. עכשיו ראש-העמוד נקי והתוכן נגלל מתחת לפס בצורה נקיה.
   v12 - תיקון "פס שחור" בתחתית המסך במובייל (זהה ל-QuizPlay v147): נוסף צבע-רצפה מוצק על html,body (var(--bg1) = #05080f) — הקיצור background: על body איפס את צבע-הרקע ל-transparent, ולכן iOS צבע את אזור ה-home-indicator בשחור; עכשיו הוא נצבע באותו כחול-כהה כמו תחתית הגרדיאנט, ללא שחור.
@@ -92,7 +93,7 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
      (מתבצעת רק בדף החידונים); לא-מחובר → תוכן מוסתר + הפניה לדף החידונים. תפריט ניווט:
      ➕ בניית חידון חדש (teacherquiz.html?new=1) · 🗂️ החידונים שלי (teacherquiz.html?list=1 — ?list=1 מקפיץ ישר לרשימה) · 🎬 יציאה למצגת.
      "ספרייה" לא בתפריט (אנחנו כאן). הסגנון זהה ל-nav-menu בקובץ teacherquiz.html. -->
-<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v14</div>
+<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v15</div>
 <!-- v7: שם-חשבון קבוע למעלה-במרכז, כמו בדף החידונים (נראה כשמחובר) -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -102,7 +103,8 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
     <a href="quizplay.html?new=1" class="nav-item-link">➕ בניית חידון חדש</a>
     <a href="quizplay.html?list=1" class="nav-item-link">🗂️ החידונים שלי</a>
     <button id="nav-signout" onclick="signOut()" style="display:none;">🚪 יציאה מהחשבון <span class="info-i" onclick="event.stopPropagation(); showInfo(event, 'אפשר לצאת בכל רגע — כשתחזרו תמשיכו בדיוק מאותה נקודה.')">i</span></button>
-    <a href="index.html" class="nav-exit">🎬 יציאה לבניית מצגת</a>
+    <!-- ⚠️ ממתין לטיפול: מוסתר עד שעמוד-הבית (index.html) יתפרסם — אז להחזיר (ראה v15 ביומן למעלה). -->
+    <!-- <a href="index.html" class="nav-exit">🎬 יציאה לבניית מצגת</a> -->
   </div>
   <button id="nav-toggle" onclick="toggleNavMenu()" title="פתיחה/סגירה של תפריט הניווט">☰ <span id="nav-toggle-label">ניווט</span> <span class="chev">▾</span></button>
 </div>
