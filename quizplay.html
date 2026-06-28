@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v173 - חזרה-חלקה דרך ה-QR (מילוי-מראש בהצטרפות-מחדש לאותו משחק): כשתלמיד שיצא סורק שוב את ה-QR של מסך-המארח (אותו משחק שעדיין רץ), השם והקוד מתמלאים אוטומטית ולוחצים רק "כניסה". (1) בכל הצטרפות, proceed שומר ב-localStorage רשומה לפי קוד-המשחק האמיתי (qz_join_{realCode}): שם, קבוצה, הקוד-בו-השתמש (כללי או קוד-הקראה), והאם תלמיד-הקראה. (2) prefillReturn חדשה נקראת ב-initJoinFromURL כשמגיעים עם ?game={code}: אם המכשיר זוכר את המשחק — השם ממולא ונעול לגמרי (readOnly+עמום, בלי מוצא; מכשירים לא מתחלפים באמצע משחק), הקוד ממולא בערך הנכון (תלמיד-הקראה מקבל את קוד-ההקראה כך שההקראה משוחזרת במקום ללכת לאיבוד), הקבוצה נזכרת ומסומנת, וחיווי "ברוך שובך". תלמיד חדש / משחק אחר / מכשיר אחר → אין מילוי, הקלדה רגילה. (3) תיקון-לוואי: maybeLoadTeams פוצלה (applyJoinTeams) ועכשיו מזהה קוד-הקראה וטוענת קבוצות מהמשחק האמיתי + מסמנת את הקבוצה הנזכרת — מתקן באג קיים שבו הקלדת קוד-הקראה ידנית במשחק-קבוצתי לא הציגה כלל כפתורי-קבוצות והתלמיד נתקע ב"בחרו קבוצה". הניקוד היה בטוח גם קודם (המארח מתעלם מהשם/קבוצה בחזרה ושומר את הרשומה לפי המזהה היציב) — ערך הפיצ'ר הוא תיקון-ההקראה+נוחות. אומת: node --check (שני בלוקי-JS) + איזון-תגיות + נוכחות הפונקציות.
   v172 - הודעת חסימת-פרסום + ערעור (השלמת מערכת-המודרציה): משתמש שנחסם מהספרייה (blocked/{uid}) — הכללים דוחים את כתיבת-הפרסום ל-library/. עד כה הכשל הוצג כ"תקלה" גנרית; עכשיו openLibraryPublishFromCard מזהה PERMISSION_DENIED ופותח חלון ייעודי (showBlockedAppeal) שמסביר שהחשבון חסום מפרסום (בנייה/הפעלה פרטית עדיין אפשרית) ומאפשר לשלוח ערעור — נכתב ל-appeals/{uid} (מותר גם לחסום לפי הכללים) ומופיע בלוח-הניהול, עם מייל-קשר-גיבוי (yanivhpro@gmail.com). שאר נתיבי-הכשל ממשיכים בהודעה הגנרית. אומת: node --check (שני בלוקי-JS) + איזון-תגיות.
   v171 - אבטחת-פרטיות + ניקוי קוד-מת (משלים לכללי-ה-Firebase הגרנולריים שנפרסו): המייל של המנחה הוא הנכס הרגיש שהיה חשוף, ושלוש נקודות-דליפה נסגרו בקוד. (1) saveHostSnapshot דוחף עכשיו עותק של החידון בלי ownerEmail ל-games/{code}/hostState/quiz — נתיב שחייב להישאר קריא לכל מצטרף-אורח בזמן משחק, אז המייל הוצא ממנו. ownerEmail הוא ממילא write-only (נכתב לזיהוי-בעלים, לא נקרא באף לוגיקה) — אפס-השפעה על שחזור/משחק, ונכתב מחדש בשמירה הרגילה. (2) הוסרה נפילת-המייל מ-ownerName וגם מ-originalAuthor — שניהם נכתבים לרשומות shared/ ו-library/ הציבוריות (כ"שותף על ידי"/"נוצר על ידי"); כעת בלי שם-Google מוצג קרדיט ריק במקום מייל. (3) קוד שיתוף-לפי-מייל המת נמחק כליל: ארבע פונקציות (startSpecificShare/addShareEmail/removeShareEmail/unshareSpecificAll — אפס-קוראים מאז הסרת ה-UI ב-v67), השדה allowedEmails (תמיד ריק), בלוק-המיילים ב-shareStatusBox, וענפי-הגישה-לפי-מייל בדיאלוג-הקבלה (נשאר רק נתיב-ההוספה הרגיל). הנימוק למחיקה ולא השארה: המודל שבור-מבנית בשיתוף-העתקה — נמען מקבל עותק עצמאי וחופשי לשתפו, ורשומות shared/ ציבוריות; השארת הקוד רק מפתה לשחזר דפוס שבור, והוא שמור ב-v170/Git. אומת: node --check (שני בלוקי-JS) + איזון-תגיות זהה למקור + grep ללא שאריות-קוד-חי. הסתייגות: הזרימה הרב-מכשירית החיה ניתנת לאימות סופי רק על מכשיר אמיתי — Firebase חסום בסביבת-הפיתוח.
   v170 - תיקון באג: מארח-אורח שנפל השאיר את המשתתפים על "תיכף נחזור" לנצח (הבטחה שקרית): מנגנון הנוכחות-החיה (setupHostAlive, v129) נכתב ללא תנאי גם למארח-אורח, אז כשאורח נופל ה-onDisconnect מסיר את hostAlive והמשתתפים רואים "תיכף נחזור" אחרי 8 שניות — אבל לאורח אין שחזור (resumeHostGame נשען על teachers/{uid}/activeGame, ולאורח אין uid), אז ההבטחה לא מתממשת והמשתתפים תקועים. התיקון (עקבי וכן — אורח לעולם לא חוזר): המארח כותב games/{code}/meta.hostIsGuest ביצירת החדר; כל משתתף קורא אותו בהצטרפות (_hostIsGuest); ב-handler המארח-נפל, אם המארח אורח ← המשתתף רואה "המשחק הסתיים" (מסך pcut הקיים) במקום "תיכף נחזור". מארח-מחובר — ללא שינוי (יכול לשחזר עד 45 דקות). בליפ-רשת קצר עדיין נספג ע"י 8 השניות (גם לאורח). saveHostSnapshot כבר היה מוגן לאורח (myStoreKey ריק ← return), אז אין כתיבת-זבל. אומת: node --check + איזון-תגיות + רינדור מסך-הסיום. דורש אימות-מכשיר: הזרימה החיה הרב-מכשירית (מארח-אורח נופל ← המשתתף רואה pcut) לא נבדקה בסביבה.
@@ -579,7 +580,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v172</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v173</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -5811,6 +5812,20 @@ function clearNewParamFromUrl(){
   } catch(e){}
 }
 
+// v173: חזרה לאותו משחק דרך ה-QR — אם המכשיר זוכר זהות למשחק הזה, ממלאים שם (נעול) + הקוד הנכון + קבוצה.
+// תלמיד-הקראה חוזר עם קוד-ההקראה (entered) כדי שההקראה תשוחזר. תלמיד חדש / משחק אחר / מכשיר אחר → אין מילוי.
+function prefillReturn(scannedCode){
+  let rec = null;
+  try { const raw = localStorage.getItem('qz_join_'+scannedCode); if (raw) rec = JSON.parse(raw); } catch(e){}
+  if (!rec || !rec.name) return false;
+  if ($('j-code') && rec.entered && /^\d{4}$/.test(rec.entered)) $('j-code').value = rec.entered;
+  if ($('j-name')){ $('j-name').value = rec.name; $('j-name').readOnly = true; $('j-name').style.opacity = '.75'; }
+  myTeam = (rec.team != null) ? rec.team : -1;
+  const msg = $('j-msg');
+  if (msg){ msg.style.color = 'var(--teal)'; msg.textContent = 'ברוך שובך, ' + rec.name + '! לוחצים כניסה כדי להמשיך.'; }
+  return true;
+}
+
 (function initJoinFromURL(){
   const params = new URLSearchParams(location.search);
   // בתוך הקומבו (embed=1) מסתירים את הקישור לתפריט הראשי במסך הבית (לקומבו יש סרגל משלו).
@@ -5823,6 +5838,7 @@ function clearNewParamFromUrl(){
   if (code && /^\d{4}$/.test(code)){
     $('j-code').value = code;
     show('join');
+    prefillReturn(code);   // v173: חזרה דרך QR — שם נעול + קוד נכון (כולל הקראה) אם המכשיר מזהה את המשחק
     maybeLoadTeams();
   }
   // קישור שיתוף — שומרים את המזהה ומטפלים בו אחרי התחברות
@@ -5873,19 +5889,23 @@ $('j-code').addEventListener('blur', maybeLoadTeams);
 function maybeLoadTeams(){
   const code = $('j-code').value.trim();
   if (!/^\d{4}$/.test(code)) return;
-  // נטען את שמות הקבוצות מתוך מטא של המשחק
+  // נטען את שמות הקבוצות מתוך מטא של המשחק (v173: קוד-הקראה → טוענים קבוצות מהמשחק האמיתי)
   fdb.ref('games/'+code+'/meta').once('value').then(s=>{
     const meta = s.val();
-    if (meta && meta.teamCount>0){
-      $('j-teams').style.display='block';
-      const box=$('j-team-btns'); box.innerHTML='';
-      meta.teamNames.forEach((nm,i)=>{
-        const b=document.createElement('button'); b.className='pbtn'; b.style.flex='0 0 auto'; b.textContent=nm;
-        b.onclick=()=>{ myTeam=i; [...box.children].forEach(c=>c.classList.remove('sel')); b.classList.add('sel'); };
-        box.appendChild(b);
-      });
-    } else { $('j-teams').style.display='none'; myTeam=-1; }
+    if (meta && meta.ttsFor){ fdb.ref('games/'+meta.ttsFor+'/meta').once('value').then(s2=>applyJoinTeams(s2.val())).catch(()=>{}); return; }
+    applyJoinTeams(meta);
   });
+}
+function applyJoinTeams(meta){
+  if (meta && meta.teamCount>0){
+    $('j-teams').style.display='block';
+    const box=$('j-team-btns'); box.innerHTML='';
+    meta.teamNames.forEach((nm,i)=>{
+      const b=document.createElement('button'); b.className='pbtn'+(i===myTeam?' sel':''); b.style.flex='0 0 auto'; b.textContent=nm;
+      b.onclick=()=>{ myTeam=i; [...box.children].forEach(c=>c.classList.remove('sel')); b.classList.add('sel'); };
+      box.appendChild(b);
+    });
+  } else { $('j-teams').style.display='none'; myTeam=-1; }
 }
 
 function joinGame(){
@@ -5905,6 +5925,8 @@ function joinGame(){
     _hostWasAlive = false; _playerGameEnded = false; _hostIsGuest = false;   // v129: איפוס מצב-המתנה בהצטרפות חדשה
     studentTtsOn = false; studentTtsActive = false; _ttsOpeningDone = false; _spokeClosing = false; document.body.classList.remove('tts-student');   // v153: איפוס מצב-הקראה מקומי בהצטרפות-ידנית טרייה. לא נוגע ב-iAmTtsStudent (דגל-הניתוב לכולם/חלק, נקבע ב-joinGame מעל) ולא ב-ttsVoice (הקול במטמון) — המאזין משחזר את studentTtsOn מיד לפי הדגלים החיים.
     myId = getStablePlayerId(code);   // מזהה יציב לאותו משחק — חזרה = אותו מזהה (פריט 6 + 10)
+    // v173: זוכרים זהות למשחק הזה (שם/קבוצה/הקוד-בו-השתמש/הקראה) — לחזרה דרך ה-QR בלי הקלדה מחדש
+    try { localStorage.setItem('qz_join_'+code, JSON.stringify({ name: myName, team: myTeam, entered: enteredCode, real: code, tts: !!iAmTtsStudent, ts: Date.now() })); } catch(e){}
     setupPresence(code, myId);        // נוכחות שמשתחזרת אוטומטית בכל חיבור חוזר (מתקן מקרה כיבוי-מסך)
     listenGame(code, () => {
       send({ t:'join', id:myId, name:myName, team:myTeam });
