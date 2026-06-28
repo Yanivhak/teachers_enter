@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v175 - לוגו גם במסך-הלובי (הברקוד): לוקאפ-המותג (yopoy מעל 🧠 + QuizPlay) נוסף בראש מסך-הלובי, מעל כותרת-החידון — המסך הכי-נצפה (מוקרן לכל הקבוצה בהתכנסות). קטן ומאופק (ho-brand-sm) כדי לא להתחרות בקוד/QR הפונקציונליים, בלי רקע-זוהר (זהו מסך-עבודה של המנחה). אומת: node --check + איזון-תגיות.
   v174 - לוגו במסך-ההצטרפות (join): מסך-הכניסה של התלמיד (הקלדת קוד+שם אחרי סריקת ה-QR) קיבל את לוקאפ-המותג (yopoy מעל 🧠 + QuizPlay בזוהר זהב) בראש הטופס + רקע-זוהר (מחלקת pbrand), להשלמת אי-הסימטריה מול מסכי-הפרידה הממותגים (pwait/pfin/pcut) — כעת גם הכניסה וגם היציאה של התלמיד ממותגות, ומסכי-המשחק נשארים נקיים. אומת: node --check + איזון-תגיות + רינדור.
   v173 - חזרה-חלקה דרך ה-QR (מילוי-מראש בהצטרפות-מחדש לאותו משחק): כשתלמיד שיצא סורק שוב את ה-QR של מסך-המארח (אותו משחק שעדיין רץ), השם והקוד מתמלאים אוטומטית ולוחצים רק "כניסה". (1) בכל הצטרפות, proceed שומר ב-localStorage רשומה לפי קוד-המשחק האמיתי (qz_join_{realCode}): שם, קבוצה, הקוד-בו-השתמש (כללי או קוד-הקראה), והאם תלמיד-הקראה. (2) prefillReturn חדשה נקראת ב-initJoinFromURL כשמגיעים עם ?game={code}: אם המכשיר זוכר את המשחק — השם ממולא ונעול לגמרי (readOnly+עמום, בלי מוצא; מכשירים לא מתחלפים באמצע משחק), הקוד ממולא בערך הנכון (תלמיד-הקראה מקבל את קוד-ההקראה כך שההקראה משוחזרת במקום ללכת לאיבוד), הקבוצה נזכרת ומסומנת, וחיווי "ברוך שובך". תלמיד חדש / משחק אחר / מכשיר אחר → אין מילוי, הקלדה רגילה. (3) תיקון-לוואי: maybeLoadTeams פוצלה (applyJoinTeams) ועכשיו מזהה קוד-הקראה וטוענת קבוצות מהמשחק האמיתי + מסמנת את הקבוצה הנזכרת — מתקן באג קיים שבו הקלדת קוד-הקראה ידנית במשחק-קבוצתי לא הציגה כלל כפתורי-קבוצות והתלמיד נתקע ב"בחרו קבוצה". הניקוד היה בטוח גם קודם (המארח מתעלם מהשם/קבוצה בחזרה ושומר את הרשומה לפי המזהה היציב) — ערך הפיצ'ר הוא תיקון-ההקראה+נוחות. אומת: node --check (שני בלוקי-JS) + איזון-תגיות + נוכחות הפונקציות.
   v172 - הודעת חסימת-פרסום + ערעור (השלמת מערכת-המודרציה): משתמש שנחסם מהספרייה (blocked/{uid}) — הכללים דוחים את כתיבת-הפרסום ל-library/. עד כה הכשל הוצג כ"תקלה" גנרית; עכשיו openLibraryPublishFromCard מזהה PERMISSION_DENIED ופותח חלון ייעודי (showBlockedAppeal) שמסביר שהחשבון חסום מפרסום (בנייה/הפעלה פרטית עדיין אפשרית) ומאפשר לשלוח ערעור — נכתב ל-appeals/{uid} (מותר גם לחסום לפי הכללים) ומופיע בלוח-הניהול, עם מייל-קשר-גיבוי (yanivhpro@gmail.com). שאר נתיבי-הכשל ממשיכים בהודעה הגנרית. אומת: node --check (שני בלוקי-JS) + איזון-תגיות.
@@ -581,7 +582,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v174</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v175</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -946,6 +947,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
 <div class="screen" id="lobby">
   <div class="topbar"></div>
   <div class="wrap">
+    <div class="ho-brand ho-brand-sm" style="display:flex; margin:0 0 16px;"><span class="ho-stack"><span class="ho-yopoy">yopoy</span><span class="ho-brain">🧠</span></span><span class="ho-word">QuizPlay</span></div>
     <h2 id="lobby-title">החידון</h2>
     <p class="sub">המשתתפים מצטרפים באחת משלוש דרכים — בוחרים מה שנוח.</p>
     <div>קוד למשחק:</div>
