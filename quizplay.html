@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (teacherquiz):
+  v172 - הודעת חסימת-פרסום + ערעור (השלמת מערכת-המודרציה): משתמש שנחסם מהספרייה (blocked/{uid}) — הכללים דוחים את כתיבת-הפרסום ל-library/. עד כה הכשל הוצג כ"תקלה" גנרית; עכשיו openLibraryPublishFromCard מזהה PERMISSION_DENIED ופותח חלון ייעודי (showBlockedAppeal) שמסביר שהחשבון חסום מפרסום (בנייה/הפעלה פרטית עדיין אפשרית) ומאפשר לשלוח ערעור — נכתב ל-appeals/{uid} (מותר גם לחסום לפי הכללים) ומופיע בלוח-הניהול, עם מייל-קשר-גיבוי (yanivhpro@gmail.com). שאר נתיבי-הכשל ממשיכים בהודעה הגנרית. אומת: node --check (שני בלוקי-JS) + איזון-תגיות.
   v171 - אבטחת-פרטיות + ניקוי קוד-מת (משלים לכללי-ה-Firebase הגרנולריים שנפרסו): המייל של המנחה הוא הנכס הרגיש שהיה חשוף, ושלוש נקודות-דליפה נסגרו בקוד. (1) saveHostSnapshot דוחף עכשיו עותק של החידון בלי ownerEmail ל-games/{code}/hostState/quiz — נתיב שחייב להישאר קריא לכל מצטרף-אורח בזמן משחק, אז המייל הוצא ממנו. ownerEmail הוא ממילא write-only (נכתב לזיהוי-בעלים, לא נקרא באף לוגיקה) — אפס-השפעה על שחזור/משחק, ונכתב מחדש בשמירה הרגילה. (2) הוסרה נפילת-המייל מ-ownerName וגם מ-originalAuthor — שניהם נכתבים לרשומות shared/ ו-library/ הציבוריות (כ"שותף על ידי"/"נוצר על ידי"); כעת בלי שם-Google מוצג קרדיט ריק במקום מייל. (3) קוד שיתוף-לפי-מייל המת נמחק כליל: ארבע פונקציות (startSpecificShare/addShareEmail/removeShareEmail/unshareSpecificAll — אפס-קוראים מאז הסרת ה-UI ב-v67), השדה allowedEmails (תמיד ריק), בלוק-המיילים ב-shareStatusBox, וענפי-הגישה-לפי-מייל בדיאלוג-הקבלה (נשאר רק נתיב-ההוספה הרגיל). הנימוק למחיקה ולא השארה: המודל שבור-מבנית בשיתוף-העתקה — נמען מקבל עותק עצמאי וחופשי לשתפו, ורשומות shared/ ציבוריות; השארת הקוד רק מפתה לשחזר דפוס שבור, והוא שמור ב-v170/Git. אומת: node --check (שני בלוקי-JS) + איזון-תגיות זהה למקור + grep ללא שאריות-קוד-חי. הסתייגות: הזרימה הרב-מכשירית החיה ניתנת לאימות סופי רק על מכשיר אמיתי — Firebase חסום בסביבת-הפיתוח.
   v170 - תיקון באג: מארח-אורח שנפל השאיר את המשתתפים על "תיכף נחזור" לנצח (הבטחה שקרית): מנגנון הנוכחות-החיה (setupHostAlive, v129) נכתב ללא תנאי גם למארח-אורח, אז כשאורח נופל ה-onDisconnect מסיר את hostAlive והמשתתפים רואים "תיכף נחזור" אחרי 8 שניות — אבל לאורח אין שחזור (resumeHostGame נשען על teachers/{uid}/activeGame, ולאורח אין uid), אז ההבטחה לא מתממשת והמשתתפים תקועים. התיקון (עקבי וכן — אורח לעולם לא חוזר): המארח כותב games/{code}/meta.hostIsGuest ביצירת החדר; כל משתתף קורא אותו בהצטרפות (_hostIsGuest); ב-handler המארח-נפל, אם המארח אורח ← המשתתף רואה "המשחק הסתיים" (מסך pcut הקיים) במקום "תיכף נחזור". מארח-מחובר — ללא שינוי (יכול לשחזר עד 45 דקות). בליפ-רשת קצר עדיין נספג ע"י 8 השניות (גם לאורח). saveHostSnapshot כבר היה מוגן לאורח (myStoreKey ריק ← return), אז אין כתיבת-זבל. אומת: node --check + איזון-תגיות + רינדור מסך-הסיום. דורש אימות-מכשיר: הזרימה החיה הרב-מכשירית (מארח-אורח נופל ← המשתתף רואה pcut) לא נבדקה בסביבה.
   v169 - אחידות-מונח: כפתור הבדיקה בעורך (action-box) שינה תווית מ"תצוגה מקדימה" ל"בדיקה", כדי להתיישר עם כל שאר המקומות בכלי (מסך-ההכנה, רשימת החידונים, מסך-הסיום, תגית מצב-בדיקה) ועם מדריך-המשתמש. (תצוגה-מקדימה-של-רקע במסך-ההכנה נשארת "תצוגה מקדימה" — היא דבר אחר.) אומת: node --check.
@@ -578,7 +579,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v171</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v172</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -3453,7 +3454,13 @@ function openLibraryPublishFromCard(code, q, onDone){
       if (typeof onDone === 'function') onDone(); else refreshMyList();
     }catch(e){
       pubBtn.disabled=false; pubBtn.textContent='📚 הוספה';
-      showToast('תקלה בהוספה לספרייה הציבורית. נסו שוב.');
+      // v172: משתמש חסום מפרסום — הכללים דוחים את הכתיבה. מציגים הסבר + חלון-ערעור.
+      if (e && (e.code === 'PERMISSION_DENIED' || /permission[_ ]denied/i.test(String(e.message||e)))){
+        ov.remove();
+        showBlockedAppeal();
+      } else {
+        showToast('תקלה בהוספה לספרייה הציבורית. נסו שוב.');
+      }
     }
   };
   btnRow.appendChild(cancelBtn); btnRow.appendChild(pubBtn);
@@ -3461,6 +3468,49 @@ function openLibraryPublishFromCard(code, q, onDone){
 
   ov.appendChild(box); document.body.appendChild(ov);
   updateCounter(); ta.focus();
+}
+
+// ===== v172: חסימת-פרסום — הסבר + חלון ערעור (נשלח לניהול הספרייה דרך appeals/) =====
+function showBlockedAppeal(){
+  const old = $('blocked-appeal-overlay'); if (old) old.remove();
+  const ov = document.createElement('div'); ov.id='blocked-appeal-overlay';
+  ov.style.cssText='position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px;';
+  const box = document.createElement('div');
+  box.style.cssText='background:var(--card); border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:22px 20px; max-width:440px; width:100%; box-shadow:0 12px 40px rgba(0,0,0,.5);';
+  const head = document.createElement('div');
+  head.style.cssText="font-family:'Secular One'; font-size:20px; color:var(--coral); margin-bottom:8px; text-align:center;";
+  head.textContent='⛔ הפרסום לספרייה חסום';
+  box.appendChild(head);
+  const sub = document.createElement('div');
+  sub.style.cssText='font-size:14px; color:var(--ink-dim); margin-bottom:12px; text-align:center; line-height:1.6;';
+  sub.textContent='החשבון שלכם חסום מפרסום לספרייה הציבורית. עדיין אפשר לבנות ולהפעיל חידונים באופן פרטי. אם לדעתכם מדובר בטעות — שלחו ערעור לניהול הספרייה.';
+  box.appendChild(sub);
+  const ta = document.createElement('textarea');
+  ta.maxLength = 500;
+  ta.placeholder='כתבו את הערעור שלכם בקצרה…';
+  ta.style.cssText="width:100%; min-height:90px; box-sizing:border-box; font-family:'Heebo'; font-size:15px; padding:12px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); resize:vertical; text-align:right; margin-bottom:10px;";
+  box.appendChild(ta);
+  const contact = document.createElement('div');
+  contact.style.cssText='font-size:12px; color:var(--ink-dim); text-align:center; margin-bottom:14px;';
+  contact.textContent='לחלופין אפשר לפנות במייל: yanivhpro@gmail.com';
+  box.appendChild(contact);
+  const btnRow = document.createElement('div'); btnRow.style.cssText='display:flex; gap:8px;';
+  const cancelBtn = document.createElement('button'); cancelBtn.className='btn ghost sm'; cancelBtn.style.flex='1'; cancelBtn.textContent='סגירה';
+  cancelBtn.onclick=()=>ov.remove();
+  const sendBtn = document.createElement('button'); sendBtn.className='btn teal'; sendBtn.style.flex='1'; sendBtn.textContent='שליחת ערעור';
+  sendBtn.onclick=()=>{
+    const text = (ta.value||'').trim();
+    if (!text){ showToast('כתבו כמה מילים בערעור.'); ta.focus(); return; }
+    if (!myUid){ showToast('צריך להיות מחובר.'); return; }
+    sendBtn.disabled=true; sendBtn.textContent='שולח...';
+    fdb.ref('appeals/'+myUid).set({ text: text.slice(0,500), email: myEmail || '', ts: Date.now() })
+      .then(()=>{ ov.remove(); showToast('הערעור נשלח לניהול הספרייה. תודה.'); })
+      .catch(()=>{ sendBtn.disabled=false; sendBtn.textContent='שליחת ערעור'; showToast('תקלה בשליחת הערעור. נסו שוב.'); });
+  };
+  btnRow.appendChild(cancelBtn); btnRow.appendChild(sendBtn);
+  box.appendChild(btnRow);
+  ov.appendChild(box); document.body.appendChild(ov);
+  ta.focus();
 }
 
 function removeFromLibrary(){

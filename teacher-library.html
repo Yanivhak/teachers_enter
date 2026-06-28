@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   ספריית חידונים (yopoy) — changelog
+  v14 - דיווחים עם סיבה + הסתרה במקום מחיקה (חלק ממערכת-מודרציה רב-קבצים): לחיצה על 🚩 פותחת חלון בחירת-סיבה (פוגעני / מידע שגוי / ספאם / איכות ירודה / אחר+הערה עד 120 תווים) במקום אישור כן/לא. הדיווח כותב זהות+סיבה לצומת lib_reports/{quizId}/{uid} — קריא-לאדמין-בלבד (אפס מיילים בנתון הציבורי, עקבי עם מודל-הפרטיות), ומגדיל מונה ציבורי library/{id}/reports (פעם-אחת-לכל-משתמש דרך השמירה ב-lib_user). המחיקה-האוטומטית ב-3 דיווחים הוסרה והוחלפה בהסתרה: renderList מסנן החוצה כל פריט עם hidden===true (הסתרה ידנית של אדמין) או reports>=3 (סף 3 מדווחים-שונים) — הפריט נעלם מהספרייה אך נשאר בבסיס-הנתונים, ואדמין יכול להשיבו. אומת: node --check + איזון-תגיות.
   v13 - תיקון "הפס למעלה": הכותרת והטקסט התנגשו עם התגים הצפים בראש העמוד (חותמת/שם-חשבון/תפריט), כי לא היה פס-עליון קבוע והתוכן התחיל גבוה מדי. נוסף .topbar (פס עליון מלא-רוחב, קבוע, רקע כמעט-אטום עם blur — זהה לחידון) + padding-top שמרחיק את התוכן מתחתיו. עכשיו ראש-העמוד נקי והתוכן נגלל מתחת לפס בצורה נקיה.
   v12 - תיקון "פס שחור" בתחתית המסך במובייל (זהה ל-QuizPlay v147): נוסף צבע-רצפה מוצק על html,body (var(--bg1) = #05080f) — הקיצור background: על body איפס את צבע-הרקע ל-transparent, ולכן iOS צבע את אזור ה-home-indicator בשחור; עכשיו הוא נצבע באותו כחול-כהה כמו תחתית הגרדיאנט, ללא שחור.
   v11 - ספירת שאלות אמיתיות בתצוגת הספרייה: עד כה הספירה ספרה גם שאלות ריקות (וערך 0 נפל בטעות לאורך-המערך). עכשיו מחושבת ישירות ממערך השאלות המסונכרן (realQCount) — שאלה ריקה לא נספרת, וחידון ללא תוכן אמיתי מראה "0 שאלות". (משלים את teacherquiz v146.)
@@ -70,6 +71,19 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
 .info-i{display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(255,255,255,.16); color:var(--ink); font-size:13px; font-weight:700; cursor:pointer; margin-inline-start:6px; vertical-align:middle; user-select:none;}
 .info-i:hover{background:var(--teal); color:#06231f;}
 .info-pop{position:fixed; z-index:210; max-width:280px; background:#0d1426; border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:12px 14px; font-size:14px; line-height:1.5; color:var(--ink); box-shadow:0 10px 30px rgba(0,0,0,.5);}
+/* v14: חלון דיווח עם בחירת-סיבה */
+.report-ov{display:none; position:fixed; inset:0; z-index:330; background:rgba(5,8,20,.74); align-items:center; justify-content:center; padding:24px;}
+.report-ov.on{display:flex;}
+.report-box{background:#1a2440; border:1px solid rgba(255,255,255,.14); border-radius:18px; padding:22px; max-width:430px; width:100%; box-shadow:0 14px 44px rgba(0,0,0,.55);}
+.report-title{font-family:'Secular One'; font-size:20px; color:var(--gold); text-align:center; margin-bottom:4px;}
+.report-sub{font-size:13px; color:var(--ink-dim); text-align:center; margin-bottom:16px; line-height:1.5;}
+.report-reasons{display:flex; flex-direction:column; gap:8px; margin-bottom:12px;}
+.rr{display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:10px 12px; cursor:pointer; font-size:14px; color:var(--ink);}
+.rr:hover{background:rgba(255,255,255,.09);}
+.rr input{accent-color:var(--teal); width:16px; height:16px; cursor:pointer; flex:none;}
+.report-note{width:100%; box-sizing:border-box; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.18); border-radius:10px; padding:10px 12px; color:var(--ink); font-family:'Heebo'; font-size:14px; resize:vertical; min-height:60px; margin-bottom:12px;}
+.report-btns{display:flex; gap:12px; justify-content:center;}
+.report-btns .btn{flex:1; font-size:15px; padding:11px 16px; border-radius:12px;}
 </style>
 </head>
 <body>
@@ -78,7 +92,7 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
      (מתבצעת רק בדף החידונים); לא-מחובר → תוכן מוסתר + הפניה לדף החידונים. תפריט ניווט:
      ➕ בניית חידון חדש (teacherquiz.html?new=1) · 🗂️ החידונים שלי (teacherquiz.html?list=1 — ?list=1 מקפיץ ישר לרשימה) · 🎬 יציאה למצגת.
      "ספרייה" לא בתפריט (אנחנו כאן). הסגנון זהה ל-nav-menu בקובץ teacherquiz.html. -->
-<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v13</div>
+<div style="position:fixed; top:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">library v14</div>
 <!-- v7: שם-חשבון קבוע למעלה-במרכז, כמו בדף החידונים (נראה כשמחובר) -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -119,6 +133,26 @@ h1{font-family:'Secular One'; font-size:clamp(30px,5vw,44px); color:var(--gold);
     <div class="confirm-btns">
       <button class="btn confirm-yes" id="confirm-yes" onclick="_confirmResolve(true)">אישור</button>
       <button class="btn ghost" id="confirm-no" onclick="_confirmResolve(false)">ביטול</button>
+    </div>
+  </div>
+</div>
+
+<!-- v14: חלון דיווח עם בחירת-סיבה -->
+<div class="report-ov" id="report-ov" onclick="if(event.target===this) closeReport()">
+  <div class="report-box">
+    <div class="report-title">🚩 דיווח על חידון</div>
+    <div class="report-sub">בחרו סיבה. הדיווח נשלח לניהול הספרייה בלבד.</div>
+    <div class="report-reasons">
+      <label class="rr"><input type="radio" name="rr" value="offensive" onclick="toggleReportNote()"><span>תוכן פוגעני / לא הולם</span></label>
+      <label class="rr"><input type="radio" name="rr" value="wrong" onclick="toggleReportNote()"><span>מידע שגוי / טעות עובדתית</span></label>
+      <label class="rr"><input type="radio" name="rr" value="spam" onclick="toggleReportNote()"><span>ספאם / לא רלוונטי</span></label>
+      <label class="rr"><input type="radio" name="rr" value="quality" onclick="toggleReportNote()"><span>איכות ירודה (ריק או שבור)</span></label>
+      <label class="rr"><input type="radio" name="rr" value="other" onclick="toggleReportNote()"><span>אחר</span></label>
+    </div>
+    <textarea id="report-note" class="report-note" maxlength="120" placeholder="פרטו במילים ספורות (עד 120 תווים)" style="display:none;"></textarea>
+    <div class="report-btns">
+      <button class="btn confirm-yes" onclick="submitReport()">שליחת דיווח</button>
+      <button class="btn ghost" onclick="closeReport()">ביטול</button>
     </div>
   </div>
 </div>
@@ -242,6 +276,8 @@ function score(q){ return (q.likes||0) - (q.dislikes||0); }
 function renderList(){
   const term = ($('search').value || '').trim().toLowerCase();
   let items = library.slice();
+  // v14: מסתירים מהספרייה פריטים שהוסתרו ע"י אדמין או שעברו סף 3 מדווחים-שונים (נשארים בבסיס-הנתונים)
+  items = items.filter(q => !(q.hidden === true || (q.reports||0) >= 3));
   if (term){
     items = items.filter(q =>
       (q.title||'').toLowerCase().includes(term) ||
@@ -375,21 +411,36 @@ function vote(quizId, kind){
   Promise.all(ops).then(()=>{ /* הרשימה תתעדכן מהמאזין */ }).catch(()=>{});
 }
 
+let _reportQuizId = null;
 function reportQuiz(quizId){
   if (!myUid){ toast('צריך להתחבר עם Google כדי לדווח.'); return; }
   if (myReports[quizId]){ toast('כבר דיווחת על החידון הזה.'); return; }
-  showConfirm('לדווח על החידון הזה כלא ראוי?', ()=>{
+  _reportQuizId = quizId;
+  Array.prototype.forEach.call(document.getElementsByName('rr'), r => { r.checked = false; });
+  const note = $('report-note'); if (note){ note.value=''; note.style.display='none'; }
+  const ov = $('report-ov'); if (ov) ov.classList.add('on');
+}
+function toggleReportNote(){
+  const sel = document.querySelector('input[name="rr"]:checked');
+  const note = $('report-note');
+  if (note) note.style.display = (sel && sel.value === 'other') ? 'block' : 'none';
+}
+function closeReport(){ const ov = $('report-ov'); if (ov) ov.classList.remove('on'); _reportQuizId = null; }
+function submitReport(){
+  if (!_reportQuizId || !myUid){ closeReport(); return; }
+  const quizId = _reportQuizId;
+  const sel = document.querySelector('input[name="rr"]:checked');
+  if (!sel){ toast('בחרו סיבה לדיווח.'); return; }
+  const reason = sel.value;
+  const note = (reason === 'other') ? (($('report-note').value||'').trim().slice(0,120)) : '';
+  if (reason === 'other' && !note){ toast('כתבו כמה מילים על הסיבה.'); return; }
+  // v14: זהות+סיבה לצומת אדמין-בלבד (lib_reports); מונה ציבורי לסף ההסתרה. אין מחיקה — הסתרה בלבד.
   myReports[quizId] = true;
+  fdb.ref('lib_reports/'+quizId+'/'+myUid).set({ reason: reason, note: note, email: myEmail, ts: Date.now() }).catch(()=>{});
   fdb.ref('lib_user/'+myUid+'/reports/'+quizId).set(true).catch(()=>{});
-  fdb.ref('library/'+quizId+'/reports').transaction(v => (v||0)+1).then(res => {
-    const val = res.snapshot.val() || 0;
-    if (val >= 3){
-      // הסרה אוטומטית מהספרייה (החידון המקורי של היוצר נשאר)
-      fdb.ref('library/'+quizId).remove().catch(()=>{});
-    }
-    toast('הדיווח נשלח. תודה.');
-  }).catch(()=>{ toast('תקלה בדיווח.'); });
-  });
+  fdb.ref('library/'+quizId+'/reports').transaction(v => (v||0)+1).catch(()=>{});
+  closeReport();
+  toast('הדיווח נשלח לניהול. תודה.');
 }
 </script>
 </body>

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <!--
   ניהול חידונים (admin, yopoy) — changelog
+  v2 - לוח-מודרציה + מייל-אדמין כפול: (א) מייל-האדמין הורחב לשני חשבונות (ADMIN_EMAILS: yanivhpro@gmail.com + yaniv.hakim@mail.huji.ac.il) — שניהם בעלי הרשאות-אדמין זהות, מבטל את סכנת הנעילה-העצמית בהחלפת מייל. (ב) נוסף מקטע מודרציה (loadModeration) הקורא library/lib_reports/blocked/appeals/teachers ומציג: פריטים מדווחים (כל מדווח עם מייל+סיבה+הערה+זמן, מצב מוסתר/דווח, וכפתורי השב-לספרייה/הסתר-ידנית/חסום-בעלים); בעלים שתוכנם דווח 3+; מדווחים-חריגים 5+ (התרעה בלבד, חסימה ידנית); ערעורים (טקסט המשתמש + ביטול-חסימה/דחייה); ומשתמשים חסומים. חסימה כותבת blocked/{uid} (נאכף ע"י הכללים על פרסום/דיווח/הצבעה, לא על תוכן פרטי). אומת: node --check + איזון-תגיות.
   v1 - גרסה ראשונה במעקב. החלפת 2 הדיאלוגים הנייטיב (confirm למחיקת כל חידוני מורה, ו-alert שגיאה) במודאל אישור פנימי + toast, זהים לאלה שב-QuizPlay/הספרייה. מונע את חלון "Suppress dialogs" של הדפדפן (שמופיע אחרי כמה דיאלוגים נייטיב ברצף — רלוונטי כאן כי מוחקים כמה מורים ברצף). נוסף showConfirm + toast + .confirm-ov + חותמת-גרסה גלויה.
 -->
 <html lang="he" dir="rtl">
@@ -36,6 +37,23 @@ h1{font-family:'Secular One'; font-size:34px; color:var(--gold); text-align:cent
 .cbtn{flex:1; font-family:'Heebo'; font-weight:700; font-size:15px; padding:11px 16px; border-radius:12px; border:none; cursor:pointer;}
 .cbtn.yes{background:var(--teal); color:#06231f;}
 .cbtn.no{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 2px rgba(255,255,255,.2);}
+/* v2: מודרציה */
+.mod-h{font-family:'Secular One'; font-size:20px; color:var(--gold); margin:26px 0 10px; border-bottom:1px solid rgba(255,255,255,.12); padding-bottom:6px;}
+.mod-empty{color:var(--ink-dim); font-size:14px; margin:4px 0 12px;}
+.mod-card{background:var(--card); border-radius:12px; padding:14px 16px; margin-bottom:10px;}
+.mod-card .ttl{font-weight:700; font-size:15px;}
+.mod-card .st{font-size:13px; color:var(--ink-dim); margin:4px 0 8px;}
+.mod-rep{font-size:13px; color:var(--ink-dim); padding:4px 0; border-top:1px dashed rgba(255,255,255,.08);}
+.mod-rep b{color:var(--ink);}
+.mod-actions{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; align-items:center;}
+.mod-actions button{border:none; border-radius:8px; padding:6px 12px; cursor:pointer; font-family:Heebo; font-size:13px;}
+.b-restore{background:var(--teal); color:#06231f;}
+.b-hide{background:#7a5b18; color:#fff;}
+.b-block{background:#c0392b; color:#fff;}
+.b-unblock{background:rgba(255,255,255,.14); color:var(--ink);}
+.pill{display:inline-block; padding:2px 9px; border-radius:20px; font-size:12px; font-weight:700;}
+.pill-hidden{background:rgba(192,57,43,.25); color:#ff9b8f;}
+.pill-rep{background:rgba(255,209,102,.2); color:var(--gold);}
 </style>
 </head>
 <body>
@@ -58,11 +76,12 @@ h1{font-family:'Secular One'; font-size:34px; color:var(--gold); text-align:cent
     </div>
     <div id="list"></div>
     <p id="msg">טוען...</p>
+    <div id="moderation"></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
-<div style="position:fixed; bottom:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">admin v1</div>
+<div style="position:fixed; bottom:8px; left:10px; font-size:11px; color:rgba(170,180,207,.5); z-index:50;">admin v2</div>
 <!-- v1: מודאל אישור פנימי — מחליף confirm() הנייטיב (מונע "Suppress dialogs") -->
 <div class="confirm-ov" id="confirm-ov" onclick="if(event.target===this) _confirmResolve(false)">
   <div class="confirm-box">
@@ -91,7 +110,7 @@ firebase.initializeApp(firebaseConfig);
 const fdb = firebase.database();
 const fauth = firebase.auth();
 
-const ADMIN_EMAIL = 'yaniv.hakim@mail.huji.ac.il';
+const ADMIN_EMAILS = ['yanivhpro@gmail.com', 'yaniv.hakim@mail.huji.ac.il'];
 let adminLoaded = false;
 // v1: toast + מודאל אישור פנימי — מחליפים alert/confirm נייטיב. var (מורם) כדי שיהיו נגישים בכל קריאה ללא תלות ברצף האתחול.
 function toast(t){ const el=document.getElementById('toast'); if(!el) return; el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 2600); }
@@ -120,11 +139,11 @@ function adminSignIn(){
 
 fauth.onAuthStateChanged(user => {
   const email = user && user.email ? user.email.toLowerCase() : '';
-  if (user && email === ADMIN_EMAIL){
+  if (user && ADMIN_EMAILS.includes(email)){
     document.getElementById('gate').style.display = 'none';
     document.getElementById('panel').style.display = 'block';
     document.getElementById('who').textContent = email;
-    if (!adminLoaded){ adminLoaded = true; loadAdmin(); }
+    if (!adminLoaded){ adminLoaded = true; loadAdmin(); loadModeration(); }
   } else if (user){
     // מחובר אבל לא המנהל
     document.getElementById('gate').style.display = 'block';
@@ -183,6 +202,94 @@ fdb.ref('teachers').once('value').then(snap => {
   document.getElementById('msg').textContent = 'תקלה בטעינה: ' + e.message;
 });
 }
+
+// ===== v2: מודרציה — דיווחים, הסתרה, חסימות, ערעורים =====
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const REASON_HE = { offensive:'תוכן פוגעני', wrong:'מידע שגוי', spam:'ספאם', quality:'איכות ירודה', other:'אחר' };
+const SERIAL_REPORTER_THRESHOLD = 5;
+const OWNER_REPORTED_THRESHOLD = 3;
+function relTime(ts){
+  if (!ts) return '';
+  const d = Date.now() - ts, m = Math.floor(d/60000), h = Math.floor(m/60), days = Math.floor(h/24);
+  if (days > 0) return 'לפני ' + days + ' ימים';
+  if (h > 0) return 'לפני ' + h + ' שעות';
+  if (m > 0) return 'לפני ' + m + ' דקות';
+  return 'הרגע';
+}
+function loadModeration(){
+  const box = document.getElementById('moderation');
+  if (box) box.innerHTML = '<p style="color:var(--ink-dim); margin-top:20px;">טוען מודרציה…</p>';
+  Promise.all([
+    fdb.ref('library').once('value'),
+    fdb.ref('lib_reports').once('value'),
+    fdb.ref('blocked').once('value'),
+    fdb.ref('appeals').once('value'),
+    fdb.ref('teachers').once('value')
+  ]).then(snaps => {
+    const lib = snaps[0].val() || {}, reps = snaps[1].val() || {}, blocked = snaps[2].val() || {}, appeals = snaps[3].val() || {}, teachers = snaps[4].val() || {};
+    const uidEmail = {};
+    Object.keys(teachers).forEach(uid => { const qs = teachers[uid] || {}; const first = Object.values(qs)[0]; uidEmail[uid] = (first && first.ownerEmail) ? first.ownerEmail : uid; });
+    renderModeration(lib, reps, blocked, appeals, uidEmail);
+  }).catch(e => { if (box) box.innerHTML = '<p style="color:#ff6b6b;">תקלה בטעינת מודרציה: ' + esc(e.message) + '</p>'; });
+}
+function renderModeration(lib, reps, blocked, appeals, uidEmail){
+  const box = document.getElementById('moderation'); if (!box) return;
+  let html = '';
+  const reportedIds = Object.keys(lib).filter(id => lib[id] && ((lib[id].reports||0) > 0 || lib[id].hidden === true));
+  reportedIds.sort((a,b) => (lib[b].reports||0) - (lib[a].reports||0));
+  html += '<div class="mod-h">🚩 פריטים מדווחים (' + reportedIds.length + ')</div>';
+  if (!reportedIds.length) html += '<div class="mod-empty">אין דיווחים פתוחים.</div>';
+  reportedIds.forEach(id => {
+    const it = lib[id], n = it.reports || 0, isHidden = it.hidden === true, autoHidden = n >= 3;
+    const qCount = (it.quiz && it.quiz.questions) ? it.quiz.questions.length : (it.questionCount || 0);
+    const pill = isHidden ? '<span class="pill pill-hidden">מוסתר ידנית</span>' : (autoHidden ? '<span class="pill pill-hidden">מוסתר (3+ דיווחים)</span>' : '<span class="pill pill-rep">' + n + ' דיווחים</span>');
+    html += '<div class="mod-card"><div class="ttl">' + esc(it.title || 'חידון') + '</div>';
+    html += '<div class="st">מאת ' + esc(it.ownerName || 'מורה') + ' · ' + qCount + ' שאלות · ' + pill + '</div>';
+    const ir = reps[id] || {};
+    Object.keys(ir).forEach(ruid => { const r = ir[ruid] || {}; const rsn = REASON_HE[r.reason] || r.reason || '—'; const note = r.note ? ' — ' + esc(r.note) : ''; html += '<div class="mod-rep"><b>' + esc(r.email || ruid) + '</b> · ' + esc(rsn) + note + ' <span style="opacity:.55;">(' + relTime(r.ts) + ')</span></div>'; });
+    html += '<div class="mod-actions"><button class="b-restore" data-act="restore" data-id="' + esc(id) + '">↩︎ השב לספרייה</button>';
+    if (!isHidden) html += '<button class="b-hide" data-act="hide" data-id="' + esc(id) + '">🙈 הסתר ידנית</button>';
+    if (it.ownerUid && !blocked[it.ownerUid]) html += '<button class="b-block" data-act="block" data-id="' + esc(it.ownerUid) + '" data-email="' + esc(uidEmail[it.ownerUid]||'') + '">⛔ חסום בעלים</button>';
+    html += '</div></div>';
+  });
+  const ownerAgg = {};
+  Object.keys(lib).forEach(id => { const it = lib[id]; if (!it) return; const n = it.reports||0; if (n<=0) return; const ou = it.ownerUid; if (!ou) return; if (!ownerAgg[ou]) ownerAgg[ou] = { reports:0, items:0, email: uidEmail[ou]||ou }; ownerAgg[ou].reports += n; ownerAgg[ou].items += 1; });
+  const fOwners = Object.keys(ownerAgg).filter(o => ownerAgg[o].reports >= OWNER_REPORTED_THRESHOLD).sort((a,b)=>ownerAgg[b].reports-ownerAgg[a].reports);
+  html += '<div class="mod-h">👤 בעלים שתוכנם דווח (' + OWNER_REPORTED_THRESHOLD + '+)</div>';
+  if (!fOwners.length) html += '<div class="mod-empty">אין.</div>';
+  fOwners.forEach(o => { const a = ownerAgg[o]; html += '<div class="mod-card"><div class="st"><b>' + esc(a.email) + '</b> — ' + a.reports + ' דיווחים על ' + a.items + ' מהחידונים שלו</div><div class="mod-actions">'; html += blocked[o] ? '<span style="color:var(--ink-dim); font-size:13px;">חסום ✓</span>' : '<button class="b-block" data-act="block" data-id="' + esc(o) + '" data-email="' + esc(a.email) + '">⛔ חסום</button>'; html += '</div></div>'; });
+  const repAgg = {};
+  Object.keys(reps).forEach(qid => { const m = reps[qid] || {}; Object.keys(m).forEach(ru => { if (!repAgg[ru]) repAgg[ru] = { count:0, email: (m[ru] && m[ru].email) || ru }; repAgg[ru].count += 1; }); });
+  const serial = Object.keys(repAgg).filter(r => repAgg[r].count >= SERIAL_REPORTER_THRESHOLD).sort((a,b)=>repAgg[b].count-repAgg[a].count);
+  html += '<div class="mod-h">📢 מדווחים חריגים (' + SERIAL_REPORTER_THRESHOLD + '+ פריטים)</div>';
+  html += '<div class="mod-empty">התרעה בלבד — חסימה ידנית לפי שיקולך.</div>';
+  if (!serial.length) html += '<div class="mod-empty">אין.</div>';
+  serial.forEach(r => { const a = repAgg[r]; html += '<div class="mod-card"><div class="st"><b>' + esc(a.email) + '</b> — דיווח על ' + a.count + ' פריטים שונים</div><div class="mod-actions">'; html += blocked[r] ? '<span style="color:var(--ink-dim); font-size:13px;">חסום ✓</span>' : '<button class="b-block" data-act="block" data-id="' + esc(r) + '" data-email="' + esc(a.email) + '">⛔ חסום</button>'; html += '</div></div>'; });
+  const apUids = Object.keys(appeals);
+  html += '<div class="mod-h">✉️ ערעורים (' + apUids.length + ')</div>';
+  if (!apUids.length) html += '<div class="mod-empty">אין ערעורים.</div>';
+  apUids.forEach(uid => { const ap = appeals[uid] || {}; html += '<div class="mod-card"><div class="st"><b>' + esc(ap.email || uid) + '</b> <span style="opacity:.55;">(' + relTime(ap.ts) + ')</span></div>'; html += '<div style="font-size:14px; background:rgba(255,255,255,.05); border-radius:8px; padding:10px; margin:6px 0;">' + esc(ap.text || '') + '</div><div class="mod-actions">'; html += blocked[uid] ? '<button class="b-unblock" data-act="unblock" data-id="' + esc(uid) + '">✔︎ בטל חסימה</button>' : '<span style="color:var(--ink-dim); font-size:13px;">לא חסום כרגע</span>'; html += '<button class="b-unblock" data-act="dismiss" data-id="' + esc(uid) + '">דחה ערעור</button></div></div>'; });
+  const blkUids = Object.keys(blocked);
+  html += '<div class="mod-h">⛔ משתמשים חסומים (' + blkUids.length + ')</div>';
+  if (!blkUids.length) html += '<div class="mod-empty">אין משתמשים חסומים.</div>';
+  blkUids.forEach(uid => { const b = blocked[uid] || {}; const em = (b && b.email) ? b.email : (uidEmail[uid]||uid); html += '<div class="mod-card"><div class="st"><b>' + esc(em) + '</b> <span style="opacity:.55;">' + (b.ts ? '('+relTime(b.ts)+')' : '') + '</span></div><div class="mod-actions"><button class="b-unblock" data-act="unblock" data-id="' + esc(uid) + '">✔︎ בטל חסימה</button></div></div>'; });
+  box.innerHTML = html;
+  box.querySelectorAll('button[data-act]').forEach(btn => {
+    btn.onclick = () => {
+      const act = btn.getAttribute('data-act'), id = btn.getAttribute('data-id'), email = btn.getAttribute('data-email') || '';
+      if (act === 'restore') restoreItem(id);
+      else if (act === 'hide') hideItem(id);
+      else if (act === 'block') blockUser(id, email);
+      else if (act === 'unblock') unblockUser(id);
+      else if (act === 'dismiss') dismissAppeal(id);
+    };
+  });
+}
+function restoreItem(quizId){ showConfirm('להשיב את הפריט לספרייה? הדיווחים יימחקו והוא יוצג שוב.', ()=>{ Promise.all([ fdb.ref('library/'+quizId+'/hidden').set(false), fdb.ref('library/'+quizId+'/reports').set(0), fdb.ref('lib_reports/'+quizId).remove() ]).then(()=>{ toast('הפריט הושב לספרייה.'); loadModeration(); }).catch(e=>toast('תקלה: '+e.message)); }); }
+function hideItem(quizId){ showConfirm('להסתיר את הפריט מהספרייה? (הפיך)', ()=>{ fdb.ref('library/'+quizId+'/hidden').set(true).then(()=>{ toast('הפריט הוסתר.'); loadModeration(); }).catch(e=>toast('תקלה: '+e.message)); }); }
+function blockUser(uid, email){ showConfirm('לחסום את ' + (email||uid) + '?\nלא יוכל לפרסם, לדווח או להצביע בספרייה. תוכן פרטי לא נחסם.', ()=>{ fdb.ref('blocked/'+uid).set({ email: email||'', ts: Date.now(), by: (fauth.currentUser && fauth.currentUser.email) || '' }).then(()=>{ toast('המשתמש נחסם.'); loadModeration(); }).catch(e=>toast('תקלה: '+e.message)); }); }
+function unblockUser(uid){ showConfirm('לבטל את החסימה?', ()=>{ fdb.ref('blocked/'+uid).remove().then(()=>{ toast('החסימה בוטלה.'); loadModeration(); }).catch(e=>toast('תקלה: '+e.message)); }); }
+function dismissAppeal(uid){ showConfirm('למחוק את הערעור?', ()=>{ fdb.ref('appeals/'+uid).remove().then(()=>{ toast('הערעור נמחק.'); loadModeration(); }).catch(e=>toast('תקלה: '+e.message)); }); }
 </script>
 </body>
 </html>
