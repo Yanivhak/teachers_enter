@@ -2789,15 +2789,10 @@ function openImport(){
   // ===== כמות שאלות ותשובות =====
   const sel = document.createElement('div'); sel.style.cssText='display:flex; gap:18px; flex-wrap:wrap; margin:16px 0 6px;';
   sel.innerHTML =
-    '<div><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">כמה שאלות?</div><div id="imp-q-row" style="display:flex; gap:6px;"></div></div>' +
+    '<div style="max-width:340px;"><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">כמה שאלות?</div><div id="imp-q-row" style="display:flex; gap:6px;"></div><div style="font-size:12.5px; color:var(--ink-dim); margin:8px 0 0; line-height:1.5;">מעבר ל-30 שאלות, איכות השאלות מהבינה המלאכותית יורדת. לעוד שאלות — הוסיפו אותן ידנית בעורך.</div></div>' +
     '<div><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">כמה תשובות?</div><div id="imp-a-row" style="display:flex; gap:6px;"></div></div>' +
     '<div><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">רמת קושי</div><div id="imp-diff-row" style="display:flex; gap:6px;"></div></div>';
-  box.appendChild(sel);
-  // v178: הערת תקרת-כמות (נושא נפרד מההסברים) — מעל 30 איכות ה-AI יורדת בבקשה אחת.
-  const qNote = document.createElement('div');
-  qNote.style.cssText='font-size:12.5px; color:var(--ink-dim); margin:2px 0 8px; line-height:1.5;';
-  qNote.textContent='מעבר ל-30 שאלות, איכות השאלות מהבינה המלאכותית יורדת. לעוד שאלות — הוסיפו אותן ידנית בעורך.';
-  box.appendChild(qNote);
+  box.appendChild(sel);   // v178: הערת תקרת-ה-30 יושבת בתוך עמודת "כמה שאלות?" (לא אחרי כל השורה)
 
   // ===== פריט 5: רשימת השאלות הקיימות (רק בעריכת חידון שיש בו שאלות) =====
   if (quizHasRealContent()){
