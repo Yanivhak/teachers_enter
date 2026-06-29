@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (quizplay):
+  v181 - כלי חדש ונפרד: "מילוי הסברים לשאלות הקיימות באמצעות AI" (לבקשת יניב). פותר פער — עד כה הסברים נוצרו רק לשאלות חדשות/מוחלפות, ולכן לא היה אפשר להוסיף הסבר לשאלה קיימת בלי לזרוק אותה. ההחלטה (אחרי שיניב הצביע על סיכון-הבלבול): כלי נפרד לגמרי מחלון-ההחלפה, ולא מתג-מצב — כדי שלא ייווצר "מחליף או מסביר?" ולא יתנגש עם זרימת ה-AI הקיימת. כל פעולה היא דבר אחד ברור.
+  ── כפתור (renderQuestions, בראש q-list): "מלא הסברים באמצעות AI" — מופיע רק כשמתג ההסברים דלוק ויש שאלה אחת לפחות עם נוסח אך בלי הסבר (questionsMissingExplanation). נעלם כשהכל מולא.
+  ── דיאלוג (openExplainFill): פרומפט להעתקה + תיבת-הדבקה + החלה, בסגנון חלון ה-AI. הפרומפט (buildExplainPrompt) מטמיע כל שאלה חסרת-הסבר + התשובה הנכונה שלה (התשובות הכרחיות כאן כי ההסבר מתחיל בתשובה), עם הנחיית-האיכות מ-v178, ומבקש הסברים ממוספרים באותו סדר.
+  ── פענוח+הצמדה (parseExplainFill/applyExplainFill): מפענח הסברים ממוספרים (תומך שורות-המשך ומסנן placeholder-ים), ומצמיד כל הסבר לשאלה שלו לפי המספור שצולם בפתיחת הדיאלוג (exfillTargets). מילוי בלבד — לעולם לא דורס הסבר קיים (כולל ידני). מדווח כמה נוספו, כמה ארוכים, וכמה נותרו.
+  ── בידוד: openImport/buildImportPrompt/parseImport (זרימת ההחלפה, v180) לא נגעו כלל.
+  אומת: node check (שני בלוקי-JS) + איזון-תגיות + רינדור (הכפתור מופיע/נעלם נכון; הפרומפט מטמיע שאלות+תשובות; ההצמדה ממלאת חסרים בלבד ולא דורסת).
+  v180 - שני תיקונים בחלון ה-AI בעריכת חידון קיים, שניהם לבקשת יניב.
+  ── שדה ההערה החופשית הועלה מעל רשימת-השאלות-הקיימות (openImport): בעריכה הרשימה (שאלות + תיבות-החלפה) דחפה את שדה-ההערה הרבה מתחת לקצה המסך (~1723px), והמורה לא מצא אותו ("ההערה לא מופיעה"). השחזור עצמו תקין (noteInp.value=impNote) — הבעיה הייתה מיקום בלבד. סדר חדש: בוררי-כמות -> הערה -> רשימת-השאלות. initReplaceState ו-qlBox עדיין נוצרים לפני renderImpQuestionList, אז הרינדור-הראשוני של הרשימה לא נפגע. אומת ברינדור: ההערה גלויה בלי גלילה.
+  ── השאלות הקיימות מוטמעות בפרומפט-העריכה (buildImportPrompt): עד כה פרומפט-העריכה היה זהה לפרומפט "חידון חדש" — ה-AI קיבל "צור N שאלות בנושא X" בלי לראות מה כבר בחידון, ולכן לא יכול היה להימנע מכפילות או לשמור על הנושא. עכשיו, כשעורכים חידון שיש בו תוכן (editingExisting), נוסף לפרומפט בלוק: "אלה השאלות שכבר נמצאות בו — ייצר שאלות חדשות באותו נושא ובאותו סגנון, ששונות מהן, ואל תחזור על אף אחת מהן" + רשימת כל נוסחי-השאלות הקיימות. הוטמעו רק נוסחי-שאלות (בלי תשובות) לבקשת יניב, כדי לא לנפח את הפרומפט; כולל המסומנות-להחלפה, כדי שגם החדשות שיחליפו אותן יהיו שונות. לוגיקת מספר-השאלות (מסומנות + תוספות) לא השתנתה — נוסף רק הקשר. הערת-נושא-הברירה ("כתוב את הנושא במקום שבחרתי") הושתקה בעריכה, כי השאלות הקיימות כבר מגדירות את הנושא.
+  אומת: node check (שני בלוקי-JS) + איזון-תגיות + רינדור (חלון-עריכה: הערה גלויה מעל הרשימה; הפרומפט מטמיע את נוסחי-השאלות עם הנחיית "אל תחזור עליהן").
   v179 - שתי תוספות שהצטברו אחרי v178 (פיצ'ר-ההסבר), שתיהן לבקשת יניב. (בשלב-הביניים סומן הקובץ v178.1 כסמן-זיהוי אישי בלי רשומת-לוג; כאן מתועד הכל.)
   ── i של "מבנה המשחק" (תיקון-דיוק): בדיקת-קוד (hostFinish) אישרה שבמצב-קבוצות יש גם תחרות אישית וגם קבוצתית במקביל — הפודיום האישי (3 המובילים לפי ניקוד אישי) מרונדר תמיד (אין תנאי שמכבה אותו בקבוצות), הניקוד האישי נצבר לכל שחקן בכל מצב (revealQ), וכרטיסי-הכיף אישיים תמיד; מצב-קבוצות מוסיף על זה את חישוב סכומי-הקבוצות והכרזת הקבוצה המנצחת (team-final). ה-i הישן מיסגר כאו-או ("בחירת קבוצות הופכת... בלי קבוצות — כל אחד משחק לעצמו") ולכן לא היה מדויק. הוחלף ל: "בכל המצבים כל שחקן עונה לבד, צובר ניקוד אישי, ובסוף יש פודיום אישי. ההבדל הוא רק בתוספת: ב'קבוצות' הנקודות של כל שחקן מצטברות גם לקבוצה שלו, ובסוף — לצד הפודיום האישי — מוכתרת גם הקבוצה המנצחת. התחרות האישית קיימת תמיד; קבוצות פשוט מוסיפות עליה רובד קבוצתי." המירכאות-הכפולות סביב "קבוצות" קודדו כ-&quot; כדי לא לשבור את ה-attribute (ה-i יושב בתוך onclick של showInfo). התווית "מבנה המשחק" עצמה נשארה (הוחלט לא לשנות — ההבחנה נישאת ב-i). אומת ברינדור: לחיצה על ה-i מציגה את הטקסט המלא עם מירכאות תקינות.
   ── שורת-שמירה מעל כפתורי ההפעלה (play-save-note, מעל "התחל משחק"/"בדיקה"): פותרת "היתקעות" — מורה שלוחץ "התחל משחק" נוחת בלובי, ואם יוצא אינו יודע שהחידון נשמר ואיך לחזור אליו. הנוסח מותנה ב-isGuest (נקבע ב-renderEditor): מחובר → "החידון נשמר אוטומטית. ניתן למצוא עותק שלו בחידונים שלי" (אפור-עמום); אורח → "כאורח החידון לא נשמר — אם תצאו הוא יימחק" (זהוב). קריטי: לאורח החידון אינו נשמר ל-Firebase, אז הבטחת "נשמר / מצא בחידונים שלי" הייתה גורמת בדיוק לאובדן שהיא מנסה למנוע — לכן הנוסח המותנה. עקבי עם באנר-האורח הקיים בראש העורך ועם שורת-הסטטוס ("מצב אורח — לא נשמר"). אומת ברינדור: שני המצבים — נוסח, צבע, ומיקום צמוד מעל הכפתורים.
@@ -599,7 +609,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v179</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v181</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -2576,6 +2586,14 @@ function buildImportPrompt(){
     p += ' בנוסף, לכל שאלה כתוב הסבר של 2-3 משפטים ברורים שמתחיל בתשובה הנכונה, והוסף לפחות פרט אחד שהמשתתף כנראה לא ידע — סיבה, מנגנון או עובדה מפתיעה — ולא רק חזרה על התשובה או הגדרה שלה במילים אחרות. שמור עליו תמציתי כדי שייכנס במסך אחד. לדוגמה: "דולפין — יונק ימי חכם שנושם אוויר דרך נחיר בראשו ומניק את גוריו, וחי בלהקות שמתקשרות זו עם זו בצלילים." ההסבר נפרד מהשאלה ומהתשובות.';
     if (attachOn) p += ' בסס גם את ההסברים על תוכן החומר המצורף — אל תמציא אותם.';
   }
+  // v180: בעריכת חידון קיים — מטמיעים את נוסחי השאלות הקיימות כהקשר, כדי שה-AI לא יחזור עליהן וישמור על אותו נושא וסגנון.
+  if (editingExisting){
+    const existingTexts = (quiz.questions||[]).map(q => q && q.text && q.text.trim()).filter(Boolean);
+    if (existingTexts.length){
+      p += '\n\nזהו עדכון לחידון קיים. אלה השאלות שכבר נמצאות בו — ייצר שאלות חדשות באותו נושא ובאותו סגנון, ששונות מהן, ואל תחזור על אף אחת מהן:\n' +
+           existingTexts.map((t,i) => (i+1)+'. '+t).join('\n');
+    }
+  }
   p += '\n\nהחזר אך ורק טקסט בפורמט הבא, בלי שום הסבר נוסף, בלי מספור, ובלי כותרות:\n\n' +
     'שאלה: <נוסח השאלה>\n' +
     'נכונה: <התשובה הנכונה>\n' +
@@ -2584,7 +2602,7 @@ function buildImportPrompt(){
     (quiz && quiz.hasExplanations ? 'הסבר: <2-3 משפטים שמתחילים בתשובה ומוסיפים לפחות פרט אחד שלא ידעת על הנושא, לא רק הגדרה>\n' : '') +
     '(וכך הלאה ' + impACount + ' תשובות בסך הכול לכל שאלה — אחת בשורת "נכונה" והשאר בשורות "תשובה")\n\n' +
     'הפרד בין שאלות בשורה ריקה.';
-  if (!topics.length) p += ' כתוב את הנושא של החידון במקום שבחרתי.';
+  if (!topics.length && !editingExisting) p += ' כתוב את הנושא של החידון במקום שבחרתי.';
   return p;
 }
 
@@ -2816,14 +2834,7 @@ function openImport(){
     '<div><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">רמת קושי</div><div id="imp-diff-row" style="display:flex; gap:6px;"></div></div>';
   box.appendChild(sel);   // v178: הערת תקרת-ה-30 יושבת בתוך עמודת "כמה שאלות?" (לא אחרי כל השורה)
 
-  // ===== פריט 5: רשימת השאלות הקיימות (רק בעריכת חידון שיש בו שאלות) =====
-  if (quizHasRealContent()){
-    initReplaceState();
-    const qlHr = document.createElement('div'); qlHr.style.cssText='border-top:1px solid rgba(255,255,255,.12); margin:18px 0 14px;'; box.appendChild(qlHr);
-    const qlBox = document.createElement('div'); qlBox.id='imp-qlist'; box.appendChild(qlBox);
-  }
-
-  // ===== הערה חופשית לפרומפט =====
+  // ===== הערה חופשית לפרומפט (v180: הועלתה מעל רשימת-השאלות כדי שתיראה בעריכה בלי לגלול) =====
   const noteWrap = document.createElement('div'); noteWrap.style.cssText='margin:14px 0 4px;';
   const noteLabel = document.createElement('div'); noteLabel.style.cssText='font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;';
   noteLabel.textContent='הערה חופשית (לא חובה)';
@@ -2835,6 +2846,13 @@ function openImport(){
   noteInp.oninput = ()=>{ impNote = noteInp.value; $('imp-prompt').value = buildImportPrompt(); };
   noteWrap.appendChild(noteLabel); noteWrap.appendChild(noteSub); noteWrap.appendChild(noteInp);
   box.appendChild(noteWrap);
+
+  // ===== פריט 5: רשימת השאלות הקיימות (רק בעריכת חידון שיש בו שאלות) =====
+  if (quizHasRealContent()){
+    initReplaceState();
+    const qlHr = document.createElement('div'); qlHr.style.cssText='border-top:1px solid rgba(255,255,255,.12); margin:18px 0 14px;'; box.appendChild(qlHr);
+    const qlBox = document.createElement('div'); qlBox.id='imp-qlist'; box.appendChild(qlBox);
+  }
 
   // ===== v137: מתג צירוף-קובץ בכלי ה-AI =====
   const atWrap = document.createElement('div'); atWrap.style.cssText='margin:12px 0 4px; background:rgba(46,196,182,.08); border:1px solid rgba(46,196,182,.25); border-radius:10px; padding:11px 13px;';
@@ -3047,8 +3065,129 @@ function moveQuestion(i, dir){
   const tmp = quiz.questions[i]; quiz.questions[i] = quiz.questions[j]; quiz.questions[j] = tmp;
   renderQuestions(); touch();
 }
+/* ===== v181: מילוי הסברים לשאלות קיימות באמצעות AI (כלי נפרד מחלון ההחלפה) ===== */
+// אינדקסים של שאלות שיש להן נוסח אך אין להן הסבר (מועמדות למילוי).
+function questionsMissingExplanation(){
+  return (quiz.questions||[]).map((_,i)=>i).filter(i=>{
+    const q = quiz.questions[i];
+    const hasText = q && q.text && String(q.text).trim();
+    const hasExp  = q && q.explanation && String(q.explanation).trim();
+    return hasText && !hasExp;
+  });
+}
+// בונה פרומפט שמבקש הסבר אחד לכל שאלה חסרת-הסבר, כולל התשובה הנכונה (כי ההסבר מתחיל בתשובה).
+function buildExplainPrompt(missIdx){
+  const items = missIdx.map((qi,p)=>{
+    const q = quiz.questions[qi];
+    const correct = (q.answers && q.answers[q.correct]!=null) ? String(q.answers[q.correct]).trim() : '';
+    return (p+1)+'. '+String(q.text||'').trim() + (correct ? ' (התשובה הנכונה: '+correct+')' : '');
+  });
+  let p = 'הנה שאלות מתוך חידון טריוויה, כל אחת עם התשובה הנכונה שלה. כתוב לכל שאלה הסבר קצר.';
+  p += ' לכל שאלה הסבר של 2-3 משפטים ברורים שמתחיל בתשובה הנכונה, והוסף לפחות פרט אחד שהמשתתף כנראה לא ידע — סיבה, מנגנון או עובדה מפתיעה — ולא רק חזרה על התשובה או הגדרה שלה במילים אחרות. שמור על כל הסבר תמציתי כדי שייכנס במסך אחד. לדוגמה: "דולפין — יונק ימי חכם שנושם אוויר דרך נחיר בראשו ומניק את גוריו, וחי בלהקות שמתקשרות זו עם זו בצלילים."';
+  p += '\n\nהחזר אך ורק את ההסברים, ממוספרים בדיוק באותו סדר ובאותו מספור כמו השאלות, הסבר אחד בכל שורה, בלי לחזור על השאלה ובלי טקסט נוסף. כך:\n1. <ההסבר לשאלה 1>\n2. <ההסבר לשאלה 2>\n(וכן הלאה לכל השאלות)';
+  p += '\n\nהשאלות:\n' + items.join('\n');
+  return p;
+}
+// מפענח הסברים ממוספרים -> מפה {מספר: הסבר}. תומך בשורות-המשך ומסנן placeholder-ים.
+function parseExplainFill(raw){
+  const isPlaceholder = (s)=> !s || /^<.*>$/.test(s.trim()) || /<[^>]*>/.test(s);
+  const map = {};
+  let lastN = null;
+  String(raw||'').split('\n').forEach(line=>{
+    const m = line.match(/^\s*(\d+)\s*[.)\-:]\s*(.*)$/);
+    if (m){ lastN = parseInt(m[1],10); map[lastN] = (m[2]||'').trim(); }
+    else if (lastN!=null && line.trim()){ map[lastN] = (map[lastN]?map[lastN]+' ':'') + line.trim(); }
+  });
+  Object.keys(map).forEach(k=>{ if (!map[k] || isPlaceholder(map[k])) delete map[k]; });
+  return map;
+}
+// צילום אינדקסי-היעד ברגע פתיחת הדיאלוג (לשמירת ההתאמה למספור).
+let exfillTargets = [];
+// פותח דיאלוג ממוקד: פרומפט להעתקה + תיבת-הדבקה + החלה. נפרד לגמרי מחלון ההחלפה.
+function openExplainFill(){
+  let ov = document.getElementById('exfill-overlay');
+  if (ov){ ov.remove(); return; }
+  exfillTargets = questionsMissingExplanation();
+  if (!exfillTargets.length){ showToast('כל השאלות כבר כוללות הסבר.'); return; }
+  ov = document.createElement('div'); ov.id='exfill-overlay';
+  ov.style.cssText='position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.65); display:flex; align-items:flex-start; justify-content:center; padding:20px; overflow:auto;';
+  ov.onclick = (e)=>{ if (e.target===ov) ov.remove(); };
+  const box = document.createElement('div');
+  box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:580px; width:100%; text-align:right; margin:auto;';
+  box.innerHTML =
+    '<div style="font-family:\'Secular One\'; font-size:24px; color:var(--violet); margin-bottom:6px;">💡 מילוי הסברים באמצעות AI</div>' +
+    '<div style="font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:8px;">השאלות והתשובות שלכם יישארו כפי שהן — ה-AI רק כותב הסבר לכל שאלה שעדיין אין לה. הסברים שכתבתם ידנית לא יידרסו.</div>' +
+    '<div style="font-size:13px; color:var(--ink); background:rgba(141,141,242,.10); border:1px solid rgba(141,141,242,.28); border-radius:9px; padding:8px 12px; line-height:1.55; margin-bottom:16px;">📝 ' + exfillTargets.length + ' ' + (exfillTargets.length===1?'שאלה תמולא':'שאלות יימולאו') + '.</div>';
+  const s1 = document.createElement('div'); s1.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin-bottom:4px;'; s1.textContent='שלב 1 — העתיקו את הטקסט';
+  box.appendChild(s1);
+  const s1s = document.createElement('div'); s1s.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:8px; line-height:1.5;'; s1s.textContent='העתיקו את ההנחיה והדביקו אותה ב-ChatGPT, Claude או Gemini.';
+  box.appendChild(s1s);
+  const pBox = document.createElement('textarea'); pBox.id='exfill-prompt'; pBox.readOnly=true;
+  pBox.style.cssText='width:100%; height:150px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:10px; font-family:Heebo; font-size:14px; resize:vertical;';
+  pBox.value = buildExplainPrompt(exfillTargets);
+  box.appendChild(pBox);
+  const copyBtn = document.createElement('button'); copyBtn.className='btn teal'; copyBtn.textContent='📋 העתקת הפרומפט'; copyBtn.style.cssText='width:100%; margin:10px 0 18px; font-size:17px; padding:13px;';
+  copyBtn.onclick = ()=>{ pBox.select(); try{ document.execCommand('copy'); }catch(e){} copyBtn.textContent='✓ הועתק!'; setTimeout(()=>copyBtn.textContent='📋 העתקת הפרומפט',1500); };
+  box.appendChild(copyBtn);
+  const s2 = document.createElement('div'); s2.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin-bottom:4px;'; s2.textContent='שלב 2 — הדביקו את התשובה כאן';
+  box.appendChild(s2);
+  const s2s = document.createElement('div'); s2s.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:8px; line-height:1.5;'; s2s.textContent='העתיקו את ההסברים שקיבלתם והדביקו כאן.';
+  box.appendChild(s2s);
+  const paste = document.createElement('textarea'); paste.id='exfill-paste';
+  paste.style.cssText='width:100%; height:140px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:10px; font-family:Heebo; font-size:14px; resize:vertical;';
+  box.appendChild(paste);
+  const msg = document.createElement('div'); msg.id='exfill-msg'; msg.style.cssText='color:var(--coral); font-size:14px; min-height:20px; margin-top:8px;';
+  box.appendChild(msg);
+  const actions = document.createElement('div'); actions.style.cssText='display:flex; gap:10px; margin-top:6px;';
+  const doBtn = document.createElement('button'); doBtn.className='btn'; doBtn.style.cssText='flex:1; background:var(--violet); color:#0b0b2a; font-weight:700;'; doBtn.textContent='✓ מלא הסברים';
+  doBtn.onclick = ()=>applyExplainFill();
+  const cancel = document.createElement('button'); cancel.className='btn ghost sm'; cancel.textContent='ביטול';
+  cancel.onclick = ()=>ov.remove();
+  actions.appendChild(doBtn); actions.appendChild(cancel);
+  box.appendChild(actions);
+  ov.appendChild(box); document.body.appendChild(ov);
+}
+// מצמיד הסברים -> רק לשאלות שאין להן (לעולם לא דורס), לפי המספור שצולם בפתיחה.
+function applyExplainFill(){
+  const raw = $('exfill-paste') ? $('exfill-paste').value.trim() : '';
+  if (!raw){ if($('exfill-msg')) $('exfill-msg').textContent='נא להדביק את ההסברים מה-AI.'; return; }
+  const map = parseExplainFill(raw);
+  if (!Object.keys(map).length){ if($('exfill-msg')) $('exfill-msg').textContent='לא זוהו הסברים ממוספרים בטקסט. ודאו שכל הסבר מתחיל במספר (1. 2. ...).'; return; }
+  let added = 0, longCount = 0;
+  exfillTargets.forEach((qi,p)=>{
+    const q = quiz.questions[qi];
+    if (!q) return;
+    if (q.explanation && String(q.explanation).trim()) return;
+    const expl = map[p+1];
+    if (expl){ q.explanation = expl; added++; if (typeof explTooLong==='function' && explTooLong(expl)) longCount++; }
+  });
+  const ov = $('exfill-overlay'); if (ov) ov.remove();
+  if (!added){ showToast('לא נוספו הסברים. ודאו שהמספור בתשובה תואם לשאלות (1, 2, 3 ...).'); return; }
+  renderQuestions(); touch(); saveQuiz();
+  const remain = questionsMissingExplanation().length;
+  let t = 'נוספו ' + added + ' הסברים!';
+  if (longCount>0) t += ' ' + longCount + ' מהם ארוכים וסומנו — מומלץ לקצר.';
+  if (remain>0) t += ' נותרו ' + remain + ' שאלות בלי הסבר.';
+  showToast(t);
+}
+
 function renderQuestions(){
   const list = $('q-list'); list.innerHTML = '';
+  // v181: כפתור "מלא הסברים באמצעות AI" — מופיע רק כשמתג ההסברים דלוק ויש שאלות בלי הסבר.
+  if (quiz.hasExplanations){
+    const missExp = questionsMissingExplanation();
+    if (missExp.length){
+      const ebar = document.createElement('div');
+      ebar.style.cssText='display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:rgba(141,141,242,.10); border:1px solid rgba(141,141,242,.30); border-radius:12px; padding:12px 15px; margin-bottom:16px;';
+      const etxt = document.createElement('div'); etxt.style.cssText='font-size:13.5px; color:var(--ink); line-height:1.5; flex:1 1 220px;';
+      etxt.textContent = '💡 ' + missExp.length + ' ' + (missExp.length===1?'שאלה עדיין בלי הסבר':'שאלות עדיין בלי הסבר') + '. אפשר למלא ידנית בכל שאלה, או להיעזר ב-AI:';
+      const ebtn = document.createElement('button'); ebtn.className='btn'; ebtn.style.cssText='background:var(--violet); color:#0b0b2a; font-weight:700; flex:0 0 auto;';
+      ebtn.textContent='✨ מלא הסברים באמצעות AI';
+      ebtn.onclick = openExplainFill;
+      ebar.appendChild(etxt); ebar.appendChild(ebtn);
+      list.appendChild(ebar);
+    }
+  }
   quiz.questions.forEach((q, qi) => {
     const card = document.createElement('div'); card.className='qcard';
     const top = document.createElement('div'); top.className='qtop';
