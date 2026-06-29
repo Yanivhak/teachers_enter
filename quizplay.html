@@ -850,6 +850,9 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <!-- ═══ קו מפריד חזק: סוף עריכה, תחילת הפעלה ═══ -->
     <div class="zone-div"></div>
 
+    <!-- v178.1: הערת-ביטחון מעל כפתורי ההפעלה — נוסח מותנה (מחובר/אורח) נקבע ב-renderEditor -->
+    <div id="play-save-note" style="display:none; text-align:center; font-size:13px; line-height:1.55; margin:0 0 12px;"></div>
+
     <!-- ───── שורה 1: הפעלה ובדיקה ───── -->
     <div class="action-grid">
       <div class="action-box" onclick="prePlay()"><span class="ab-ico">▶️</span><span>התחל משחק</span></div>
@@ -2354,6 +2357,18 @@ function renderEditor(){
   if ($('guest-editor-banner')) $('guest-editor-banner').style.display = (isGuest ? 'block' : 'none');
   // אורח: שורת-הסטטוס מציגה "לא נשמר" כבר מהרגע הראשון (לא "נשמר אוטומטית" — לא נכון לאורח)
   if (isGuest && $('save-state')) $('save-state').textContent = 'מצב אורח — לא נשמר';
+  // v178.1: הערת-ביטחון מעל כפתורי ההפעלה — מותנית, כי לאורח החידון לא נשמר (אסור להבטיח "נשמר")
+  const _psn = $('play-save-note');
+  if (_psn){
+    if (isGuest){
+      _psn.textContent = '⚠️ כאורח החידון לא נשמר — אם תצאו הוא יימחק.';
+      _psn.style.color = 'var(--gold)';
+    } else {
+      _psn.textContent = 'החידון נשמר אוטומטית. ניתן למצוא עותק שלו בחידונים שלי.';
+      _psn.style.color = 'var(--ink-dim)';
+    }
+    _psn.style.display = 'block';
+  }
   // v114/v115: לאורח — שיתוף/ספרייה נעולים (נראים אך 🔒 ומעומעמים); לחיצה → הודעה-צפה אחידה
   const _sb = $('act-share'), _lb = $('act-library');
   if (_sb && _lb){
