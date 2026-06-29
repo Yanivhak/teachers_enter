@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- teacher-guide v17 — QuizPlay בלבד (קהל רחב). חלק מ-yopoy. v17: כפתור-החזרה teacherquiz.html→quizplay.html (תיקון 404). -->
+<!-- teacher-guide v18.3 — QuizPlay בלבד (קהל רחב). חלק מ-yopoy. v18.3: בלוק "הסבר לכל שאלה" בסעיף בניית-החידון (פיצ'ר v179). v18.2: פס-ניווט עליון + תיקון רקע-לבן + הגדלת כפתור-חזרה. v18.1: שלב 2 בקופסה. v18: קופסת "התחלה מהירה" + איחוד אייקון בדיקה. -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -13,7 +13,7 @@
 :root{ --bg1:#05080f; --bg2:#0a1020; --ink:#f7f4ec; --ink-dim:#aab4cf; --gold:#ffd166; --teal:#2ec4b6; --card:#16223f; }
 *{box-sizing:border-box;}
 html,body{margin:0; padding:0;}
-body{font-family:'Heebo',sans-serif; background: radial-gradient(900px 600px at 78% 12%, rgba(255,209,102,.10), transparent 60%), radial-gradient(820px 560px at 18% 88%, rgba(46,196,182,.09), transparent 62%), radial-gradient(680px 520px at 50% 50%, rgba(141,141,242,.06), transparent 70%), radial-gradient(1200px 800px at 50% 0%, #131f3a 0%, var(--bg2) 45%, var(--bg1) 100%); background-attachment:fixed; color:var(--ink); min-height:100vh; padding:32px 20px; line-height:1.7;}
+body{font-family:'Heebo',sans-serif; background: radial-gradient(900px 600px at 78% 12%, rgba(255,209,102,.10), transparent 60%), radial-gradient(820px 560px at 18% 88%, rgba(46,196,182,.09), transparent 62%), radial-gradient(680px 520px at 50% 50%, rgba(141,141,242,.06), transparent 70%), radial-gradient(1200px 800px at 50% 0%, #131f3a 0%, var(--bg2) 45%, var(--bg1) 100%); background-color:var(--bg1); color:var(--ink); min-height:100vh; padding:54px 20px 40px; line-height:1.7;}
 .wrap{max-width:760px; margin:0 auto;}
 
 /* כותרת ממותגת */
@@ -34,7 +34,7 @@ h2{font-family:'Secular One'; font-size:24px; color:var(--teal); margin:34px 0 1
 .banner-head{font-family:'Secular One'; font-size:27px; color:#06231f; background:linear-gradient(135deg, #2ec4b6, #25a99d); margin:40px 0 6px; padding:15px 20px; border-radius:14px; border-bottom:none;}
 /* תת-נושא */
 h3{font-family:'Secular One'; font-size:20px; color:var(--teal); margin:24px 0 8px; padding:4px 14px; border-inline-start:4px solid var(--teal);}
-html{scroll-behavior:smooth;}
+html{scroll-behavior:smooth; background:var(--bg1);}
 .group-head{font-family:'Secular One'; font-size:21px; color:#06281f; background:var(--teal); margin:42px 0 2px; padding:10px 18px; border-radius:12px; scroll-margin-top:14px;}
 .toc{margin:10px 0 24px; font-size:14.5px; line-height:1.6;}
 .toc a{color:var(--teal); text-decoration:none; font-weight:700;}
@@ -68,10 +68,14 @@ code{background:rgba(255,255,255,.1); padding:2px 7px; border-radius:6px; font-s
 
 /* כפתור רעיון */
 .idea-btn{display:inline-block; background:var(--teal); color:#06231f; font-weight:800; font-size:17px; text-decoration:none; padding:13px 26px; border-radius:12px; margin-top:6px;}
-.back{display:inline-block; margin-top:26px; color:var(--ink-dim); text-decoration:none; font-size:15px;}
+.back{display:inline-block; margin-top:24px; background:var(--gold); color:#3a2a00; font-family:'Secular One'; font-size:16px; text-decoration:none; padding:13px 30px; border-radius:12px;}
+  /* פס-ניווט עליון נדבק — חזרה ל-QuizPlay תמיד נגיש */
+  .topbar{position:fixed; top:0; left:0; right:0; z-index:200; display:flex; align-items:center; justify-content:center; gap:8px; padding:11px 16px; background:rgba(7,11,20,.93); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.08); font-family:'Secular One'; font-size:16px; color:var(--gold); text-decoration:none;}
+  .topbar:active{background:rgba(7,11,20,.99);}
 </style>
 </head>
 <body>
+<a class="topbar" href="quizplay.html">→ חזרה ל-QuizPlay</a>
 <div class="wrap">
 
   <div class="brand">
@@ -79,6 +83,19 @@ code{background:rgba(255,255,255,.1); padding:2px 7px; border-radius:6px; font-s
   </div>
   <p class="manifesto">טכנולוגיה טובה לא מודדים במה שהיא עושה, אלא במה שהיא <span>מאפשרת לאנשים לעשות יחד</span>.</p>
   <p class="lead">נולד מתוך צורך. נבנה מניסיון.</p>
+
+  <!-- ===== התחלה מהירה ===== -->
+  <div class="card" style="border:1px solid rgba(255,209,102,.35); background:rgba(255,209,102,.06);">
+    <p style="font-family:'Secular One'; color:var(--gold); font-size:19px; margin:0 0 8px;">🚀 התחלה מהירה — החידון הראשון שלכם</p>
+    <p style="margin:0 0 12px; font-size:14.5px; color:var(--ink-dim);">ארבעה צעדים, ואתם בפנים. ל-QuizPlay יכולות רבות נוספות — כולן מוסברות בהמשך המדריך.</p>
+    <ol style="margin:0; padding-inline-start:20px; line-height:1.7;">
+      <li style="margin-bottom:8px;"><b>מתחברים</b> עם Google — כך החידון נשמר אוטומטית וזמין מכל מכשיר.</li>
+      <li style="margin-bottom:8px;"><b>יוצרים חידון</b> — ידנית או בעזרת AI, וגם אפשר לשלב.</li>
+      <li style="margin-bottom:8px;"><b>מכינים את המשחק</b> — בוחרים רקע, מוזיקה או הקראה (הכול אופציונלי), ואז לוחצים שוב ▶️ התחל משחק.</li>
+      <li style="margin-bottom:0;"><b>מצרפים ומתחילים</b> — נפתח מסך-ההמתנה עם קוד-משחק ו-QR; המשתתפים מצטרפים מהטלפון, וכשכולם בפנים לוחצים 🚀 מתחילים!</li>
+    </ol>
+    <p style="margin:12px 0 0; font-size:14px; color:var(--ink-dim);">💡 מפעילים מול קהל? מומלץ להריץ קודם <b>👁️ בדיקה</b>. כך תוכלו לראות בדיוק איך החידון ייראה, בלי שאף משתתף יצטרף.</p>
+  </div>
 
   <!-- ===== כמה מילים (אישי) ===== -->
   <h2 style="background:none; color:var(--gold); padding:0; border:none; font-size:26px; margin-top:8px;">👋 כמה מילים</h2>
@@ -179,6 +196,15 @@ code{background:rgba(255,255,255,.1); padding:2px 7px; border-radius:6px; font-s
     <div class="tip">כדאי להשתמש בשדה ההערה החופשית כדי לתת ל-AI הקשר נוסף, למשל: "חידון קליל לערב גיבוש", "התמקד בפרק 3" או "מתאים לבני נוער".</div>
   </div>
 
+  <h4>💡 הסבר לכל שאלה (אופציונלי)</h4>
+  <div class="card">
+    <p style="margin-top:0;">מעל רשימת השאלות בעורך יש כרטיס סגול <b>"💡 הסבר לכל שאלה"</b> עם מתג <b>הצגה</b>. כשמדליקים אותו, לכל שאלה נפתח שדה-הסבר אופציונלי.</p>
+    <p>את ההסבר אפשר לכתוב בעצמכם, או — אם יצרתם את החידון בעזרת AI — לתת לו לכתוב גם את ההסברים יחד עם השאלות.</p>
+    <p>אין חובה למלא הסבר בכל שאלה: שאלה שתישאר ריקה פשוט לא תציג הסבר.</p>
+    <p>אם אתם כותבים הסבר בעצמכם, כדאי לפתוח אותו בתשובה ואז להמשיך להסביר, ולשמור עליו תמציתי — הסבר ארוך מדי עלול לחרוג מהמסך (העורך יתריע בעדינות).</p>
+    <p style="margin-bottom:0;">במשחק, אחרי שהתשובה הנכונה נחשפת, בשאלות שיש להן הסבר יופיע כפתור <b>💡 הסבר</b> — לחיצה עליו מציגה מסך עם השאלה וההסבר, ומשם ממשיכים לשאלה הבאה.</p>
+  </div>
+
   <div class="card">
     <p style="margin-top:0; margin-bottom:4px;">לאחר שהחידון מוכן, אפשר לבדוק אותו, לשתף אותו או להתחיל לשחק. בתחתית המסך נמצאות הפעולות המרכזיות:</p>
     <ul style="list-style:none; padding-inline-start:2px; margin:4px 0 0;">
@@ -190,7 +216,7 @@ code{background:rgba(255,255,255,.1); padding:2px 7px; border-radius:6px; font-s
     </ul>
     <p>ה-AI לא משמש רק ליצירה — אם החידון כבר קיים, אפשר להשתמש ב-<b>"עריכה באמצעות AI"</b> כדי להחליף או לרענן שאלות מסוימות, בלי לבנות את הכול מחדש.</p>
     <div class="tip">לפני שמפעילים חידון מול קהל, מומלץ להריץ אותו קודם במצב <b>👁️ בדיקה</b>.</div>
-  </div><h3>🔎 בדיקה — הדמיה והתכוננות לפני המפגש</h3>
+  </div><h3>👁️ בדיקה — הדמיה והתכוננות לפני המפגש</h3>
   <div class="card">
     <p style="margin-top:0;">לפני שמפעילים חידון מול קבוצה, אפשר להריץ אותו לבד במצב <b>בדיקה</b>. זו הרצה מלאה של החידון, בדיוק כפי שייראה במשחק האמיתי — אותו מסך, אותה זרימה ואותו תפריט-מנחה — בלי שאף אחד צריך להצטרף.</p>
     <p>הבדיקה היא גם <b>הדמיה</b> וגם <b>התכוננות</b>: רואים איך החידון ייראה, וגם מתאמנים על הצגתו לפני המפגש.</p>
@@ -219,7 +245,7 @@ code{background:rgba(255,255,255,.1); padding:2px 7px; border-radius:6px; font-s
       <li>⚡ <b>בונוס-מהירות</b> — דלוק כברירת-מחדל: תשובה מהירה מזכה בניקוד גבוה יותר. אפשר לכבות, ואז כל תשובה נכונה שווה ניקוד מלא — לקצב רגוע בלי לחץ-זמן.</li>
     </ul>
     <p>את כל אלה אפשר לשנות, לכבות או להחזיר גם תוך כדי המשחק, דרך סרגל המנחה.</p>
-    <p style="background:rgba(46,196,182,.1); border-radius:10px; padding:10px 14px; margin:12px 0 0; font-size:14px;">💡 לפני שמתחילים, <b>ניתן</b> ללחוץ <b>👁️ בדיקה</b> ולעבור על החידון פעם אחת עם כל ההגדרות שבחרתם — מוזיקה, רקע והקראה — כדי לראות שהכול עובד כמו שצריך. (פירוט מלא בחלק <b>🔎 בדיקה</b>.)</p>
+    <p style="background:rgba(46,196,182,.1); border-radius:10px; padding:10px 14px; margin:12px 0 0; font-size:14px;">💡 לפני שמתחילים, <b>ניתן</b> ללחוץ <b>👁️ בדיקה</b> ולעבור על החידון פעם אחת עם כל ההגדרות שבחרתם — מוזיקה, רקע והקראה — כדי לראות שהכול עובד כמו שצריך. (פירוט מלא בחלק <b>👁️ בדיקה</b>.)</p>
     <p>כל ההכנות מאחוריכם — וזה הרגע שהכול הוביל אליו. מכאן והלאה החידון קם לחיים מול הקבוצה.</p>
     <p style="margin-bottom:4px;">הפעלת החידון מתבצעת בשלושה שלבים:</p>
     <ol style="margin-top:4px;">
