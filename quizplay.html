@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (quizplay):
+  v178 - שתי תוספות (יניב): (א) הסבר-לכל-שאלה (אופציונלי) ו-(ב) הערת תקרת-30 בחלון ה-AI.
+  ── הסברים: מתג ברמת-החידון "הסבר לכל שאלה" (quiz.hasExplanations) באזור-ההגדרות בעורך (ליד מבנה-המשחק). דלוק → כל כרטיס-שאלה מקבל שדה-הסבר אופציונלי (q.explanation), ובחלון ה-AI הפרומפט מבקש לכל שאלה הסבר קצר שמתחיל בתשובה הנכונה (כך התשובה כלולה בהסבר) + שורת-פורמט "הסבר:", ו-parseImport קולט אותה (כולל ניקוי-placeholder). אם גם מתג-הקובץ (v137) דלוק — הפרומפט מוסיף מאליו "בסס גם את ההסברים על תוכן החומר המצורף" (בלי מתג שלישי). תיקון-ניסוח בפרומפט: "אל תיצור הסברים" → "אל תכלול הסברים בתוך השאלות או התשובות עצמן" (כדי שלא יתנגש עם שדה-ההסבר הנפרד; נכון בשני המצבים). זרימת-המשחק: במסך-החשיפה, אם לשאלה יש טקסט-הסבר → מופיע כפתור "💡 הסבר" וכפתור-ההמשך הופך מ"ממשיכים" ל"לשאלה הבאה"; אם אין — "ממשיכים" כרגיל ובלי כפתור (הקובע הוא קיום-טקסט-ההסבר בשאלה, לא מצב-המתג — מורה שמילא חלק מקבל כפתור רק בהן). "הסבר" → מסך-הסבר ייעודי (#hexp, נוסף ל-bgScreens) שמראה שאלה + הסבר בלבד (בלי שורת-תשובה נפרדת — התשובה בתוך ההסבר), עם "ממשיכים ◂" → nextQ ו-🔊 שמקריא שאלה+הסבר ברצף (בלי "התשובה היא"). הטלפון לא נגע — נשאר על מסך-אחרי-התשובה (pfeed) עד שהשאלה הבאה נדחפת (אין send במעבר-להסבר). סדר מול הפסקת-ביניים: חשיפה → הסבר → הפסקה → הבאה (אוטומטי — ההסבר עוקף לפני nextQ, שם נכנסת ההפסקה). הקראת-תלמידים לא קשורה להסבר. תאימות-לאחור מלאה (חידון בלי השדה = בלי הסברים, בלי מיגרציה; hasExplanations נגזר בטעינה גם מקיום-טקסט-הסבר בשאלות, כך ששיתוף/העתקה — שמעבירים את מערך-השאלות בשלמותו — שומרים הסברים ומדליקים את השדות בעורך-המקבל). הבדיקה (סולו) משקפת 1:1 כי מסך-החשיפה ו-nextQ משותפים (applyRevealExplainBtn נקרא גם ב-soloReveal). בעורך נוספה אזהרת-אורך רכה להסבר (כמו לשאלה/לתשובה): מעל ~260 תווים נדלקת הערה שההסבר יחרוג מהמסך ויחייב גלילה ידנית — בלי חסימה, נעלמת בקיצור.
+  ── הערת-30: שורת-טקסט מתחת ל"כמה שאלות?" — "מעבר ל-30 שאלות איכות ה-AI יורדת, לעוד שאלות הוסיפו ידנית". הבורר נשאר 5-30.
+  אומת: node --check (שני בלוקי-JS) + איזון-תגיות + רינדור.
   v177 - הסתרת קישורי-index לקראת פרסום-החידון-בלבד + נקודות-כניסה למדריך/לוג (עמוד-הבית עדיין לא מתפרסם): כל הקישורים ל-index.html הוחבאו (comment, הפיכים) כי עמוד-הבית יעלה רק אחרי המונטאז'. (1) במסך-הכניסה הוסתר "🏠 חזרה לתפריט הראשי", ובמקומו נוספו "📖 מדריך" ו-"🆕 מה חדש" (אותה-לשונית, מעטפת home-help-links) — נגישים בכל מצבי-ההתחברות לפני הכניסה לעורך, כך שאין סיכון לאובדן-עבודה לאורח. (2) "🎬 יציאה לבניית מצגת" הוסתר בתפריט-הניווט הפנימי וגם ב-teacher-library v15. (3) יעדי-החזרה תוקנו: teacher-guide v17 (כפתור-החזרה teacherquiz.html→quizplay.html, היה 404) ו-teacher-changelog (index.html→quizplay.html + התווית "חזרה לבחירת הכלים"→"חזרה ל-QuizPlay"). (4) קוד ה-embed מסתיר עכשיו את home-help-links במקום main-menu-link שהוסר. ניקוי: teachercombo.html (יתום-שבור, שריד שמות-ישן) למחיקה. אומת: node --check + איזון-תגיות.
   ⚠️ ממתין לטיפול (כשעמוד-הבית יחזור): (א) להחזיר את כל קישורי-index המוחבאים (מסומנים בהערות בקוד). (ב) רק מסך-הכניסה אמור לקשר ל-index, לא מתוך החידון. (ג) פתוח: אין כרגע דרך לחזור החוצה מהחידון / למסך-הכניסה מתוך זרימת-העבודה — צריך פתרון ניווט עתידי.
   v176 - מסך-כניסה, סידור-מחדש: תיאור-המוצר ("הופכים רעיון לפעילות אינטראקטיבית בתוך דקות") הועבר מ*מעל* הכפתורים ל*מתחתיהם* (מעל שורת-ה-✓). אוויר מוגדל בין בלוק-המותג לכפתורים (.ho-cta margin 28→40) ובין הכפתורים לתיאור (.ho-tag margin 22→28). ההיגיון: מותג (לוגו+מנשר) → פעולה → תיאור+הוכחה. אומת: node --check + איזון-תגיות.
@@ -591,7 +595,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v177</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v178</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -812,6 +816,14 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
         <option value="4">4 קבוצות</option>
       </select>
       <div id="team-names" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="field" id="explain-toggle-wrap">
+      <label>הסבר לכל שאלה <span class="info-i" onclick="showInfo(event, 'כשהאפשרות דלוקה, אחרי חשיפת התשובה הנכונה יופיע כפתור להצגת הסבר קצר על המסך. בכל שאלה תבחרו אם להציג את ההסבר או לדלג ישר לשאלה הבאה. כל שאלה מקבלת שדה הסבר בעורך — מה שתשאירו ריק פשוט לא יוצג.')">i</span></label>
+      <span class="draft-toggle" id="explain-toggle" onclick="toggleExplanations()" title="הצגת הסבר אחרי כל שאלה">
+        <span class="sw"></span><span>הצגת הסבר לכל שאלה</span>
+      </span>
+      <div style="font-size:13px; color:var(--ink-dim); margin-top:9px; line-height:1.55;">במסך שמציג את התשובה הנכונה, יתווסף כפתור להצגת הסבר קצר — ובכל שאלה תוכלו לבחור אם להציג אותו או לדלג לשאלה הבאה. השאלות יקבלו שדה הסבר בעורך.</div>
     </div>
 
     <h2 style="margin-top:14px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
@@ -1035,8 +1047,21 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   <div id="hr-bars" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
   <div id="hr-teams" style="margin-top:18px; font-size:clamp(20px,2.4vw,28px); color:var(--gold); font-weight:700;"></div>
   <div style="display:flex; justify-content:center; align-items:center; gap:14px; margin-top:22px; flex-wrap:wrap;">
+    <button class="btn" id="hr-explain" onclick="showExplanation()" style="display:none; background:var(--violet); color:#0b0b2a;">💡 הסבר</button>
     <button class="btn teal" id="hr-next" onclick="nextQ()">ממשיכים ◂</button>
     <button class="hspk-btn" onclick="hostSpeakRoom()" style="display:none; font-family:'Heebo'; font-size:17px; font-weight:800; color:#06231f; background:var(--teal); border:none; border-radius:12px; padding:12px 24px; cursor:pointer;">🔊 הקראה</button>
+  </div>
+</div>
+
+<!-- ============ מארח: הסבר (אופציונלי — אחרי החשיפה, לפי בחירת המנחה) ============ -->
+<div class="screen" id="hexp">
+  <p class="correct-line" style="opacity:.8; font-size:clamp(20px,2.6vw,30px); margin-bottom:6px;">השאלה</p>
+  <div id="hexp-q" style="font-family:'Heebo'; font-size:clamp(22px,3.2vw,40px); font-weight:700; line-height:1.3; color:rgba(255,255,255,.92); max-width:1100px; text-align:center; text-shadow:0 2px 12px rgba(0,0,0,.85); margin-bottom:22px;"></div>
+  <p class="correct-line" style="opacity:.8; font-size:clamp(20px,2.6vw,30px); margin-bottom:6px;">הסבר</p>
+  <div id="hexp-text" style="font-family:'Heebo'; font-size:clamp(24px,3.4vw,44px); font-weight:800; line-height:1.45; color:#fff; max-width:1100px; text-align:center; text-shadow:0 3px 14px rgba(0,0,0,.85);"></div>
+  <div style="display:flex; justify-content:center; align-items:center; gap:14px; margin-top:28px; flex-wrap:wrap;">
+    <button class="btn teal" id="hexp-next" onclick="nextQ()">ממשיכים ◂</button>
+    <button class="hspk-btn" onclick="hostSpeakExplain()" style="display:none; font-family:'Heebo'; font-size:17px; font-weight:800; color:#06231f; background:var(--teal); border:none; border-radius:12px; padding:12px 24px; cursor:pointer;">🔊 הקראה</button>
   </div>
 </div>
 
@@ -1283,7 +1308,7 @@ function show(id){
   updateNavMenu();
   // התצוגה-המקדימה של הרקע פעילה רק ב-pregame ובמסכי-משחק. במעבר למסך אחר (עורך/רשימה) — מכבים
   // כדי שהרקע לא "ידלוף" לשם. (hostStart מדליק שוב למשחק האמיתי.)
-  const bgScreens = ['pregame','hq','hr','hint','plook','preview','hfin'];
+  const bgScreens = ['pregame','hq','hr','hexp','hint','plook','preview','hfin'];
   if (!bgScreens.includes(id)){ const gb = $('game-bg'); if (gb) gb.classList.remove('on'); }
 }
 
@@ -2178,7 +2203,7 @@ function _openLibraryOverlayCore(){
 async function newQuiz(){
   editCode = await genUniqueStoreKey();
   const displayCode = await genDisplayCode();   // קוד-תצוגה אנושי קבוע, נוצר פעם אחת
-  quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], displayCode: displayCode, originalAuthor: (myAuthName || ''), isDraft:false, share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
+  quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], hasExplanations:false, displayCode: displayCode, originalAuthor: (myAuthName || ''), isDraft:false, share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
   resetAiMeta();             // חידון חדש — בחירות AI מתאפסות (פריט 1)
   aiCardDismissed = false;   // חידון חדש — הכרטיס יוצג שוב
   quiz.questions.push({ text:'', answers:['',''], correct:0 });  // שאלה ריקה ראשונה — לפני הרינדור, כדי לרנדר פעם אחת בלבד
@@ -2197,6 +2222,7 @@ function clearAllQuiz(){
   quiz.teamCount = 0;
   quiz.teamNames = [];
   quiz.questions = [{ text:'', answers:['',''], correct:0 }];
+  quiz.hasExplanations = false;
   // share נשאר כפי שהוא — לא נוגעים (לפי החלטה: שיתוף שורד ניקוי)
   resetAiMeta();             // בחירות ה-AI מתאפסות (חידון נקי)
   delete quiz.aiMeta;
@@ -2214,6 +2240,7 @@ function openExisting(code, data){
     title: data.title || '', time: data.time || 20,
     teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
     questions: data.questions || [],
+    hasExplanations: !!(data.hasExplanations || (data.questions||[]).some(function(q){ return q && q.explanation && String(q.explanation).trim(); })),
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
@@ -2235,6 +2262,7 @@ function playExisting(code, data){
     title: data.title || '', time: data.time || 20,
     teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
     questions: data.questions || [],
+    hasExplanations: !!(data.hasExplanations || (data.questions||[]).some(function(q){ return q && q.explanation && String(q.explanation).trim(); })),
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
@@ -2270,6 +2298,7 @@ function testExisting(code, data){
     title: data.title || '', time: data.time || 20,
     teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
     questions: data.questions || [],
+    hasExplanations: !!(data.hasExplanations || (data.questions||[]).some(function(q){ return q && q.explanation && String(q.explanation).trim(); })),
     displayCode: data.displayCode || null,
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
@@ -2341,6 +2370,7 @@ function renderEditor(){
   renderSharePanel();
   if ($('library-panel')) renderLibraryPanel();
   syncDraftToggles();   // v104 שלב ב': עדכון מצב שני מתגי-הטיוטה לפי quiz.isDraft
+  syncExplainToggle();   // v178: מצב מתג "הסבר לכל שאלה"
 }
 
 function teamCountChanged(){
@@ -2518,12 +2548,18 @@ function buildImportPrompt(){
        ' כל שאלה קצרה וישירה, עד 20 מילים (מקסימום מוחלט 25 מילים).' +
        ' כל תשובה קצרה ותמציתית — רצוי שורה אחת, מילה או ביטוי קצר ולא משפט שלם.' +
        ' כל התשובות באותה שאלה צריכות להיות באורך דומה, והתשובה הנכונה לא ארוכה מהשגויות.' +
-       ' אל תיצור הסברים, משפטים מורכבים או ניסוחים מסורבלים. העדף מושגים, שמות, תהליכים וביטויים קצרים.';
+       ' אל תכלול הסברים בתוך השאלות או התשובות עצמן, ואל תשתמש במשפטים מורכבים או ניסוחים מסורבלים. העדף מושגים, שמות, תהליכים וביטויים קצרים.';
+  // v178: אם החידון כולל הסברים — מבקשים מה-AI הסבר קצר לכל שאלה שמתחיל בתשובה (כך התשובה כלולה בהסבר).
+  if (quiz && quiz.hasExplanations){
+    p += ' בנוסף, לכל שאלה כתוב הסבר קצר (משפט אחד או שניים) שמתחיל בתשובה הנכונה ואז מסביר אותה בקצרה — לדוגמה: "פריז — בירת צרפת מאז המאה ה-10". ההסבר נפרד מהשאלה ומהתשובות.';
+    if (attachOn) p += ' בסס גם את ההסברים על תוכן החומר המצורף — אל תמציא אותם.';
+  }
   p += '\n\nהחזר אך ורק טקסט בפורמט הבא, בלי שום הסבר נוסף, בלי מספור, ובלי כותרות:\n\n' +
     'שאלה: <נוסח השאלה>\n' +
     'נכונה: <התשובה הנכונה>\n' +
     'תשובה: <תשובה שגויה>\n' +
     'תשובה: <תשובה שגויה>\n' +
+    (quiz && quiz.hasExplanations ? 'הסבר: <הסבר קצר שמתחיל בתשובה הנכונה>\n' : '') +
     '(וכך הלאה ' + impACount + ' תשובות בסך הכול לכל שאלה — אחת בשורת "נכונה" והשאר בשורות "תשובה")\n\n' +
     'הפרד בין שאלות בשורה ריקה.';
   if (!topics.length) p += ' כתוב את הנושא של החידון במקום שבחרתי.';
@@ -2757,6 +2793,11 @@ function openImport(){
     '<div><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">כמה תשובות?</div><div id="imp-a-row" style="display:flex; gap:6px;"></div></div>' +
     '<div><div style="font-size:14px; color:var(--ink); font-weight:700; margin-bottom:6px;">רמת קושי</div><div id="imp-diff-row" style="display:flex; gap:6px;"></div></div>';
   box.appendChild(sel);
+  // v178: הערת תקרת-כמות (נושא נפרד מההסברים) — מעל 30 איכות ה-AI יורדת בבקשה אחת.
+  const qNote = document.createElement('div');
+  qNote.style.cssText='font-size:12.5px; color:var(--ink-dim); margin:2px 0 8px; line-height:1.5;';
+  qNote.textContent='מעבר ל-30 שאלות, איכות השאלות מהבינה המלאכותית יורדת. לעוד שאלות — הוסיפו אותן ידנית בעורך.';
+  box.appendChild(qNote);
 
   // ===== פריט 5: רשימת השאלות הקיימות (רק בעריכת חידון שיש בו שאלות) =====
   if (quizHasRealContent()){
@@ -2888,6 +2929,9 @@ function parseImport(){
     } else if (/^תשוב[הת]\s*[:\-]/.test(line)){
       if (!cur) cur = { text:'', answers:[], correct:0 };
       cur.answers.push(line.replace(/^תשוב[הת]\s*[:\-]\s*/, '').trim());
+    } else if (/^הסבר\s*[:\-]/.test(line)){
+      if (!cur) cur = { text:'', answers:[], correct:0 };
+      cur.explanation = line.replace(/^הסבר\s*[:\-]\s*/, '').trim();
     }
   });
   if (cur && cur.answers.length>=2) parsed.push(cur);
@@ -2898,12 +2942,13 @@ function parseImport(){
   parsed.forEach(q => {
     if (isPlaceholder(q.text)) q.text = '';
     q.answers = q.answers.filter(a => !isPlaceholder(a));
+    if (q.explanation && isPlaceholder(q.explanation)) q.explanation = '';
     if (q.correct >= q.answers.length) q.correct = 0;
   });
 
   // ניקוי: רק שאלות עם נוסח ולפחות 2 תשובות
   const valid = parsed.filter(q => q.text && q.answers.filter(a=>a).length>=2)
-                      .map(q => ({ text:q.text, answers:q.answers.slice(0,4), correct: Math.min(q.correct, q.answers.length-1) }));
+                      .map(q => ({ text:q.text, answers:q.answers.slice(0,4), correct: Math.min(q.correct, q.answers.length-1), explanation: (q.explanation || '').trim() }));
 
   // ערבוב התשובות בכל שאלה — כדי שהתשובה הנכונה לא תהיה תמיד ראשונה.
   // שומרים את הטקסט של התשובה הנכונה, מערבבים, ומאתרים מחדש את האינדקס שלה.
@@ -2964,6 +3009,7 @@ function parseImport(){
 // ספירת שאלות/תשובות שחורגות מהמומלץ (לדיווח אחרי ייבוא)
 function qTooLong(text){ return text && text.trim().split(/\s+/).length > 25; }
 function aTooLong(text){ return text && text.trim().length > 45; }
+function explTooLong(text){ return text && text.trim().length > 260; }   // v178: סף-אזהרה רך להסבר — מעבר לזה התוכן חורג מהמסך
 function countOverLength(list){
   let n = 0;
   list.forEach(q => {
@@ -3047,6 +3093,24 @@ function renderQuestions(){
       const add = document.createElement('button'); add.className='addans'; add.textContent='➕ תשובה';
       add.onclick = () => { q.answers.push(''); renderQuestions(); touch(); };
       card.appendChild(add);
+    }
+    // v178: שדה-הסבר אופציונלי לכל שאלה — רק כשהמתג "הסבר לכל שאלה" דלוק
+    if (quiz.hasExplanations){
+      const exWrap = document.createElement('div'); exWrap.style.cssText='margin-top:14px; border-top:1px dashed rgba(255,255,255,.14); padding-top:12px;';
+      const exLbl = document.createElement('div'); exLbl.style.cssText='font-size:13px; color:var(--violet); font-weight:700; margin-bottom:6px;';
+      exLbl.textContent='💡 הסבר (אופציונלי) — יוצג אחרי חשיפת התשובה';
+      const exIn = document.createElement('textarea'); exIn.placeholder='הסבר קצר לשאלה זו. כדאי להתחיל בתשובה ואז להסביר. אם תשאירו ריק — לא יוצג הסבר לשאלה הזו.';
+      exIn.style.cssText='width:100%; height:62px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:9px 12px; font-family:Heebo; font-size:14px; resize:vertical;';
+      exIn.value = q.explanation || '';
+      // v178: אזהרת-אורך רכה (כמו לשאלה/לתשובה) — נדלקת מעל הסף, נעלמת בקיצור
+      const exHint = document.createElement('div');
+      exHint.style.cssText='font-size:12px; color:var(--gold); margin:6px 0 0; display:none; line-height:1.5;';
+      exHint.textContent='⚠️ ההסבר ארוך ולא ייכנס במסך אחד — חלק ממנו והכפתורים יֵרדו מתחת לקצה ותצטרכו לגלול ידנית. מומלץ לקצר כדי שהכל ייכנס במבט אחד.';
+      const updExHint = () => { exHint.style.display = explTooLong(exIn.value) ? 'block' : 'none'; };
+      exIn.oninput = () => { q.explanation = exIn.value; updExHint(); touch(); };
+      exWrap.appendChild(exLbl); exWrap.appendChild(exIn); exWrap.appendChild(exHint);
+      updExHint();
+      card.appendChild(exWrap);
     }
     list.appendChild(card);
   });
@@ -4450,6 +4514,47 @@ function hostSpeakRoom(){
   } catch(e){}
 }
 if (window.speechSynthesis){ loadTtsVoice(); speechSynthesis.onvoiceschanged = loadTtsVoice; }
+
+/* ===== v178: הסבר-לשאלה (אופציונלי) — כפתור במסך-החשיפה + מסך-הסבר ייעודי ===== */
+function hasExplanation(q){ return !!(q && q.explanation && String(q.explanation).trim()); }
+// במסך-החשיפה: יש הסבר → כפתור "הסבר" + הכפתור הראשי הופך ל"לשאלה הבאה"; אין → "ממשיכים" כרגיל, בלי כפתור.
+function applyRevealExplainBtn(){
+  const ex = hasExplanation(curQ);
+  const eb = $('hr-explain'); if (eb) eb.style.display = ex ? 'inline-block' : 'none';
+  const nx = $('hr-next'); if (nx) nx.textContent = ex ? 'לשאלה הבאה ◂' : 'ממשיכים ◂';
+}
+// מעבר למסך-ההסבר: שאלה + הסבר (התשובה כלולה בהסבר). הטלפון לא מושפע — אין send (נשאר על מסך-אחרי-התשובה).
+function showExplanation(){
+  if (!curQ) return;
+  if ($('hexp-q')) $('hexp-q').textContent = curQ.text || '';
+  if ($('hexp-text')) $('hexp-text').textContent = (curQ.explanation || '').trim();
+  show('hexp');
+  refreshHostSpeakBtn();   // כפתור 🔊 מופיע/נעלם לפי מתג-ההקראה גם במסך זה
+}
+// 🔊 במסך-ההסבר: מקריא שאלה ואז הסבר (התשובה כלולה בהסבר), ברצף אחד — בלי "התשובה היא".
+function hostSpeakExplain(){
+  if (!window.speechSynthesis || !ttsVoice || !curQ) return;
+  try {
+    const parts = [];
+    if (curQ.text) parts.push(curQ.text);
+    const exp = (curQ.explanation || '').trim(); if (exp) parts.push(exp);
+    const text = parts.join('. '); if (!text) return;
+    const synth = window.speechSynthesis; synth.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'he-IL'; u.voice = ttsVoice;
+    setTimeout(function(){ try { synth.speak(u); } catch(e){} }, 80);
+  } catch(e){}
+}
+// מתג "הסבר לכל שאלה" בעורך: דגל ברמת-החידון; פותח/סוגר את שדות-ההסבר בכרטיסים, ונקרא ב-buildImportPrompt.
+function toggleExplanations(){
+  if (!quiz) return;
+  quiz.hasExplanations = !quiz.hasExplanations;
+  syncExplainToggle();
+  renderQuestions();
+  touch();
+}
+function syncExplainToggle(){
+  const t = $('explain-toggle'); if (t) t.classList.toggle('on', !!(quiz && quiz.hasExplanations));
+}
 function hostStart(){
   speedBonusOn = $('pg-speed-toggle') ? $('pg-speed-toggle').checked : true;   // v149: קריאת המתג לפני הצילום
   sttsHostOn = $('pg-stts-toggle') ? $('pg-stts-toggle').checked : false;   // v151 (נקרא מוקדם)
@@ -5125,6 +5230,7 @@ function revealQ(){
     Object.values(players).forEach(p => { if (p.team>=0) tSum[p.team]+=p.score; });
     $('hr-teams').innerHTML = Object.keys(tSum).map(k=>'<span style="display:inline-block; margin:0 10px;">'+escapeHtml(quiz.teamNames[k])+': <b style="color:#fff;">'+tSum[k]+'</b> נק׳</span>').join('');
   } else $('hr-teams').textContent = '';
+  applyRevealExplainBtn();
   show('hr');
 }
 
@@ -5784,6 +5890,7 @@ function soloReveal(){
   $('hr-teams').textContent = (a && a.pick===curQ.correct) ? '✅ נכון!' : '❌ לא נכון — הנכונה מסומנת בירוק';
   // v159: כפתור-ההמשך הוא ה-hr-next האמיתי (ממשיכים ◂, onclick=nextQ→soloNextQ בבדיקה) — 1:1 עם המשחק
   if ($('hr-next')) $('hr-next').style.display='inline-block';
+  applyRevealExplainBtn();
   show('hr');
 }
 
