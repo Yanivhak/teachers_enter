@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- teacher-changelog — רשימת "מה חדש" לגרסה 1.0. עודכן 30.6.2026: + תיעוד הסברים (💡 מתג/שדה · ✨ מילוי AI · 💡 חשיפה במשחק); + פס-ניווט עליון וכפתור-חזרה מודגש (תואם למדריך); תיקון רקע ל-iOS (הוסר background-attachment:fixed). -->
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
@@ -11,8 +12,9 @@
 <style>
 :root{ --bg1:#05080f; --bg2:#0a1020; --ink:#f7f4ec; --ink-dim:#aab4cf; --gold:#ffd166; --teal:#2ec4b6; --card:#22325c; }
 *{box-sizing:border-box;}
+html{background:var(--bg1);}
 html,body{margin:0; padding:0;}
-body{font-family:'Heebo',sans-serif; background: radial-gradient(900px 600px at 78% 12%, rgba(255,209,102,.10), transparent 60%), radial-gradient(820px 560px at 18% 88%, rgba(46,196,182,.09), transparent 62%), radial-gradient(680px 520px at 50% 50%, rgba(141,141,242,.06), transparent 70%), radial-gradient(1200px 800px at 50% 0%, #131f3a 0%, var(--bg2) 45%, var(--bg1) 100%); background-attachment:fixed; color:var(--ink); min-height:100vh; padding:32px 20px; line-height:1.7;}
+body{font-family:'Heebo',sans-serif; background: radial-gradient(900px 600px at 78% 12%, rgba(255,209,102,.10), transparent 60%), radial-gradient(820px 560px at 18% 88%, rgba(46,196,182,.09), transparent 62%), radial-gradient(680px 520px at 50% 50%, rgba(141,141,242,.06), transparent 70%), radial-gradient(1200px 800px at 50% 0%, #131f3a 0%, var(--bg2) 45%, var(--bg1) 100%); background-color:var(--bg1); color:var(--ink); min-height:100vh; padding:54px 20px 40px; line-height:1.7;}
 .wrap{max-width:720px; margin:0 auto;}
 /* לוקאפ הלוגו — זהה ל-hero של quizplay (yopoy מעל המוח + QuizPlay) */
 .brand{text-align:center; margin-bottom:6px;}
@@ -33,10 +35,14 @@ li{margin-bottom:8px;}
 b{color:var(--gold);}
 .section-title{font-weight:700; color:var(--ink); margin:14px 0 4px;}
 .subhead{font-weight:700; color:var(--teal); font-size:15px; margin:18px 0 2px;}
-.back{display:inline-block; margin-top:30px; color:var(--ink-dim); text-decoration:none; font-size:15px;}
+.back{display:inline-block; margin-top:24px; background:var(--gold); color:#3a2a00; font-family:'Secular One'; font-size:16px; text-decoration:none; padding:13px 30px; border-radius:12px;}
+  /* פס-ניווט עליון נדבק — חזרה ל-QuizPlay תמיד נגיש (זהה למדריך) */
+  .topbar{position:fixed; top:0; left:0; right:0; z-index:200; display:flex; align-items:center; justify-content:center; gap:8px; padding:11px 16px; background:rgba(7,11,20,.93); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); border-bottom:1px solid rgba(255,255,255,.08); font-family:'Secular One'; font-size:16px; color:var(--gold); text-decoration:none;}
+  .topbar:active{background:rgba(7,11,20,.99);}
 </style>
 </head>
 <body>
+<a class="topbar" href="quizplay.html">→ חזרה ל-QuizPlay</a>
 <div class="wrap">
   <div class="brand"><div class="ho-brand"><span class="ho-stack"><span class="ho-yopoy">yopoy</span><span class="ho-brain">🧠</span></span><span class="ho-word">QuizPlay</span></div></div>
   <p style="text-align:center; color:var(--ink); font-size:16px; font-weight:500; line-height:1.5; max-width:520px; margin:14px auto 0;">טכנולוגיה טובה לא מודדים במה שהיא עושה, אלא במה שהיא <span style="font-weight:700; white-space:nowrap;">מאפשרת לאנשים לעשות יחד</span>.</p>
@@ -55,6 +61,7 @@ b{color:var(--gold);}
       <li>מספר שאלות בלתי-מוגבל בבנייה ידנית</li>
       <li>הוספה, עריכה, מחיקה ושינוי-סדר של שאלות (בחיצים) בכל רגע</li>
       <li>מבנה משחק: כל אחד לעצמו, או 2/3/4 קבוצות עם שמות לבחירתכם</li>
+      <li>הסבר לכל שאלה (💡): מתג אופציונלי שפותח שדה-הסבר לכל שאלה — ממלאים רק במה שרוצים, בעצמכם או באמצעות AI</li>
       <li>שמירה אוטומטית של כל שינוי — בלי צורך ללחוץ שמירה (קיים גם כפתור שמירה ידנית)</li>
     </ul>
 
@@ -67,6 +74,7 @@ b{color:var(--gold);}
       <li>הוספת הקשר קצר (הערה חופשית) לכוונון התוצאה</li>
       <li>צירוף קובץ או קבצים בכלי ה-AI — החידון נבנה על תוכנם</li>
       <li>עריכה באמצעות AI של חידון קיים — החלפה או רענון של שאלות מסוימות, בלי להתחיל מחדש</li>
+      <li>מילוי הסברים באמצעות AI (✨): כלי נפרד שמשלים הסברים רק לשאלות שאין להן עדיין — בלי לשנות שאלות או הסברים קיימים</li>
     </ul>
 
     <div class="subhead">🎬 הכנות למשחק</div>
@@ -96,6 +104,7 @@ b{color:var(--gold);}
       <li>כל משתתף מזין שם, ובמשחק קבוצתי בוחר את הקבוצה שלו בכניסה</li>
       <li>שאלות על המסך הגדול, מענה מהטלפון האישי</li>
       <li>ניקוד לפי דיוק, מהירות, ובונוס על רצף תשובות נכונות</li>
+      <li>כפתור 💡 הסבר אחרי חשיפת התשובה הנכונה — בשאלות שיש להן הסבר, מציג מסך עם השאלה וההסבר</li>
       <li>רגעי-לוח ("הסתכלו ללוח") שמחזירים את העיניים למסך המשותף</li>
       <li>רגעי-שיא חגיגיים עם זיקוקים ואפקטי-קול (שיא מהירות, שיא רצף)</li>
       <li>מונה-נוכחות בזמן אמת, שמתריע כשמשתתף חסר</li>
