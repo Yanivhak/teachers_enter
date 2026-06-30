@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (quizplay):
+  v184 - הערת-החלוקה נכתבה מחדש לפי הזרימה האמיתית של המורה (לבקשת יניב). הבעיה בנוסח הקודם: הוא הסביר "בקשו 10" — אבל הפרומפט כבר מבקש 10 לבד במצב-חלוקה (v182), אז ההנחיה הייתה כפולה ומבלבלת.
+  ── הטקסט עכשיו דינמי (נבנה ב-syncBatchNote לפי impQCount, מתעדכן בזמן אמת עם הבורר): "שלחו את ההנחיה כרגיל, ואז כתבו 'המשך' [פעם אחת/פעמיים], העתיקו את [שני/שלושת] המקבצים לתיבה ברצף, ולחצו צור חידון." בלי מספר-יעד ובלי חישוב גלוי למורה.
+  ── הסף: 16–20 שאלות → "המשך" פעם אחת ושני מקבצים; מעל 20 → פעמיים ושלושה מקבצים. (ההערה ממילא מופיעה רק מעל 15.) הוראה, לא חסימה — המורה חופשי לחלק אחרת.
+  אומת: node --check (שני בלוקי-JS) + איזון-תגיות.
   v183 - שני שינויים בכלי ה-AI (לבקשת יניב).
   ── פתיחת הפרומפט (buildImportPrompt): "צור חידון טריוויה בעברית" ← "צור מקבץ שאלות טריוויה כטקסט בלבד בעברית". הסיבה: ג׳מיני (gemini.google.com) תופס "צור חידון" בתחילת המשפט כפקודה ומפעיל כלי-canvas אינטראקטיבי במקום להחזיר טקסט בפורמט הנדרש. הניסוח החדש מנטרל את הטריגר ואומת בג׳מיני וב-ChatGPT. "החידון" באמצע המשפט נשאר — אינו טריגר. תקף לחידון חדש ולעריכה (אותה פונקציה).
   ── התרעת-כפילויות (findSimilarPairs + _dupTokens): אחרי ייבוא, השוואת נוסחי-השאלות בחידון הסופי (Jaccard ≥ 0.7 על טוקנים מנורמלים — קילוף תחילית/ה' הידיעה עם שמירת ≥3 אותיות, סינון מילות-קישור ומילות-שאלה). זוגות דומים-מאוד מצורפים לטוסט-הסיום (לא טוסט נפרד), מילולית ובלי מחיקה אוטומטית. סף שמרני בכוונה כדי לא להציף התרעות-שווא; תופס כפילויות-נוסח, לא בהכרח כפילויות-תוכן בניסוח רחוק.
@@ -618,7 +622,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v183</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v184</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -2738,7 +2742,16 @@ function impBatchMode(){
 }
 function syncBatchNote(){
   const note = $('imp-batch-note');
-  if (note) note.style.display = impBatchMode() ? 'block' : 'none';
+  if (!note) return;
+  const on = impBatchMode();
+  note.style.display = on ? 'block' : 'none';
+  if (!on) return;
+  // v184: מספר ה"המשך" והמקבצים נגזר מהבורר — 16–20 → פעם אחת/שני מקבצים; מעל 20 → פעמיים/שלושה מקבצים.
+  const askCount = quizHasRealContent() ? impNewQuestionsNeeded() : impQCount;
+  const twice = askCount > 20;
+  const contTxt  = twice ? 'פעמיים' : 'פעם אחת';
+  const batchTxt = twice ? 'שלושת' : 'שני';
+  note.innerHTML = '📎 <b>קובץ גדול (מעל 50 עמודים בערך)?</b> הבינה המלאכותית לא תמיד מסתדרת עם הרבה שאלות בבת אחת, אז עובדים במנות:<br>שלחו את ההנחיה כרגיל, ואז כתבו בצ׳אט "המשך" ' + contTxt + '. העתיקו את ' + batchTxt + ' המקבצים שתקבלו לתיבה למטה — אחד אחרי השני — ולחצו "צור חידון".';
 }
 
 /* בונה סעיף אקורדיון: כותרת שנלחצת + תוכן שנפתח/נסגר */
@@ -2907,10 +2920,9 @@ function openImport(){
   const atRemind = document.createElement('div'); atRemind.id='imp-attach-remind'; atRemind.style.cssText='display:none; background:rgba(255,209,102,.12); border:1px solid rgba(255,209,102,.3); border-radius:10px; padding:11px 14px; margin:-8px 0 16px; font-size:14px; color:var(--ink); line-height:1.5;';
   atRemind.textContent='📎 אם אתם מצרפים קבצים — צרפו אותם יחד עם ההנחיה באותה הודעה.';
   box.appendChild(atRemind);
-  // v182: הערת-חלוקה — מוצגת רק כשמתג-הקובץ דלוק וגם מבוקשות מעל 15 שאלות (impBatchMode/syncBatchNote)
+  // v182: הערת-חלוקה — מוצגת רק כשמתג-הקובץ דלוק וגם מבוקשות מעל 15 שאלות. v184: הטקסט נבנה דינמית ב-syncBatchNote לפי הבורר.
   const batchNote = document.createElement('div'); batchNote.id='imp-batch-note';
   batchNote.style.cssText='display:none; background:rgba(255,209,102,.12); border:1px solid rgba(255,209,102,.3); border-radius:10px; padding:12px 14px; margin:-8px 0 16px; font-size:13.5px; color:var(--ink); line-height:1.6;';
-  batchNote.innerHTML='📎 <b>הרבה שאלות מקובץ גדול (מעל 50 עמודים בערך)?</b> כלי ה-AI קורא את הקובץ, אבל כשמבקשים ממנו שאלות רבות בבת אחת מחומר גדול הוא עלול לעצור באמצע ולהחזיר פחות שאלות מהמבוקש. עדיף לבקש במנות: בקשו 10, ואז כתבו בצ׳אט "המשך, עוד 10 על אותו חומר", וכך עד לכמות הרצויה. אספו את כל המנות לתיבת ההדבקה למטה, ורק אז לחצו "צור חידון" — פעם אחת.';
   box.appendChild(batchNote);
 
   // שלב 2
