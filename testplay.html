@@ -649,7 +649,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v187</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 6</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -3785,7 +3785,17 @@ function examImportBuild(jsonText, mode){
   quiz.parts.forEach(function(part){ if (examPartSum(part)===0 && (Number(part.score)||0)>0) examAutofill(part); });
   var ov=$('exam-imp-overlay'); if (ov) ov.remove();
   renderQuestions(); touch(); syncExamToggle();
-  setTimeout(function(){ if (!examIsValid()) showToast('הבחינה יובאה — יש הערות-אימות לתיקון (ראו אדום).'); else showToast('הבחינה יובאה בהצלחה ✓'); }, 60);
+  var _allEmpty = quiz.questions.length>0 && quiz.questions.every(function(q){
+    var te = (String(q.text||'').trim()==='');
+    if (q.subs) return te && q.subs.every(function(su){ return String(su.text||'').trim()===''; });
+    if (q.answers) return te && q.answers.every(function(a){ return String(a||'').trim()===''; });
+    return te;
+  });
+  setTimeout(function(){
+    if (!struct && _allEmpty){ showToast('ה-JSON לא כלל תוכן שאלות — נבנה המבנה בלבד. אם רצית תוכן, ודאו שהעתקתם את ההנחיה של "כולל תוכן השאלות".'); }
+    else if (!examIsValid()){ showToast('הבחינה יובאה — יש הערות-אימות לתיקון (ראו אדום).'); }
+    else { showToast('הבחינה יובאה בהצלחה ✓'); }
+  }, 60);
 }
 function openExamImport(mode){
   mode = (mode==='structure') ? 'structure' : 'full';
@@ -3798,6 +3808,8 @@ function openExamImport(mode){
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:600px; width:100%; text-align:right; margin:auto;';
   var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent = (mode==='structure') ? '📐 ייבוא בחינה — מבנה בלבד (ללא תוכן)' : '🤖 ייבוא בחינה — כולל תוכן השאלות';
   box.appendChild(title);
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 6';
+  box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;';
   desc.textContent='העתיקו את ההנחיה, פתחו את ChatGPT / Gemini / Claude, וצרפו שם את קובץ-הבחינה (Word/PDF) או הדביקו את הטקסט שלה. הדביקו כאן את התשובה — והמערכת תבנה את הבחינה: חלקים, סוגים, ניקוד ובחירה.';
   box.appendChild(desc);
@@ -3839,12 +3851,13 @@ function renderExamEditor(){
   var list = $('q-list'); list.innerHTML = '';
   examEnsure();
   var _impWrap = document.createElement('div'); _impWrap.style.cssText='margin-bottom:14px;';
-  var _impLbl = document.createElement('div'); _impLbl.style.cssText='font-size:13.5px; color:var(--gold); font-weight:700; margin-bottom:7px;'; _impLbl.textContent='🤖 ייבוא בחינה באמצעות AI:';
-  _impWrap.appendChild(_impLbl);
-  var _impRow = document.createElement('div'); _impRow.style.cssText='display:flex; gap:8px; flex-wrap:wrap;';
-  var _impFull = document.createElement('button'); _impFull.className='btn'; _impFull.style.cssText='flex:1 1 200px; background:rgba(243,200,90,.14); border:1px solid rgba(243,200,90,.4); color:var(--gold); font-weight:700;'; _impFull.textContent='כולל תוכן השאלות'; _impFull.onclick=function(){ openExamImport('full'); };
-  var _impStruct = document.createElement('button'); _impStruct.className='btn'; _impStruct.style.cssText='flex:1 1 200px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _impStruct.textContent='מבנה בלבד (ללא תוכן)'; _impStruct.onclick=function(){ openExamImport('structure'); };
-  _impRow.appendChild(_impFull); _impRow.appendChild(_impStruct); _impWrap.appendChild(_impRow);
+  var _impBtn = document.createElement('button'); _impBtn.className='btn'; _impBtn.style.cssText='width:100%; background:rgba(243,200,90,.2); border:1px solid rgba(243,200,90,.55); color:var(--gold); font-weight:800; font-size:18px; padding:15px;'; _impBtn.textContent='🤖 ייבוא בחינה באמצעות AI';
+  _impWrap.appendChild(_impBtn);
+  var _impModeLbl = document.createElement('label'); _impModeLbl.style.cssText='display:flex; align-items:flex-start; gap:8px; cursor:pointer; margin:8px 6px 0; font-size:12px; color:var(--ink-dim); line-height:1.45;';
+  var _impModeChk = document.createElement('input'); _impModeChk.type='checkbox'; _impModeChk.id='exam-imp-mode-chk'; _impModeChk.checked=true; _impModeChk.style.cssText='width:17px; height:17px; accent-color:var(--teal); cursor:pointer; flex:0 0 auto; margin-top:1px;';
+  var _impModeTxt = document.createElement('span'); _impModeTxt.textContent='כלול גם את תוכן השאלות. בלי סימון — ייבנה רק המבנה (חלקים, מספר שאלות, ניקוד ובחירה) עם שאלות ריקות למילוי.';
+  _impModeLbl.appendChild(_impModeChk); _impModeLbl.appendChild(_impModeTxt); _impWrap.appendChild(_impModeLbl);
+  _impBtn.onclick = function(){ openExamImport(_impModeChk.checked ? 'full' : 'structure'); };
   list.appendChild(_impWrap);
   var total = examTotal(), cap = examCap(), over = total > cap;
 
