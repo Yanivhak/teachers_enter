@@ -3714,16 +3714,29 @@ function examImportPrompt(){
     'החזר JSON תקין אחד בלבד, בלי טקסט לפני או אחרי.'
   ].join('\n');
 }
+function examImportError(msg){
+  var m = $('exam-imp-msg');
+  if (m){ m.textContent = msg; m.style.display='block'; }
+  if (typeof showToast==='function') showToast(String(msg).split('\n')[0]);
+}
+function examParseExam(text){
+  var s = String(text||'');
+  s = s.replace(/[\uFEFF\u200B\u200C\u200D\u200E\u200F\u202A-\u202E\u2066-\u2069]/g,'');
+  s = s.trim().replace(/^```[a-zA-Z]*\s*/i,'').replace(/\s*```$/,'').trim();
+  var lo = s.indexOf('{'), hi = s.lastIndexOf('}');
+  if (lo>=0 && hi>lo) s = s.slice(lo, hi+1);
+  var noC = s.replace(/\/\/[^\n\r]*/g,'').replace(/\/\*[\s\S]*?\*\//g,'').replace(/,(\s*[}\]])/g,'$1');
+  var attempts = [ s, s.replace(/,(\s*[}\]])/g,'$1'), noC, noC.replace(/[\u201C\u201D\u201E\u201F]/g,'"').replace(/[\u2018\u2019]/g,"'") ];
+  var lastErr='';
+  for (var i=0;i<attempts.length;i++){ try { return { ok:true, data: JSON.parse(attempts[i]) }; } catch(e){ lastErr = e.message; } }
+  return { ok:false, err: lastErr, snippet: (s.slice(0,160) || '(ריק)') };
+}
 function examImportBuild(jsonText){
-  var data;
-  try {
-    var clean = String(jsonText||'').trim();
-    clean = clean.replace(/^```[a-zA-Z]*/,'').replace(/```$/,'').trim();
-    var lo = clean.indexOf('{'), hi = clean.lastIndexOf('}');
-    if (lo>0 || hi<clean.length-1){ if (lo>=0 && hi>lo) clean = clean.slice(lo, hi+1); }
-    data = JSON.parse(clean);
-  } catch(e){ showToast('לא הצלחתי לקרוא את ה-JSON. ודאו שהעתקתם את כל התשובה, בלי טקסט נוסף.'); return; }
-  if (!data || !Array.isArray(data.parts) || !data.parts.length){ showToast('ה-JSON לא כולל "parts" תקין.'); return; }
+  var _m=$('exam-imp-msg'); if(_m){ _m.style.display='none'; _m.textContent=''; }
+  var _r = examParseExam(jsonText);
+  if (!_r.ok){ examImportError('לא הצלחתי לקרוא את ה-JSON.\nשגיאה: ' + _r.err + '\n\nהתחלת מה שהתקבל:\n' + _r.snippet); return; }
+  var data = _r.data;
+  if (!data || !Array.isArray(data.parts) || !data.parts.length){ examImportError('ה-JSON נקרא, אך אין בו "parts" (רשימת חלקים) תקינה. ודאו שההנחיה רצה במלואה ושהתשובה לא נחתכה.'); return; }
   var hasExisting = (quiz.parts && quiz.parts.length) || (typeof quizHasRealContent==='function' && quizHasRealContent());
   if (hasExisting && !confirm('הייבוא יחליף את הבחינה הקיימת. להמשיך?')) return;
   examEnsure();
@@ -3792,6 +3805,8 @@ function openExamImport(){
   var paste = document.createElement('textarea'); paste.id='exam-imp-paste';
   paste.style.cssText='width:100%; height:150px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:10px; font-family:Heebo; font-size:14px; resize:vertical;';
   box.appendChild(paste);
+  var msg = document.createElement('div'); msg.id='exam-imp-msg'; msg.style.cssText='display:none; white-space:pre-wrap; color:#ff8a8a; background:rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.35); border-radius:10px; padding:10px 13px; font-size:13px; line-height:1.5; margin-top:12px; font-family:Heebo;';
+  box.appendChild(msg);
   var actions = document.createElement('div'); actions.style.cssText='display:flex; gap:10px; margin-top:14px;';
   var doBtn = document.createElement('button'); doBtn.className='btn teal'; doBtn.textContent='✓ בנה בחינה'; doBtn.style.flex='1';
   doBtn.onclick = function(){ examImportBuild(paste.value); };
