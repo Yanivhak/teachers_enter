@@ -649,7 +649,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 7</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 8</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -3689,7 +3689,7 @@ function examImportPrompt(mode){
     '  "examTime": 90,',
     '  "bonus": 0,',
     '  "parts": [',
-    '    { "type": "open", "score": 34, "choiceCount": 2,',
+    '    { "type": "open", "score": 34, "choiceCount": 2, "passage": "קטע-הקריאה, אם יש",',
     '      "questions": [',
     '        { "text": "נוסח השאלה", "subs": [ {"text":"סעיף א","points":7}, {"text":"סעיף ב","points":10} ] }',
     '      ] },',
@@ -3708,6 +3708,7 @@ function examImportPrompt(mode){
     '- type: "mc" לשאלות אמריקאיות (רב-ברירה), "open" לשאלות פתוחות. אל תערבב סוגים בתוך חלק.',
     '- score: ניקוד החלק כולו (מספר שלם).',
     '- choiceCount: כמה שאלות עונים מתוך החלק. "יש לענות על 2 מבין 4" → choiceCount:2 (והבא את כל 4 השאלות). אם עונים על הכל → 0.',
+    '- passage: קטע-קריאה (אנ-סין) המופיע מעל שאלות החלק. אם אין קטע בחלק — השמט את השדה.',
     '- mc: answers = רשימת התשובות; correct = אינדקס התשובה הנכונה מ-0 (או -1 אם לא ידוע).',
     '- open: subs = תת-הסעיפים, לכל אחד text ו-points. שאלה פתוחה בלי סעיפים → sub יחיד עם מלוא ניקוד-השאלה.'
   ];
@@ -3715,6 +3716,7 @@ function examImportPrompt(mode){
     lines.push('');
     lines.push('חשוב — ייבוא מבנה בלבד: השאר את כל שדות ה-text ריקים (""). אל תכתוב את נוסחי השאלות, התשובות או הסעיפים.');
     lines.push('מלא רק את המבנה: type, score, choiceCount, מספר השאלות בכל חלק, מספר התשובות בכל שאלת-mc (כמחרוזות ריקות), וב-open את הסעיפים עם ה-points בלבד.');
+    lines.push('אם בחלק יש קטע-קריאה, כלול "passage":"" ריק (השדה קיים אך בלי התוכן).');
   }
   lines.push('');
   lines.push('השתמש במרכאות כפולות ישרות (") בלבד — לא מרכאות מסולסלות/חכמות.');
@@ -3765,6 +3767,7 @@ function examImportBuild(jsonText, mode){
   data.parts.forEach(function(pp){
     var type = (pp && pp.type==='open') ? 'open' : 'mc';
     var part = { id: examNewId(), type: type, score: Math.max(0, parseInt(pp&&pp.score,10)||0), choiceCount: Math.max(0, parseInt(pp&&pp.choiceCount,10)||0) };
+    if (pp && pp.passage != null){ part.passage = struct ? '' : String(pp.passage); }
     if (type==='open') part.subCount = 2;
     quiz.parts.push(part);
     var qlist = (pp && Array.isArray(pp.questions)) ? pp.questions : [];
@@ -3810,7 +3813,7 @@ function openExamImport(mode){
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:600px; width:100%; text-align:right; margin:auto;';
   var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent = (mode==='structure') ? '📐 ייבוא בחינה — מבנה בלבד (ללא תוכן)' : '🤖 ייבוא בחינה — כולל תוכן השאלות';
   box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 7';
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 8';
   box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;';
   desc.textContent='העתיקו את ההנחיה, פתחו את ChatGPT / Gemini / Claude, וצרפו שם את קובץ-הבחינה (Word/PDF) או הדביקו את הטקסט שלה. הדביקו כאן את התשובה — והמערכת תבנה את הבחינה: חלקים, סוגים, ניקוד ובחירה.';
@@ -3956,6 +3959,27 @@ function renderExamEditor(){
     note.style.cssText='font-size:13px; font-weight:700; margin-bottom:12px; color:'+(noteOk?'var(--teal)':'#ff7676')+';';
     note.textContent=noteTxt;
     box.appendChild(note);
+    // קטע-קריאה (אנ-סין) — רמת-חלק, אופציונלי. מוצג מעל שאלות החלק.
+    var hasP = (part.passage !== undefined && part.passage !== null);
+    if (hasP){
+      var pWrap = document.createElement('div'); pWrap.style.cssText='margin-bottom:12px; background:rgba(243,200,90,.07); border:1px solid rgba(243,200,90,.28); border-radius:10px; padding:10px 12px;';
+      var pHd = document.createElement('div'); pHd.style.cssText='display:flex; align-items:center; gap:8px; margin-bottom:6px;';
+      var pLbl = document.createElement('span'); pLbl.style.cssText='font-size:13px; font-weight:700; color:var(--gold);'; pLbl.textContent='📄 קטע קריאה (מוצג מעל שאלות החלק)';
+      var pRm = document.createElement('button'); pRm.className='btn ghost sm'; pRm.style.cssText='margin-inline-start:auto; color:#ff8a8a; border-color:rgba(255,107,107,.3); padding:3px 10px; font-size:12px;'; pRm.textContent='הסר';
+      pRm.onclick=function(){ delete part.passage; renderExamEditor(); touch(); };
+      pHd.appendChild(pLbl); pHd.appendChild(pRm); pWrap.appendChild(pHd);
+      var pTa = document.createElement('textarea'); pTa.value = String(part.passage||'');
+      pTa.placeholder='הדביקו כאן את קטע-הקריאה…';
+      pTa.style.cssText='width:100%; min-height:90px; border-radius:8px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:9px 11px; font-family:Heebo; font-size:14px; line-height:1.6; resize:vertical;';
+      pTa.oninput=function(){ part.passage = pTa.value; touch(); };
+      pWrap.appendChild(pTa);
+      box.appendChild(pWrap);
+    } else {
+      var pAdd = document.createElement('button'); pAdd.className='btn ghost sm'; pAdd.style.cssText='margin-bottom:12px; color:var(--gold); border-color:rgba(243,200,90,.35);';
+      pAdd.textContent='➕ קטע קריאה (אנ-סין)';
+      pAdd.onclick=function(){ part.passage=''; renderExamEditor(); touch(); };
+      box.appendChild(pAdd);
+    }
     examQsOf(part.id).forEach(function(q){
       box.appendChild(examQCard(q, quiz.questions.indexOf(q)));
     });
