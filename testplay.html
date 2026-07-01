@@ -3620,8 +3620,12 @@ function examAddPart(){
 }
 function examMakeSubs(k){ var a=[]; var m = k||2; for (var i=0;i<m;i++) a.push({ text:'', points:0 }); return a; }
 function examSetPartType(part, t){
-  if (part.type === t) return;
   var qs = examQsOf(part.id);
+  if (part.type === t){
+    if (qs.length) return;
+    examAddQuestion(part.id);
+    return;
+  }
   var hasContent = qs.some(function(q){
     if (q.text && q.text.trim()) return true;
     if (part.type==='open') return (q.subs||[]).some(function(s){ return (s.text&&s.text.trim()) || (Number(s.points)||0)>0; });
@@ -3635,6 +3639,13 @@ function examSetPartType(part, t){
     else { delete q.subs; if (!Array.isArray(q.answers) || q.answers.length<2){ q.answers = ['','']; } if (typeof q.correct !== 'number') q.correct = 0; }
   });
   examAutofill(part);
+  if (!examQsOf(part.id).length){ examAddQuestion(part.id); return; }
+  renderQuestions(); touch();
+}
+function examDelPart(pid){
+  if (!confirm('למחוק את החלק וכל שאלותיו?')) return;
+  quiz.questions = quiz.questions.filter(function(q){ return q.partId !== pid; });
+  quiz.parts = quiz.parts.filter(function(p){ return p.id !== pid; });
   renderQuestions(); touch();
 }
 function examSetChoice(part, val){
@@ -3665,9 +3676,136 @@ function syncExamToggle(){
   if ($('flat-addq-btn')) $('flat-addq-btn').style.display = ex ? 'none' : '';
 }
 /* ── רינדור מסך-הבחינה — מסלול נפרד מ-renderQuestions השטוח ── */
+/* ═══════════════ TestPlay — ייבוא-בחינה באמצעות AI (v1: פרומפט → JSON → בנייה) ═══════════════
+   דפוס זהה ל-openImport של QuizPlay: המורה נותן לכלי-ה-AI את הבחינה (קובץ/טקסט שם),
+   TestPlay נותן הנחיה וקולט JSON. אין חילוץ-קובץ בדפדפן — כלי-ה-AI קוראים PDF/Word טוב יותר. */
+function examImportPrompt(){
+  return [
+    'צור ייצוג JSON של הבחינה המצורפת — כטקסט בלבד, בלי עיצוב, בלי הסברים ובלי בלוק-קוד.',
+    '',
+    'המר את הבחינה בדיוק למבנה הזה (דוגמה תקינה):',
+    '{',
+    '  "title": "שם הבחינה",',
+    '  "examTime": 90,',
+    '  "bonus": 0,',
+    '  "parts": [',
+    '    { "type": "open", "score": 34, "choiceCount": 2,',
+    '      "questions": [',
+    '        { "text": "נוסח השאלה", "subs": [ {"text":"סעיף א","points":7}, {"text":"סעיף ב","points":10} ] }',
+    '      ] },',
+    '    { "type": "mc", "score": 30, "choiceCount": 5,',
+    '      "questions": [',
+    '        { "text": "נוסח השאלה", "answers": ["תשובה 1","תשובה 2","תשובה 3","תשובה 4"], "correct": 0 }',
+    '      ] }',
+    '  ]',
+    '}',
+    '',
+    'משמעות השדות:',
+    '- title: שם הבחינה (אם כתוב; אחרת השאר ריק).',
+    '- examTime: משך המבחן בדקות (מספר שלם). אם לא כתוב — 45.',
+    '- bonus: נקודות-בונוס מעבר ל-100 (0 אם אין).',
+    '- כל פרק בבחינה = part נפרד.',
+    '- type: "mc" לשאלות אמריקאיות (רב-ברירה), "open" לשאלות פתוחות. אל תערבב סוגים בתוך חלק.',
+    '- score: ניקוד החלק כולו (מספר שלם).',
+    '- choiceCount: כמה שאלות עונים מתוך החלק. "יש לענות על 2 מבין 4" → choiceCount:2 (והבא את כל 4 השאלות). אם עונים על הכל → 0.',
+    '- mc: answers = רשימת התשובות; correct = אינדקס התשובה הנכונה מ-0 (או -1 אם לא ידוע).',
+    '- open: subs = תת-הסעיפים, לכל אחד text ו-points. שאלה פתוחה בלי סעיפים → sub יחיד עם מלוא ניקוד-השאלה.',
+    '',
+    'החזר JSON תקין אחד בלבד, בלי טקסט לפני או אחרי.'
+  ].join('\n');
+}
+function examImportBuild(jsonText){
+  var data;
+  try {
+    var clean = String(jsonText||'').trim();
+    clean = clean.replace(/^```[a-zA-Z]*/,'').replace(/```$/,'').trim();
+    var lo = clean.indexOf('{'), hi = clean.lastIndexOf('}');
+    if (lo>0 || hi<clean.length-1){ if (lo>=0 && hi>lo) clean = clean.slice(lo, hi+1); }
+    data = JSON.parse(clean);
+  } catch(e){ showToast('לא הצלחתי לקרוא את ה-JSON. ודאו שהעתקתם את כל התשובה, בלי טקסט נוסף.'); return; }
+  if (!data || !Array.isArray(data.parts) || !data.parts.length){ showToast('ה-JSON לא כולל "parts" תקין.'); return; }
+  var hasExisting = (quiz.parts && quiz.parts.length) || (typeof quizHasRealContent==='function' && quizHasRealContent());
+  if (hasExisting && !confirm('הייבוא יחליף את הבחינה הקיימת. להמשיך?')) return;
+  examEnsure();
+  quiz.examMode = true;
+  if (data.title){ quiz.title = String(data.title).slice(0,40); var ti=$('quiz-title'); if (ti) ti.value = quiz.title; }
+  quiz.examTime = Math.max(1, parseInt(data.examTime,10)||45);
+  quiz.bonus = Math.max(0, parseInt(data.bonus,10)||0);
+  quiz.parts = [];
+  quiz.questions = [];
+  data.parts.forEach(function(pp){
+    var type = (pp && pp.type==='open') ? 'open' : 'mc';
+    var part = { id: examNewId(), type: type, score: Math.max(0, parseInt(pp&&pp.score,10)||0), choiceCount: Math.max(0, parseInt(pp&&pp.choiceCount,10)||0) };
+    if (type==='open') part.subCount = 2;
+    quiz.parts.push(part);
+    var qlist = (pp && Array.isArray(pp.questions)) ? pp.questions : [];
+    qlist.forEach(function(qq){
+      qq = qq||{};
+      if (type==='open'){
+        var subs = (Array.isArray(qq.subs) && qq.subs.length)
+          ? qq.subs.map(function(s){ s=s||{}; return { text:String(s.text||''), points: Math.max(0, Math.round((Number(s.points)||0)*2)/2) }; })
+          : [{text:'',points:0},{text:'',points:0}];
+        quiz.questions.push({ text:String(qq.text||''), subs:subs, partId:part.id, points:0 });
+      } else {
+        var answers = (Array.isArray(qq.answers) && qq.answers.length>=2) ? qq.answers.map(function(a){ return String(a==null?'':a); }) : ['',''];
+        if (answers.length>4) answers = answers.slice(0,4);
+        var correct = parseInt(qq.correct,10); if (isNaN(correct) || correct<0 || correct>=answers.length) correct = 0;
+        quiz.questions.push({ text:String(qq.text||''), answers:answers, correct:correct, partId:part.id, points:0 });
+      }
+    });
+  });
+  // ניקוד: אם חלק חסר ניקוד-שאלות (ה-AI לא נתן) — מלא אוטומטית שווה. אחרת — שמור את מה שהגיע.
+  quiz.parts.forEach(function(part){ if (examPartSum(part)===0 && (Number(part.score)||0)>0) examAutofill(part); });
+  var ov=$('exam-imp-overlay'); if (ov) ov.remove();
+  renderQuestions(); touch();
+  setTimeout(function(){ if (!examIsValid()) showToast('הבחינה יובאה — יש הערות-אימות לתיקון (ראו אדום).'); else showToast('הבחינה יובאה בהצלחה ✓'); }, 60);
+}
+function openExamImport(){
+  var ov = $('exam-imp-overlay');
+  if (ov){ ov.remove(); return; }
+  ov = document.createElement('div'); ov.id='exam-imp-overlay';
+  ov.style.cssText='position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.65); display:flex; align-items:flex-start; justify-content:center; padding:20px; overflow:auto;';
+  ov.onclick = function(e){ if (e.target===ov) ov.remove(); };
+  var box = document.createElement('div');
+  box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:600px; width:100%; text-align:right; margin:auto;';
+  var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent='🤖 ייבוא בחינה באמצעות AI';
+  box.appendChild(title);
+  var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;';
+  desc.textContent='העתיקו את ההנחיה, פתחו את ChatGPT / Gemini / Claude, וצרפו שם את קובץ-הבחינה (Word/PDF) או הדביקו את הטקסט שלה. הדביקו כאן את התשובה — והמערכת תבנה את הבחינה: חלקים, סוגים, ניקוד ובחירה.';
+  box.appendChild(desc);
+  var note = document.createElement('div'); note.style.cssText='background:rgba(46,196,182,.08); border:1px solid rgba(46,196,182,.25); border-radius:10px; padding:11px 13px; margin-bottom:16px; font-size:13.5px; color:var(--ink); line-height:1.55;';
+  note.textContent='📎 את קובץ-הבחינה מצרפים בכלי ה-AI (שם), לא כאן. כלי-ה-AI קוראים PDF/Word — כולל עברית — טוב יותר מכל חילוץ בדפדפן.';
+  box.appendChild(note);
+  var s1 = document.createElement('div'); s1.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin-bottom:4px;'; s1.textContent='שלב 1 — העתיקו את ההנחיה';
+  box.appendChild(s1);
+  var pBox = document.createElement('textarea'); pBox.id='exam-imp-prompt'; pBox.readOnly=true;
+  pBox.style.cssText='width:100%; height:150px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:10px; font-family:Heebo; font-size:14px; resize:vertical;';
+  pBox.value = examImportPrompt();
+  box.appendChild(pBox);
+  var copyBtn = document.createElement('button'); copyBtn.className='btn teal'; copyBtn.textContent='📋 העתקת ההנחיה'; copyBtn.style.cssText='width:100%; margin:10px 0 18px; font-size:17px; padding:13px;';
+  copyBtn.onclick = function(){ pBox.select(); try{ document.execCommand('copy'); }catch(e){} copyBtn.textContent='✓ הועתק!'; setTimeout(function(){ copyBtn.textContent='📋 העתקת ההנחיה'; },1500); };
+  box.appendChild(copyBtn);
+  var s2 = document.createElement('div'); s2.style.cssText='font-size:15px; color:var(--gold); font-weight:800; margin-bottom:4px;'; s2.textContent='שלב 2 — הדביקו את התשובה כאן';
+  box.appendChild(s2);
+  var s2sub = document.createElement('div'); s2sub.style.cssText='font-size:13px; color:var(--ink-dim); margin-bottom:8px; line-height:1.5;'; s2sub.textContent='הדביקו את ה-JSON שקיבלתם מכלי ה-AI.';
+  box.appendChild(s2sub);
+  var paste = document.createElement('textarea'); paste.id='exam-imp-paste';
+  paste.style.cssText='width:100%; height:150px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:10px; font-family:Heebo; font-size:14px; resize:vertical;';
+  box.appendChild(paste);
+  var actions = document.createElement('div'); actions.style.cssText='display:flex; gap:10px; margin-top:14px;';
+  var doBtn = document.createElement('button'); doBtn.className='btn teal'; doBtn.textContent='✓ בנה בחינה'; doBtn.style.flex='1';
+  doBtn.onclick = function(){ examImportBuild(paste.value); };
+  var closeBtn = document.createElement('button'); closeBtn.className='btn ghost sm'; closeBtn.textContent='ביטול';
+  closeBtn.onclick = function(){ ov.remove(); };
+  actions.appendChild(doBtn); actions.appendChild(closeBtn);
+  box.appendChild(actions);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+}
 function renderExamEditor(){
   var list = $('q-list'); list.innerHTML = '';
   examEnsure();
+  var _impBtn = document.createElement('button'); _impBtn.className='btn'; _impBtn.style.cssText='background:rgba(243,200,90,.14); border:1px solid rgba(243,200,90,.4); color:var(--gold); font-weight:700; margin-bottom:14px;'; _impBtn.textContent='🤖 ייבוא בחינה באמצעות AI'; _impBtn.onclick=openExamImport; list.appendChild(_impBtn);
   var total = examTotal(), cap = examCap(), over = total > cap;
 
   // הגדרות-בחינה
@@ -3768,6 +3906,9 @@ function renderExamEditor(){
     var addQ = document.createElement('button'); addQ.className='btn ghost sm'; addQ.style.cssText='margin-top:4px;';
     addQ.textContent='➕ הוסף שאלה לחלק זה'; addQ.onclick=function(){ examAddQuestion(part.id); };
     box.appendChild(addQ);
+    var delP = document.createElement('button'); delP.className='btn ghost sm'; delP.style.cssText='margin-top:4px; margin-inline-start:8px; color:#ff8a8a; border-color:rgba(255,107,107,.35);';
+    delP.textContent='🗑 מחק חלק'; delP.onclick=function(){ examDelPart(part.id); };
+    box.appendChild(delP);
     list.appendChild(box);
   });
 
@@ -3810,7 +3951,7 @@ function examQCard(q, gi){
     tipO.textContent='✍️ שאלה פתוחה — הגדירו תת-סעיפים וניקוד לכל אחד. הבדיקה תיעשה באחוזים בזמן ההערכה.';
     card.appendChild(tipO);
     var subs = q.subs || (q.subs=[]);
-    var lockPts = isChoice;
+    var lockPts = false;
     var subsWrap = document.createElement('div');
     subs.forEach(function(sub, si){
       var r = document.createElement('div'); r.className='ans-row';
@@ -3823,9 +3964,9 @@ function examQCard(q, gi){
         spBox.style.cssText='min-width:34px; text-align:center; padding:6px 7px; border-radius:7px; background:rgba(243,200,90,.10); border:1px solid rgba(243,200,90,.3); color:var(--gold); font-size:12px; font-weight:700;';
         spWrap.appendChild(spBox);
       } else {
-        var spin=document.createElement('input'); spin.type='number'; spin.min='0'; spin.value=String(Number(sub.points)||0);
-        spin.style.cssText='width:48px; padding:6px 6px; border-radius:7px; border:1px solid rgba(243,200,90,.4); background:rgba(243,200,90,.10); color:var(--gold); font-family:Heebo; font-size:12px; text-align:center; font-weight:700;';
-        spin.onchange=function(){ sub.points=Math.max(0,parseInt(spin.value,10)||0); renderExamEditor(); touch(); };
+        var spin=document.createElement('input'); spin.type='number'; spin.min='0'; spin.step='0.5'; spin.value=String(Number(sub.points)||0);
+        spin.style.cssText='width:52px; padding:6px 6px; border-radius:7px; border:1px solid rgba(243,200,90,.4); background:rgba(243,200,90,.10); color:var(--gold); font-family:Heebo; font-size:12px; text-align:center; font-weight:700;';
+        spin.onchange=function(){ sub.points=Math.max(0, Math.round((parseFloat(spin.value)||0)*2)/2); renderExamEditor(); touch(); };
         spWrap.appendChild(spin);
       }
       var spSuffix=document.createElement('span'); spSuffix.textContent='נק׳'; spSuffix.style.cssText='font-size:11px; color:var(--ink-dim);';
