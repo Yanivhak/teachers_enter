@@ -3557,10 +3557,17 @@ function examEnsure(){
 function examPartLabel(i){ return 'חלק ' + String.fromCharCode('א'.charCodeAt(0)+i); }
 function examNewId(){ return 'p' + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36); }
 function examQsOf(pid){ return quiz.questions.filter(q => q.partId === pid); }
-function examPartSum(part){ return examQsOf(part.id).reduce((s,q)=> s + (Number(q.points)||0), 0); }
+function examQPoints(q, part){ if (part && part.type==='open'){ return (q.subs||[]).reduce(function(s,x){ return s + (Number(x.points)||0); }, 0); } return Number(q.points)||0; }
+function examEffChoice(part){ var n = examQsOf(part.id).length, c = Number(part.choiceCount)||0; return (c>0 && c<n) ? c : 0; }
+function examIsChoice(part){ return examEffChoice(part) > 0; }
+function examPartSum(part){ return examQsOf(part.id).reduce(function(s,q){ return s + examQPoints(q, part); }, 0); }
 function examTotal(){ return quiz.parts.reduce((s,p)=> s + (Number(p.score)||0), 0); }
 function examCap(){ return 100 + (Number(quiz.bonus)||0); }
-function examPartOk(part){ return examPartSum(part) === (Number(part.score)||0); }
+function examPartOk(part){
+  var qs = examQsOf(part.id), score = Number(part.score)||0, c = examEffChoice(part);
+  if (c>0){ if (score % c !== 0) return false; var per = score/c; return qs.every(function(q){ return examQPoints(q, part) === per; }); }
+  return examPartSum(part) === score;
+}
 function examIsValid(){
   if (!quiz.parts.length) return false;
   if (examTotal() > examCap()) return false;
@@ -3570,13 +3577,30 @@ function examInvalidMsg(){
   if (!quiz.parts.length) return 'הבחינה ריקה — אין חלקים.';
   if (examTotal() > examCap()) return 'ציון-הבחינה (' + examTotal() + ') חורג מהמותר (' + examCap() + '). הקטינו ציוני-חלקים או הוסיפו בונוס.';
   var bad = quiz.parts.find(function(p){ return !examPartOk(p); });
-  if (bad){ var i = quiz.parts.indexOf(bad); return examPartLabel(i) + ': סכום-נקודות-השאלות (' + examPartSum(bad) + ') אינו שווה לציון-החלק (' + (Number(bad.score)||0) + ').'; }
+  if (bad){
+    var i = quiz.parts.indexOf(bad), c = examEffChoice(bad), score = Number(bad.score)||0;
+    if (c>0 && score % c !== 0) return examPartLabel(i) + ': בחלק-בחירה, ציון-החלק (' + score + ') חייב להתחלק ב-' + c + ' (מספר-השאלות לענות) לניקוד שווה.';
+    return examPartLabel(i) + ': סכום-נקודות-השאלות (' + examPartSum(bad) + ') אינו שווה לציון-החלק (' + score + ').';
+  }
   return '';
 }
 function examAutofill(part){
   var qs = examQsOf(part.id), n = qs.length; if (!n) return;
-  var score = Number(part.score)||0, base = Math.floor(score/n), rem = score - base*n;
-  qs.forEach(function(q){ q.points = base + (rem>0?1:0); if (rem>0) rem--; });
+  var score = Number(part.score)||0, c = examEffChoice(part);
+  function setTarget(q, target){
+    if (part.type==='open'){
+      var subs = q.subs || (q.subs=[]); var m = subs.length; if (!m) return;
+      var sb = Math.floor(target/m), sr = target - sb*m;
+      subs.forEach(function(s){ s.points = sb + (sr>0?1:0); if (sr>0) sr--; });
+    } else { q.points = target; }
+  }
+  if (c>0){
+    var per = Math.round(score / c);
+    qs.forEach(function(q){ setTarget(q, per); });
+  } else {
+    var base = Math.floor(score/n), rem = score - base*n;
+    qs.forEach(function(q){ var t = base + (rem>0?1:0); if (rem>0) rem--; setTarget(q, t); });
+  }
 }
 function toggleExamMode(){
   examEnsure();
@@ -3594,9 +3618,22 @@ function examAddPart(){
   quiz.parts.push({ id: examNewId(), type:'mc', score:0, choiceCount:0 });
   renderQuestions(); touch();
 }
+function examMakeSubs(k){ var a=[]; var m = k||2; for (var i=0;i<m;i++) a.push({ text:'', points:0 }); return a; }
+function examSetPartType(part, t){
+  if (examQsOf(part.id).length) return;
+  part.type = t;
+  if (t==='open' && typeof part.subCount === 'undefined') part.subCount = 2;
+  renderQuestions(); touch();
+}
+function examSetChoice(part, val){
+  var n = examQsOf(part.id).length, c = parseInt(val,10)||0; if (c<0) c=0; if (c>n) c=n;
+  part.choiceCount = c; examAutofill(part); renderQuestions(); touch();
+}
 function examAddQuestion(pid){
-  quiz.questions.push({ text:'', answers:['',''], correct:0, partId:pid, points:0 });
-  var p = quiz.parts.find(function(x){ return x.id===pid; }); if (p) examAutofill(p);
+  var p = quiz.parts.find(function(x){ return x.id===pid; });
+  if (p && p.type==='open') quiz.questions.push({ text:'', subs: examMakeSubs(p.subCount||2), partId:pid, points:0 });
+  else quiz.questions.push({ text:'', answers:['',''], correct:0, partId:pid, points:0 });
+  if (p) examAutofill(p);
   renderQuestions(); touch();
 }
 function examDelQuestion(idx){
@@ -3661,23 +3698,56 @@ function renderExamEditor(){
 
   // חלקים
   quiz.parts.forEach(function(part, pi){
-    var sum = examPartSum(part), pscore = Number(part.score)||0, ok = (sum===pscore);
+    var n = examQsOf(part.id).length;
+    var pscore = Number(part.score)||0;
+    var isChoice = examIsChoice(part);
+    var effC = examEffChoice(part);
     var box = document.createElement('div');
     box.style.cssText='border:1.5px solid rgba(141,141,242,.35); border-radius:14px; padding:14px 16px; margin-bottom:16px; background:rgba(141,141,242,.05);';
-    var head = document.createElement('div'); head.style.cssText='display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:6px;';
+    var head = document.createElement('div'); head.style.cssText='display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:8px;';
     var plbl = document.createElement('div'); plbl.style.cssText='font-size:16px; font-weight:800; color:var(--violet);'; plbl.textContent=examPartLabel(pi);
-    var ptype = document.createElement('div'); ptype.style.cssText='font-size:13px; color:var(--ink-dim); background:rgba(255,255,255,.06); padding:4px 10px; border-radius:20px;'; ptype.textContent='אמריקאי';
-    var sWrap = document.createElement('div'); sWrap.style.cssText='display:flex; align-items:center; gap:6px; margin-inline-start:auto;';
+    head.appendChild(plbl);
+    var locked = (n>0);
+    var typeWrap = document.createElement('div'); typeWrap.style.cssText='display:inline-flex; border:1px solid rgba(255,255,255,.18); border-radius:20px; overflow:hidden;';
+    [['mc','אמריקאי'],['open','פתוח']].forEach(function(pair){
+      var tb=document.createElement('button'); var on=(part.type===pair[0]);
+      tb.textContent=pair[1];
+      tb.style.cssText='border:none; padding:5px 13px; font-family:Heebo; font-size:13px; font-weight:700; cursor:'+(locked?'default':'pointer')+'; background:'+(on?'var(--violet)':'transparent')+'; color:'+(on?'#0b0b2a':'var(--ink-dim)')+';';
+      if (!locked) tb.onclick=function(){ examSetPartType(part, pair[0]); };
+      typeWrap.appendChild(tb);
+    });
+    head.appendChild(typeWrap);
+    if (locked){ var lk=document.createElement('span'); lk.textContent='🔒'; lk.title='סוג-החלק ננעל אחרי שנוספו שאלות'; lk.style.cssText='font-size:12px; opacity:.55;'; head.appendChild(lk); }
+    var sWrap = document.createElement('div'); sWrap.style.cssText='display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-inline-start:auto;';
+    var chWrap = document.createElement('span'); chWrap.style.cssText='display:inline-flex; align-items:center; gap:5px;';
+    var chLbl = document.createElement('span'); chLbl.textContent='עונים על:'; chLbl.style.cssText='font-size:13px; color:var(--ink-dim);';
+    var chIn = document.createElement('input'); chIn.type='number'; chIn.min='0'; chIn.max=String(n); chIn.value=String(Math.min(Number(part.choiceCount)||0, n));
+    chIn.title='כמה שאלות התלמיד עונה. 0 = כל השאלות.';
+    chIn.style.cssText='width:52px; padding:7px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.07); color:var(--ink); font-family:Heebo; font-size:14px; text-align:center;';
+    chIn.onchange=function(){ examSetChoice(part, chIn.value); };
+    var chOf = document.createElement('span'); chOf.textContent='מתוך '+n; chOf.style.cssText='font-size:12px; color:var(--ink-dim);';
+    chWrap.appendChild(chLbl); chWrap.appendChild(chIn); chWrap.appendChild(chOf);
+    var scWrap = document.createElement('span'); scWrap.style.cssText='display:inline-flex; align-items:center; gap:5px;';
     var sLbl = document.createElement('span'); sLbl.textContent='ציון החלק:'; sLbl.style.cssText='font-size:13px; color:var(--ink-dim);';
     var sIn = document.createElement('input'); sIn.type='number'; sIn.min='0'; sIn.value=String(pscore);
-    sIn.style.cssText='width:70px; padding:7px 9px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.07); color:var(--ink); font-family:Heebo; font-size:14px; text-align:center;';
+    sIn.style.cssText='width:66px; padding:7px 9px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.07); color:var(--ink); font-family:Heebo; font-size:14px; text-align:center;';
     sIn.onchange=function(){ examSetPartScore(part, sIn.value); };
-    sWrap.appendChild(sLbl); sWrap.appendChild(sIn);
-    head.appendChild(plbl); head.appendChild(ptype); head.appendChild(sWrap);
+    scWrap.appendChild(sLbl); scWrap.appendChild(sIn);
+    sWrap.appendChild(chWrap); sWrap.appendChild(scWrap);
+    head.appendChild(sWrap);
     box.appendChild(head);
     var note = document.createElement('div');
-    note.style.cssText='font-size:13px; font-weight:700; margin-bottom:12px; color:'+(ok?'var(--teal)':'#ff7676')+';';
-    note.textContent=(ok?'✓ ':'⛔ ')+'סכום נקודות השאלות: '+sum+' / '+pscore+(ok?'':' — חייב להיות שווה');
+    var noteTxt, noteOk;
+    if (isChoice){
+      if (pscore % effC !== 0){ noteTxt='⛔ בחלק-בחירה: ציון-החלק ('+pscore+') חייב להתחלק ב-'+effC+' לניקוד שווה'; noteOk=false; }
+      else { noteTxt='✓ עונים על '+effC+' מתוך '+n+' · כל שאלה '+(pscore/effC)+' נק׳ (שווה)'; noteOk=true; }
+    } else {
+      var sum=examPartSum(part);
+      noteOk=(sum===pscore);
+      noteTxt=(noteOk?'✓ ':'⛔ ')+'סכום נקודות השאלות: '+sum+' / '+pscore+(noteOk?'':' — חייב להיות שווה');
+    }
+    note.style.cssText='font-size:13px; font-weight:700; margin-bottom:12px; color:'+(noteOk?'var(--teal)':'#ff7676')+';';
+    note.textContent=noteTxt;
     box.appendChild(note);
     examQsOf(part.id).forEach(function(q){
       box.appendChild(examQCard(q, quiz.questions.indexOf(q)));
@@ -3696,46 +3766,94 @@ function renderExamEditor(){
 }
 /* כרטיס-שאלה במצב-בחינה (אמריקאי) — כולל שדה-ניקוד; בלי חצי-הזזה (בהמשך) */
 function examQCard(q, gi){
+  var part = quiz.parts.find(function(p){ return p.id===q.partId; });
+  var isOpen = !!(part && part.type==='open');
+  var isChoice = examIsChoice(part);
   var card = document.createElement('div'); card.className='qcard'; card.style.marginBottom='12px';
   var top = document.createElement('div'); top.className='qtop';
   var lbl = document.createElement('span'); lbl.className='qlabel'; lbl.textContent='שאלה';
   var ptsWrap = document.createElement('span'); ptsWrap.style.cssText='display:inline-flex; align-items:center; gap:5px; margin-inline-start:12px;';
   var ptsLbl = document.createElement('span'); ptsLbl.textContent='ניקוד:'; ptsLbl.style.cssText='font-size:12px; color:var(--gold);';
-  var ptsIn = document.createElement('input'); ptsIn.type='number'; ptsIn.min='0'; ptsIn.value=String(Number(q.points)||0);
-  ptsIn.style.cssText='width:58px; padding:5px 7px; border-radius:7px; border:1px solid rgba(243,200,90,.4); background:rgba(243,200,90,.10); color:var(--gold); font-family:Heebo; font-size:13px; text-align:center; font-weight:700;';
-  ptsIn.onchange=function(){ q.points = Math.max(0, parseInt(ptsIn.value,10)||0); renderExamEditor(); touch(); };
-  ptsWrap.appendChild(ptsLbl); ptsWrap.appendChild(ptsIn);
+  ptsWrap.appendChild(ptsLbl);
+  var qpts = examQPoints(q, part);
+  if (isChoice || isOpen){
+    var ptsBox = document.createElement('span'); ptsBox.textContent=String(qpts);
+    ptsBox.style.cssText='min-width:40px; text-align:center; padding:5px 9px; border-radius:7px; background:rgba(243,200,90,.10); border:1px solid rgba(243,200,90,.3); color:var(--gold); font-size:13px; font-weight:700;';
+    ptsBox.title = isChoice ? 'בחלק-בחירה הניקוד שווה לכל השאלות (נקבע אוטומטית)' : 'ניקוד-השאלה = סכום תת-הסעיפים';
+    ptsWrap.appendChild(ptsBox);
+  } else {
+    var ptsIn = document.createElement('input'); ptsIn.type='number'; ptsIn.min='0'; ptsIn.value=String(Number(q.points)||0);
+    ptsIn.style.cssText='width:58px; padding:5px 7px; border-radius:7px; border:1px solid rgba(243,200,90,.4); background:rgba(243,200,90,.10); color:var(--gold); font-family:Heebo; font-size:13px; text-align:center; font-weight:700;';
+    ptsIn.onchange=function(){ q.points = Math.max(0, parseInt(ptsIn.value,10)||0); renderExamEditor(); touch(); };
+    ptsWrap.appendChild(ptsIn);
+  }
   var del = document.createElement('button'); del.className='del'; del.textContent='🗑 מחיקה'; del.style.marginInlineStart='auto'; del.onclick=function(){ examDelQuestion(gi); };
   top.appendChild(lbl); top.appendChild(ptsWrap); top.appendChild(del); card.appendChild(top);
-  var qin = document.createElement('input'); qin.type='text'; qin.placeholder='נוסח השאלה'; qin.value=q.text; qin.style.marginBottom='10px';
+  var qin = document.createElement('input'); qin.type='text'; qin.placeholder='נוסח השאלה'; qin.value=q.text||''; qin.style.marginBottom='10px';
   qin.oninput=function(){ q.text = qin.value; touch(); };
   card.appendChild(qin);
-  var tip = document.createElement('div'); tip.style.cssText='font-size:13px; color:var(--teal); font-weight:700; margin-bottom:8px;';
-  tip.textContent='👇 כתבו את התשובות, וסמנו את הנכונה בעיגול הירוק ✓';
-  card.appendChild(tip);
-  q.answers.forEach(function(a, ai){
-    var r = document.createElement('div'); r.className='ans-row';
-    var pick = document.createElement('button'); pick.className='pick'+(q.correct===ai?' on':''); pick.textContent='✓';
-    pick.onclick=function(){ q.correct=ai; renderExamEditor(); touch(); };
-    var ain = document.createElement('input'); ain.type='text'; ain.placeholder='תשובה '+(ai+1); ain.value=a;
-    ain.oninput=function(){ q.answers[ai]=ain.value; touch(); };
-    var rem = document.createElement('button'); rem.className='rem'; rem.textContent='✕';
-    rem.onclick=function(){ if (q.answers.length<=2) return; q.answers.splice(ai,1); if (q.correct>=q.answers.length) q.correct=0; renderExamEditor(); touch(); };
-    r.appendChild(pick); r.appendChild(ain); if (q.answers.length>2) r.appendChild(rem);
-    card.appendChild(r);
-  });
-  if (q.answers.length<4){
-    var add = document.createElement('button'); add.className='addans'; add.textContent='➕ תשובה';
-    add.onclick=function(){ q.answers.push(''); renderExamEditor(); touch(); };
-    card.appendChild(add);
-  }
-  if (quiz.hasExplanations){
-    var exWrap = document.createElement('div'); exWrap.style.cssText='margin-top:14px; border-top:1px dashed rgba(255,255,255,.14); padding-top:12px;';
-    var exLbl = document.createElement('div'); exLbl.style.cssText='font-size:13px; color:var(--violet); font-weight:700; margin-bottom:6px;'; exLbl.textContent='💡 הסבר (אופציונלי)';
-    var exIn = document.createElement('textarea'); exIn.value=q.explanation||'';
-    exIn.style.cssText='width:100%; height:62px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:9px 12px; font-family:Heebo; font-size:14px; resize:vertical;';
-    exIn.oninput=function(){ q.explanation = exIn.value; touch(); };
-    exWrap.appendChild(exLbl); exWrap.appendChild(exIn); card.appendChild(exWrap);
+  if (isOpen){
+    var tipO = document.createElement('div'); tipO.style.cssText='font-size:13px; color:var(--teal); font-weight:700; margin-bottom:8px;';
+    tipO.textContent='✍️ שאלה פתוחה — הגדירו תת-סעיפים וניקוד לכל אחד. הבדיקה תיעשה באחוזים בזמן ההערכה.';
+    card.appendChild(tipO);
+    var subs = q.subs || (q.subs=[]);
+    var lockPts = isChoice;
+    var subsWrap = document.createElement('div');
+    subs.forEach(function(sub, si){
+      var r = document.createElement('div'); r.className='ans-row';
+      var slbl = document.createElement('span'); slbl.textContent=String.fromCharCode('א'.charCodeAt(0)+si); slbl.style.cssText='min-width:22px; text-align:center; color:var(--violet); font-weight:800; font-size:14px;';
+      var sin = document.createElement('input'); sin.type='text'; sin.placeholder='תת-סעיף '+(si+1)+' (טקסט חופשי — אפשר להשאיר ריק)'; sin.value=sub.text||'';
+      sin.oninput=function(){ sub.text=sin.value; touch(); };
+      var spWrap = document.createElement('span'); spWrap.style.cssText='display:inline-flex; align-items:center; gap:3px; flex:0 0 auto;';
+      if (lockPts){
+        var spBox=document.createElement('span'); spBox.textContent=String(Number(sub.points)||0);
+        spBox.style.cssText='min-width:34px; text-align:center; padding:6px 7px; border-radius:7px; background:rgba(243,200,90,.10); border:1px solid rgba(243,200,90,.3); color:var(--gold); font-size:12px; font-weight:700;';
+        spWrap.appendChild(spBox);
+      } else {
+        var spin=document.createElement('input'); spin.type='number'; spin.min='0'; spin.value=String(Number(sub.points)||0);
+        spin.style.cssText='width:48px; padding:6px 6px; border-radius:7px; border:1px solid rgba(243,200,90,.4); background:rgba(243,200,90,.10); color:var(--gold); font-family:Heebo; font-size:12px; text-align:center; font-weight:700;';
+        spin.onchange=function(){ sub.points=Math.max(0,parseInt(spin.value,10)||0); renderExamEditor(); touch(); };
+        spWrap.appendChild(spin);
+      }
+      var spSuffix=document.createElement('span'); spSuffix.textContent='נק׳'; spSuffix.style.cssText='font-size:11px; color:var(--ink-dim);';
+      spWrap.appendChild(spSuffix);
+      var rem=document.createElement('button'); rem.className='rem'; rem.textContent='✕';
+      rem.onclick=function(){ if (q.subs.length<=1) return; q.subs.splice(si,1); if (part) examAutofill(part); renderExamEditor(); touch(); };
+      r.appendChild(slbl); r.appendChild(sin); r.appendChild(spWrap); if (q.subs.length>1) r.appendChild(rem);
+      subsWrap.appendChild(r);
+    });
+    card.appendChild(subsWrap);
+    var addSub=document.createElement('button'); addSub.className='addans'; addSub.textContent='➕ תת-סעיף';
+    addSub.onclick=function(){ q.subs.push({ text:'', points:0 }); if (part) examAutofill(part); renderExamEditor(); touch(); };
+    card.appendChild(addSub);
+  } else {
+    var tip = document.createElement('div'); tip.style.cssText='font-size:13px; color:var(--teal); font-weight:700; margin-bottom:8px;';
+    tip.textContent='👇 כתבו את התשובות, וסמנו את הנכונה בעיגול הירוק ✓';
+    card.appendChild(tip);
+    (q.answers||[]).forEach(function(a, ai){
+      var r = document.createElement('div'); r.className='ans-row';
+      var pick = document.createElement('button'); pick.className='pick'+(q.correct===ai?' on':''); pick.textContent='✓';
+      pick.onclick=function(){ q.correct=ai; renderExamEditor(); touch(); };
+      var ain = document.createElement('input'); ain.type='text'; ain.placeholder='תשובה '+(ai+1); ain.value=a;
+      ain.oninput=function(){ q.answers[ai]=ain.value; touch(); };
+      var rem = document.createElement('button'); rem.className='rem'; rem.textContent='✕';
+      rem.onclick=function(){ if (q.answers.length<=2) return; q.answers.splice(ai,1); if (q.correct>=q.answers.length) q.correct=0; renderExamEditor(); touch(); };
+      r.appendChild(pick); r.appendChild(ain); if (q.answers.length>2) r.appendChild(rem);
+      card.appendChild(r);
+    });
+    if ((q.answers||[]).length<4){
+      var add = document.createElement('button'); add.className='addans'; add.textContent='➕ תשובה';
+      add.onclick=function(){ q.answers.push(''); renderExamEditor(); touch(); };
+      card.appendChild(add);
+    }
+    if (quiz.hasExplanations){
+      var exWrap = document.createElement('div'); exWrap.style.cssText='margin-top:14px; border-top:1px dashed rgba(255,255,255,.14); padding-top:12px;';
+      var exLbl = document.createElement('div'); exLbl.style.cssText='font-size:13px; color:var(--violet); font-weight:700; margin-bottom:6px;'; exLbl.textContent='💡 הסבר (אופציונלי)';
+      var exIn = document.createElement('textarea'); exIn.value=q.explanation||'';
+      exIn.style.cssText='width:100%; height:62px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:9px 12px; font-family:Heebo; font-size:14px; resize:vertical;';
+      exIn.oninput=function(){ q.explanation = exIn.value; touch(); };
+      exWrap.appendChild(exLbl); exWrap.appendChild(exIn); card.appendChild(exWrap);
+    }
   }
   return card;
 }
