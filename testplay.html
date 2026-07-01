@@ -4,6 +4,7 @@
   TestPlay — כלי בוחנים והערכה (משפחת yopoy) · מבוסס QuizPlay v187
   ────────────────────────────────────────────────────────────
   TestPlay שלב 1 — בוחן מסונכרן + רשומת-Run חיה.
+  tp1.1 — מתג "התלמיד רואה ניקוד" (מסך-הכנה + סרגל-מארח תוך-כדי, סינכרוני בלבד, דלוק כברירת-מחדל): כבוי → התלמיד רואה רק ✅/❌ בלי שורת-הנקודות, במשוב ובסיום. נשלט דרך showScore בהודעות rev/end.
   ── בורר-מצב (חידון / בוחן מסונכרן / מבחן אישי) מחווט לזרימת-ההפעלה: "התחל" → בחירת-מצב → הכנה → לובי → משחק.
   ── בוחן מסונכרן רוכב על מנוע-המשחק, רזה: בלי בונוס-מהירות, בלי חיזוקים, בלי הפסקות-ביניים, בלי באנרי-שיא, בלי פודיום/חגיגה. המורה מקדם כרגיל.
   ── רשומת-Run חיה תחת המורה — teachers/{uid}/runs/{runId}: summary (נגזרות + status running/finished) · results/{studentKey} (displayName + תשובה לכל שאלה: pick/נכון/dt) · snapshot (שאלות + הגדרות-הרצה מוקפאות). נכתבת בתחילת-ההרצה, מתעדכנת בכל שאלה, נסגרת בסיום.
@@ -882,10 +883,21 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
       <div style="font-size:13px; color:var(--ink-dim); margin-top:11px; line-height:1.55;">במסך שמציג את התשובה הנכונה, יתווסף כפתור להצגת הסבר קצר — ובכל שאלה תוכלו לבחור אם להציג אותו או לדלג לשאלה הבאה. השאלות יקבלו שדה הסבר בעורך.</div>
     </div>
 
+    <!-- TestPlay: מתג מצב-בחינה — מארגן את השאלות בחלקים עם ניקוד-משוקלל -->
+    <div id="exam-toggle-wrap" style="background:rgba(46,196,182,.10); border:1px solid rgba(46,196,182,.40); border-radius:14px; padding:15px 18px; margin:18px 0;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div style="font-size:16px; font-weight:800; color:var(--teal); display:flex; align-items:center; gap:8px;">🎓 בנה כבחינה</div>
+        <span class="draft-toggle" id="exam-toggle" onclick="toggleExamMode()" title="מצב בחינה">
+          <span class="sw"></span><span>הפעלה</span>
+        </span>
+      </div>
+      <div style="font-size:13px; color:var(--ink-dim); margin-top:11px; line-height:1.55;">במצב בחינה השאלות מאורגנות בחלקים, לכל שאלה ניקוד, וציון-הבחינה עד 100 (ועוד בונוס). השאר זהה לחידון רגיל.</div>
+    </div>
+
     <h2 style="margin-top:14px;">השאלות <span class="info-i" onclick="showInfo(event, 'לכל שאלה כתבו 2 עד 4 תשובות, וסמנו את התשובה הנכונה בלחיצה על העיגול הירוק שלצידה. רק תשובה אחת יכולה להיות מסומנת כנכונה.')">i</span></h2>
     <button id="ai-edit-btn" class="btn teal" onclick="openImport()" style="display:none; margin-bottom:14px; font-size:16px;">🤖 עריכה באמצעות AI</button>
     <div id="q-list"></div>
-    <button class="btn ghost" onclick="addQuestion()" style="margin-top:6px;">➕ הוספת שאלה</button>
+    <button id="flat-addq-btn" class="btn ghost" onclick="addQuestion()" style="margin-top:6px;">➕ הוספת שאלה</button>
 
     <!-- ───── מצב החידון: טיוטה/חידון (מתג תחתון, מסונכרן עם העליון). v107: הועלה לכאן —
          מתחת ל"הוספת שאלה" ומעל אזור הפעולות (משחק/שיתוף/ספרייה), לבקשת המשתמש. ───── -->
@@ -955,6 +967,17 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
       <button class="btn" onclick="previewQuiz('pregame')" style="font-size:18px; padding:16px 26px; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.22); color:var(--ink);">👁️ בדיקה</button>
     </div>
     <p style="margin:10px auto 0; max-width:430px; font-size:13px; color:var(--ink-dim); line-height:1.5;">👁️ הבדיקה מציגה את החידון עם הבחירות שבמסך הזה (למעט מוזיקה).</p>
+
+    <!-- TestPlay: מתג "התלמיד רואה ניקוד" — בוחן מסונכרן בלבד (נשלט מ-prePlay לפי runMode) -->
+    <div id="pg-showscore-box" style="display:none; margin:14px auto 0; max-width:430px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:14px 18px; text-align:right;">
+      <label for="pg-showscore-toggle" style="display:flex; align-items:center; justify-content:space-between; gap:16px; cursor:pointer; margin:0;">
+        <span style="flex:1;">
+          <span style="font-size:16px; font-weight:700; color:var(--ink);">🔢 התלמיד רואה ניקוד</span>
+          <span id="pg-showscore-desc" style="display:block; font-size:13px; color:var(--ink-dim); line-height:1.5; margin-top:3px;">בכל שאלה התלמיד רואה כמה נקודות צבר</span>
+        </span>
+        <span class="spd-sw"><input type="checkbox" id="pg-showscore-toggle" checked onchange="updateShowScoreDesc()"><span class="spd-track"></span></span>
+      </label>
+    </div>
 
     <!-- v149: מתג בונוס-מהירות — הגדרת-משחק, דלוק כברירת-מחדל. נקרא ב-hostStart דרך #pg-speed-toggle. -->
     <div id="pg-speed-box" style="margin:20px auto 0; max-width:430px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:14px; padding:14px 18px; text-align:right;">
@@ -1368,6 +1391,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <button onclick="toggleTtsBtn()" id="tts-toggle" style="display:none;">🔇 בטל הקראה</button>
     <button onclick="toggleStudentTts()" id="stts-host-toggle" style="display:none;">🔇 בטל הקראת-תלמידים</button>
     <button onclick="toggleReinforce()" id="reinforce-toggle">🌟 חיזוקים פעילים</button>
+    <button onclick="toggleShowScore()" id="showscore-toggle" style="display:none;">🔢 ניקוד גלוי</button>
     <button onclick="hostJumpFinish()">🏁 סיום</button>
   </div>
   <!-- השורה הקבועה התחתונה — תמיד גלויה: מונה, קוד-חזרה, וכפתור פתיחת התפריט -->
@@ -2464,7 +2488,8 @@ function prePlay(){
   // TestPlay: שדה שם-כיתה גלוי רק בבוחן מסונכרן; בונוס-מהירות מוסתר שם (לא רלוונטי להערכה)
   { const _s = (runMode === 'synced');
     if ($('pg-classname-box')) $('pg-classname-box').style.display = _s ? 'block' : 'none';
-    if ($('pg-speed-box')) $('pg-speed-box').style.display = _s ? 'none' : 'block'; }
+    if ($('pg-speed-box')) $('pg-speed-box').style.display = _s ? 'none' : 'block';
+    if ($('pg-showscore-box')) $('pg-showscore-box').style.display = _s ? 'block' : 'none'; }
 }
 
 function testExisting(code, data){
@@ -2498,6 +2523,7 @@ function realQCount(qs){ return (qs||[]).filter(q => (q.text && q.text.trim()) |
 // מתאפס בכל פתיחת חידון. נדלק כשהמורה כתב תוכן או סגר את הכרטיס ב-X.
 let aiCardDismissed = false;
 function updateAiCard(){
+  if (quiz && quiz.examMode){ var _c=$('ai-suggest-card'); if(_c)_c.style.display='none'; var _e=$('ai-edit-btn'); if(_e)_e.style.display='none'; return; }
   const card = $('ai-suggest-card');
   const editBtn = $('ai-edit-btn');
   const hasContent = quizHasRealContent();
@@ -2558,6 +2584,7 @@ function renderEditor(){
   if ($('library-panel')) renderLibraryPanel();
   syncDraftToggles();   // v104 שלב ב': עדכון מצב שני מתגי-הטיוטה לפי quiz.isDraft
   syncExplainToggle();   // v178: מצב מתג "הסבר לכל שאלה"
+  syncExamToggle();
 }
 
 function teamCountChanged(){
@@ -3519,7 +3546,202 @@ function doPrintQuiz(opts, targetQuiz){
   const pov = $('print-overlay'); if (pov) pov.remove();
 }
 
+/* ═══════════════ TestPlay — שכבת-בחינה (מבנה), צעד-1: חלקים + אמריקאי + ניקוד-משוקלל ═══════════════
+   בידוד: כל הקוד כאן רץ רק כש-quiz.examMode דלוק. חידון רגיל — מסלול נפרד ב-renderQuestions, נגוע-אפס. */
+function examEnsure(){
+  if (typeof quiz.examMode === 'undefined') quiz.examMode = false;
+  if (typeof quiz.examTime === 'undefined') quiz.examTime = 45;
+  if (typeof quiz.bonus === 'undefined') quiz.bonus = 0;
+  if (!Array.isArray(quiz.parts)) quiz.parts = [];
+}
+function examPartLabel(i){ return 'חלק ' + String.fromCharCode('א'.charCodeAt(0)+i); }
+function examNewId(){ return 'p' + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36); }
+function examQsOf(pid){ return quiz.questions.filter(q => q.partId === pid); }
+function examPartSum(part){ return examQsOf(part.id).reduce((s,q)=> s + (Number(q.points)||0), 0); }
+function examTotal(){ return quiz.parts.reduce((s,p)=> s + (Number(p.score)||0), 0); }
+function examCap(){ return 100 + (Number(quiz.bonus)||0); }
+function examPartOk(part){ return examPartSum(part) === (Number(part.score)||0); }
+function examIsValid(){
+  if (!quiz.parts.length) return false;
+  if (examTotal() > examCap()) return false;
+  return quiz.parts.every(examPartOk);
+}
+function examInvalidMsg(){
+  if (!quiz.parts.length) return 'הבחינה ריקה — אין חלקים.';
+  if (examTotal() > examCap()) return 'ציון-הבחינה (' + examTotal() + ') חורג מהמותר (' + examCap() + '). הקטינו ציוני-חלקים או הוסיפו בונוס.';
+  var bad = quiz.parts.find(function(p){ return !examPartOk(p); });
+  if (bad){ var i = quiz.parts.indexOf(bad); return examPartLabel(i) + ': סכום-נקודות-השאלות (' + examPartSum(bad) + ') אינו שווה לציון-החלק (' + (Number(bad.score)||0) + ').'; }
+  return '';
+}
+function examAutofill(part){
+  var qs = examQsOf(part.id), n = qs.length; if (!n) return;
+  var score = Number(part.score)||0, base = Math.floor(score/n), rem = score - base*n;
+  qs.forEach(function(q){ q.points = base + (rem>0?1:0); if (rem>0) rem--; });
+}
+function toggleExamMode(){
+  examEnsure();
+  quiz.examMode = !quiz.examMode;
+  if (quiz.examMode && !quiz.parts.length){
+    var p = { id: examNewId(), type:'mc', score:100, choiceCount:0 };
+    quiz.parts = [p];
+    quiz.questions.forEach(function(q){ q.partId = p.id; });
+    examAutofill(p);
+  }
+  renderQuestions(); touch();
+}
+function examAddPart(){
+  examEnsure();
+  quiz.parts.push({ id: examNewId(), type:'mc', score:0, choiceCount:0 });
+  renderQuestions(); touch();
+}
+function examAddQuestion(pid){
+  quiz.questions.push({ text:'', answers:['',''], correct:0, partId:pid, points:0 });
+  var p = quiz.parts.find(function(x){ return x.id===pid; }); if (p) examAutofill(p);
+  renderQuestions(); touch();
+}
+function examDelQuestion(idx){
+  var q = quiz.questions[idx], pid = q && q.partId;
+  quiz.questions.splice(idx,1);
+  var p = quiz.parts.find(function(x){ return x.id===pid; }); if (p) examAutofill(p);
+  renderQuestions(); touch();
+}
+function examSetPartScore(part, val){
+  part.score = Math.max(0, parseInt(val,10)||0);
+  examAutofill(part);
+  renderQuestions(); touch();
+}
+function syncExamToggle(){
+  var ex = !!(quiz && quiz.examMode);
+  var t = $('exam-toggle'); if (t) t.classList.toggle('on', ex);
+  if ($('flat-addq-btn')) $('flat-addq-btn').style.display = ex ? 'none' : '';
+}
+/* ── רינדור מסך-הבחינה — מסלול נפרד מ-renderQuestions השטוח ── */
+function renderExamEditor(){
+  var list = $('q-list'); list.innerHTML = '';
+  examEnsure();
+  var total = examTotal(), cap = examCap(), over = total > cap;
+
+  // הגדרות-בחינה
+  var cfg = document.createElement('div');
+  cfg.style.cssText = 'background:rgba(46,196,182,.10); border:1px solid rgba(46,196,182,.35); border-radius:14px; padding:15px 18px; margin-bottom:16px;';
+  var cfgTitle = document.createElement('div');
+  cfgTitle.style.cssText='font-size:15px; font-weight:800; color:var(--teal); margin-bottom:12px;';
+  cfgTitle.textContent='🎓 הגדרות הבחינה';
+  cfg.appendChild(cfgTitle);
+  var row = document.createElement('div'); row.style.cssText='display:flex; gap:18px; flex-wrap:wrap; align-items:flex-end;';
+  function field(labelTxt){
+    var w = document.createElement('div'); w.style.cssText='flex:1 1 150px;';
+    var l = document.createElement('label'); l.style.cssText='display:block; font-size:13px; color:var(--ink-dim); margin-bottom:5px;'; l.textContent=labelTxt;
+    w.appendChild(l); return w;
+  }
+  var tW = field('זמן הבחינה (דקות)');
+  var tIn = document.createElement('input'); tIn.type='number'; tIn.min='1'; tIn.max='240'; tIn.value=String(quiz.examTime);
+  tIn.style.cssText='width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); font-family:Heebo; font-size:15px;';
+  tIn.oninput=function(){ quiz.examTime = Math.max(1, parseInt(tIn.value,10)||1); touch(); };
+  tW.appendChild(tIn);
+  var bW = field('בונוס (נקודות מעבר ל-100)');
+  var bIn = document.createElement('input'); bIn.type='number'; bIn.min='0'; bIn.max='100'; bIn.value=String(quiz.bonus);
+  bIn.style.cssText='width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); font-family:Heebo; font-size:15px;';
+  bIn.onchange=function(){ quiz.bonus = Math.max(0, parseInt(bIn.value,10)||0); renderExamEditor(); touch(); };
+  bW.appendChild(bIn);
+  var sW = field('ציון הבחינה');
+  var sBox = document.createElement('div');
+  sBox.style.cssText='padding:10px 12px; border-radius:10px; font-size:15px; font-weight:800; background:rgba(255,255,255,.05); color:'+(over?'#ff6b6b':'var(--teal)')+'; border:1px solid '+(over?'rgba(255,107,107,.5)':'rgba(46,196,182,.3)')+';';
+  sBox.textContent = total + ' / ' + cap;
+  sW.appendChild(sBox);
+  row.appendChild(tW); row.appendChild(bW); row.appendChild(sW);
+  cfg.appendChild(row);
+  if (over){
+    var warn = document.createElement('div');
+    warn.style.cssText='margin-top:12px; background:rgba(255,107,107,.12); border:1px solid rgba(255,107,107,.45); border-radius:10px; padding:10px 13px; color:#ff8a8a; font-size:13.5px; line-height:1.5; font-weight:600;';
+    warn.textContent='⛔ ציון-הבחינה חורג מ-'+cap+'. הבחינה לא ניתנת להרצה עד שתתוקן (נשמרת אוטומטית).';
+    cfg.appendChild(warn);
+  }
+  list.appendChild(cfg);
+
+  // חלקים
+  quiz.parts.forEach(function(part, pi){
+    var sum = examPartSum(part), pscore = Number(part.score)||0, ok = (sum===pscore);
+    var box = document.createElement('div');
+    box.style.cssText='border:1.5px solid rgba(141,141,242,.35); border-radius:14px; padding:14px 16px; margin-bottom:16px; background:rgba(141,141,242,.05);';
+    var head = document.createElement('div'); head.style.cssText='display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:6px;';
+    var plbl = document.createElement('div'); plbl.style.cssText='font-size:16px; font-weight:800; color:var(--violet);'; plbl.textContent=examPartLabel(pi);
+    var ptype = document.createElement('div'); ptype.style.cssText='font-size:13px; color:var(--ink-dim); background:rgba(255,255,255,.06); padding:4px 10px; border-radius:20px;'; ptype.textContent='אמריקאי';
+    var sWrap = document.createElement('div'); sWrap.style.cssText='display:flex; align-items:center; gap:6px; margin-inline-start:auto;';
+    var sLbl = document.createElement('span'); sLbl.textContent='ציון החלק:'; sLbl.style.cssText='font-size:13px; color:var(--ink-dim);';
+    var sIn = document.createElement('input'); sIn.type='number'; sIn.min='0'; sIn.value=String(pscore);
+    sIn.style.cssText='width:70px; padding:7px 9px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.07); color:var(--ink); font-family:Heebo; font-size:14px; text-align:center;';
+    sIn.onchange=function(){ examSetPartScore(part, sIn.value); };
+    sWrap.appendChild(sLbl); sWrap.appendChild(sIn);
+    head.appendChild(plbl); head.appendChild(ptype); head.appendChild(sWrap);
+    box.appendChild(head);
+    var note = document.createElement('div');
+    note.style.cssText='font-size:13px; font-weight:700; margin-bottom:12px; color:'+(ok?'var(--teal)':'#ff7676')+';';
+    note.textContent=(ok?'✓ ':'⛔ ')+'סכום נקודות השאלות: '+sum+' / '+pscore+(ok?'':' — חייב להיות שווה');
+    box.appendChild(note);
+    examQsOf(part.id).forEach(function(q){
+      box.appendChild(examQCard(q, quiz.questions.indexOf(q)));
+    });
+    var addQ = document.createElement('button'); addQ.className='btn ghost sm'; addQ.style.cssText='margin-top:4px;';
+    addQ.textContent='➕ הוסף שאלה לחלק זה'; addQ.onclick=function(){ examAddQuestion(part.id); };
+    box.appendChild(addQ);
+    list.appendChild(box);
+  });
+
+  var addP = document.createElement('button'); addP.className='btn'; addP.style.cssText='background:var(--violet); color:#0b0b2a; font-weight:800; margin-top:4px;';
+  addP.textContent='➕ הוסף חלק'; addP.onclick=examAddPart;
+  list.appendChild(addP);
+
+  if ($('clear-all-wrap')) $('clear-all-wrap').style.display='block';
+}
+/* כרטיס-שאלה במצב-בחינה (אמריקאי) — כולל שדה-ניקוד; בלי חצי-הזזה (בהמשך) */
+function examQCard(q, gi){
+  var card = document.createElement('div'); card.className='qcard'; card.style.marginBottom='12px';
+  var top = document.createElement('div'); top.className='qtop';
+  var lbl = document.createElement('span'); lbl.className='qlabel'; lbl.textContent='שאלה';
+  var ptsWrap = document.createElement('span'); ptsWrap.style.cssText='display:inline-flex; align-items:center; gap:5px; margin-inline-start:12px;';
+  var ptsLbl = document.createElement('span'); ptsLbl.textContent='ניקוד:'; ptsLbl.style.cssText='font-size:12px; color:var(--gold);';
+  var ptsIn = document.createElement('input'); ptsIn.type='number'; ptsIn.min='0'; ptsIn.value=String(Number(q.points)||0);
+  ptsIn.style.cssText='width:58px; padding:5px 7px; border-radius:7px; border:1px solid rgba(243,200,90,.4); background:rgba(243,200,90,.10); color:var(--gold); font-family:Heebo; font-size:13px; text-align:center; font-weight:700;';
+  ptsIn.onchange=function(){ q.points = Math.max(0, parseInt(ptsIn.value,10)||0); renderExamEditor(); touch(); };
+  ptsWrap.appendChild(ptsLbl); ptsWrap.appendChild(ptsIn);
+  var del = document.createElement('button'); del.className='del'; del.textContent='🗑 מחיקה'; del.style.marginInlineStart='auto'; del.onclick=function(){ examDelQuestion(gi); };
+  top.appendChild(lbl); top.appendChild(ptsWrap); top.appendChild(del); card.appendChild(top);
+  var qin = document.createElement('input'); qin.type='text'; qin.placeholder='נוסח השאלה'; qin.value=q.text; qin.style.marginBottom='10px';
+  qin.oninput=function(){ q.text = qin.value; touch(); };
+  card.appendChild(qin);
+  var tip = document.createElement('div'); tip.style.cssText='font-size:13px; color:var(--teal); font-weight:700; margin-bottom:8px;';
+  tip.textContent='👇 כתבו את התשובות, וסמנו את הנכונה בעיגול הירוק ✓';
+  card.appendChild(tip);
+  q.answers.forEach(function(a, ai){
+    var r = document.createElement('div'); r.className='ans-row';
+    var pick = document.createElement('button'); pick.className='pick'+(q.correct===ai?' on':''); pick.textContent='✓';
+    pick.onclick=function(){ q.correct=ai; renderExamEditor(); touch(); };
+    var ain = document.createElement('input'); ain.type='text'; ain.placeholder='תשובה '+(ai+1); ain.value=a;
+    ain.oninput=function(){ q.answers[ai]=ain.value; touch(); };
+    var rem = document.createElement('button'); rem.className='rem'; rem.textContent='✕';
+    rem.onclick=function(){ if (q.answers.length<=2) return; q.answers.splice(ai,1); if (q.correct>=q.answers.length) q.correct=0; renderExamEditor(); touch(); };
+    r.appendChild(pick); r.appendChild(ain); if (q.answers.length>2) r.appendChild(rem);
+    card.appendChild(r);
+  });
+  if (q.answers.length<4){
+    var add = document.createElement('button'); add.className='addans'; add.textContent='➕ תשובה';
+    add.onclick=function(){ q.answers.push(''); renderExamEditor(); touch(); };
+    card.appendChild(add);
+  }
+  if (quiz.hasExplanations){
+    var exWrap = document.createElement('div'); exWrap.style.cssText='margin-top:14px; border-top:1px dashed rgba(255,255,255,.14); padding-top:12px;';
+    var exLbl = document.createElement('div'); exLbl.style.cssText='font-size:13px; color:var(--violet); font-weight:700; margin-bottom:6px;'; exLbl.textContent='💡 הסבר (אופציונלי)';
+    var exIn = document.createElement('textarea'); exIn.value=q.explanation||'';
+    exIn.style.cssText='width:100%; height:62px; border-radius:10px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:var(--ink); padding:9px 12px; font-family:Heebo; font-size:14px; resize:vertical;';
+    exIn.oninput=function(){ q.explanation = exIn.value; touch(); };
+    exWrap.appendChild(exLbl); exWrap.appendChild(exIn); card.appendChild(exWrap);
+  }
+  return card;
+}
+
 function renderQuestions(){
+  if (quiz && quiz.examMode){ renderExamEditor(); return; }
   const list = $('q-list'); list.innerHTML = '';
   // v185: סרגל-כלים — בדיקת-כפילויות + הדפסה (כשיש לפחות שאלה אחת עם נוסח)
   if (realQCount(quiz.questions) >= 1){
@@ -5078,7 +5300,11 @@ function hostStart(){
   sttsHostOn = $('pg-stts-toggle') ? $('pg-stts-toggle').checked : false;   // v151 (נקרא מוקדם)
   if (sttsHostOn) speedBonusOn = false;   // v151.4: הקראת-תלמידים דלוקה → בונוס-מהירות כבוי תמיד
   sttsLiveAllowed = sttsHostOn;   // v151.13: נקבע בתחילת המשחק — מתג-הקראה בסרגל רק אם נבחרה הקראה
-  if (runMode === 'synced'){ speedBonusOn = false; tpClassName = ($('pg-classname') && $('pg-classname').value.trim()) || ''; }   // TestPlay: בוחן — בלי בונוס-מהירות; קליטת שם-הכיתה
+  if (runMode === 'synced'){
+    speedBonusOn = false;
+    tpClassName = ($('pg-classname') && $('pg-classname').value.trim()) || '';
+    tpShowScore = $('pg-showscore-toggle') ? $('pg-showscore-toggle').checked : true;
+  } else { tpShowScore = true; }   // TestPlay: בוחן — בלי בונוס-מהירות; שם-כיתה; ומתג ניקוד-לתלמיד
   { const _r = document.querySelector('input[name="stts-mode"][value="some"]'); ttsMode = (sttsHostOn && _r && _r.checked) ? 'some' : 'all'; }   // v152
   roomTtsOn = $('pg-roomtts-toggle') ? $('pg-roomtts-toggle').checked : false;   // v150
   ttsBtnOn = roomTtsOn;   // v150.3
@@ -5087,6 +5313,7 @@ function hostStart(){
   setupHostAlive(playCode);   // v129: סימון "המארח חי" לתלמידים
   writeStudentTts(sttsHostOn);   // v152.3: הפונקציה מפצלת לפי מצב (ttsStudents ל-'all' / ttsStudentsSome ל-'some')
   refreshSttsHostToggle();   // v151
+  refreshShowScoreToggle();   // TestPlay: כפתור ניקוד-לתלמיד (בוחן בלבד)
   $('host-menu').style.display = 'flex';
   $('host-menu').classList.remove('open');   // התפריט מתחיל סגור — מסך נקי בזמן המשחק
   $('ingame-credit').style.display = 'block';
@@ -5742,7 +5969,7 @@ function revealQ(){
   const reinforceMap = (runMode === 'synced' || _boardNext) ? {} : selectReinforcements(reinforceEligibles, qIndex, quiz.questions.length);
   if (Object.keys(reinforceMap).length) sfxStreak();   // צליל קצר כשיש חיזוק
   // עדכון רצף/תוצאות לשחקנים + חיזוק אישי לכל נמען
-  send({ t:'rev', i:seq, correctIdx: curQ.correct, correctText, scores: scoreboard(), reinforce: reinforceMap });
+  send({ t:'rev', i:seq, correctIdx: curQ.correct, correctText, scores: scoreboard(), reinforce: reinforceMap, showScore: tpShowScore });
   if (runMode === 'synced'){ const _b = $('hr-banners'); if (_b) _b.innerHTML = ''; }   // בוחן: בלי באנרי-מהירות/רצף על הלוח
   tpRunRecordReveal();   // TestPlay: לכידת תשובות-השאלה ל-Run
 
@@ -6107,6 +6334,7 @@ function resumeHostGame(code){
     ttsMode = hs.ttsMode || 'all';   // v152: שחזור המצב (לכולם/מסוימים)
     writeStudentTts(sttsHostOn);   // v152.3: הפונקציה מפצלת לפי מצב
     refreshSttsHostToggle();   // v151
+    refreshShowScoreToggle();   // TestPlay: כפתור ניקוד-לתלמיד (בוחן בלבד)
     players = pr.players || {};
     seq = pr.seq || 0;
     bestMs = (pr.bestMs == null ? Infinity : pr.bestMs);
@@ -6676,7 +6904,7 @@ function showFeedback(m){
   const correct = lastPick === m.correctIdx;
   $('pfeed-emoji').textContent = correct ? '✅' : '❌';
   $('pfeed-title').textContent = correct ? 'נכון!' : 'לא נכון';
-  $('pfeed-sub').textContent = 'התשובה: ' + m.correctText + (me ? ' · ' + me.score + ' נקודות' : '');
+  $('pfeed-sub').textContent = 'התשובה: ' + m.correctText + ((me && m.showScore !== false) ? ' · ' + me.score + ' נקודות' : '');
   show('pfeed');
   // חיזוק אישי: אם המנחה צירף לי הודעה, היא מופיעה צף מעל המשוב ונעלמת
   const myReinforce = m.reinforce && m.reinforce[myId];
@@ -6686,7 +6914,7 @@ function showPFin(m){
   const me=(m.scores||[]).find(s=>s.id===myId);
   // v131: מסך-סיום ממותג — שם אישי, בלי מיקום, ניקוד עמום (כדי שלא ישוו)
   if ($('pfin-thanks')) $('pfin-thanks').textContent = myName ? ('תודה רבה, '+myName+'! ❤️') : 'תודה רבה! ❤️';
-  if ($('pfin-pts')) $('pfin-pts').textContent = me ? ('צברת ' + me.score + ' נקודות') : '';
+  if ($('pfin-pts')) $('pfin-pts').textContent = (me && m.showScore !== false) ? ('צברת ' + me.score + ' נקודות') : '';
   show('pfin');
   if (_ttsOpeningDone && !_spokeClosing){ _spokeClosing = true; setTimeout(() => speakText(myName ? ('תודה רבה ' + myName + ', היה כיף, נתראה במשחק הבא') : 'תודה רבה, היה כיף, נתראה במשחק הבא'), 160); }   // v152.5: אחרי show('pfin') + השהיה — אחרת ה-cancel של show (יציאה ממסך-שאלה) דרס את ההקראה
 }
@@ -6711,11 +6939,13 @@ let runMode = 'quiz';      // מצב-ההרצה הפעיל. ברירת-מחדל 
 let tpRunId = null;        // מזהה ההרצה הנוכחית ב-Firebase
 let tpRun = null;          // מצב-ה-Run בזיכרון (מראה למה שנכתב): { results, startedAt }
 let tpClassName = '';      // תווית-הכיתה החופשית שהמורה הקליד
+let tpShowScore = true;    // האם התלמיד רואה ניקוד (בוחן מסונכרן). דלוק כברירת-מחדל; חידון תמיד דלוק
 
 // כניסה לזרימת-ההפעלה: קודם בודקים מוכנות, ואז מציגים את בורר-המצב.
 function tpEnterPlay(){
   const noName = quizNameMissing(); if (noName){ showToast(noName); return; }
   const err = quizReady(); if (err){ showToast(err); return; }
+  if (quiz && quiz.examMode && !examIsValid()){ showToast(examInvalidMsg()); return; }
   show('mode-select');
 }
 
@@ -6820,7 +7050,7 @@ function tpRunFinish(){
 // סיום בוחן מסונכרן — מסך-סיום ענייני, בלי פודיום/חגיגה.
 function tpHostFinishSynced(){
   tpRunFinish();
-  send({ t:'end', scores: scoreboard() });
+  send({ t:'end', scores: scoreboard(), showScore: tpShowScore });
   clearActiveGamePointer();
   teardownHostAlive();
   ['podium','team-final','fun-cards'].forEach(function(id){ const el = $(id); if (el) el.style.display = 'none'; });
@@ -6837,6 +7067,20 @@ function tpHostFinishSynced(){
   if ($('guest-save-box')) $('guest-save-box').style.display = 'none';
   show('hfin');
 }
+
+// מתג "התלמיד רואה ניקוד" — עדכון התיאור במסך-ההכנה
+function updateShowScoreDesc(){
+  const t = $('pg-showscore-toggle'), d = $('pg-showscore-desc');
+  if (d) d.textContent = (t && !t.checked) ? 'התלמיד רואה רק נכון/לא-נכון, בלי ניקוד' : 'בכל שאלה התלמיד רואה כמה נקודות צבר';
+}
+// כפתור-הניקוד בסרגל-המארח — מוצג בבוחן בלבד; תווית לפי-מצב. נקרא בתחילת-משחק ובשחזור.
+function refreshShowScoreToggle(){
+  const m = $('showscore-toggle'); if (!m) return;
+  m.style.display = (runMode === 'synced') ? '' : 'none';
+  m.textContent = tpShowScore ? '🔢 ניקוד גלוי' : '🙈 ניקוד מוסתר';
+}
+// היפוך תוך-כדי הבחינה — משפיע מהשאלה הבאה (showScore נשלח בכל חשיפה ובסיום).
+function toggleShowScore(){ tpShowScore = !tpShowScore; refreshShowScoreToggle(); }
 </script>
 </body>
 </html>
