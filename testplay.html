@@ -3611,7 +3611,7 @@ function toggleExamMode(){
     quiz.questions.forEach(function(q){ q.partId = p.id; });
     examAutofill(p);
   }
-  renderQuestions(); touch();
+  renderQuestions(); touch(); syncExamToggle();
 }
 function examAddPart(){
   examEnsure();
@@ -3731,7 +3731,8 @@ function examParseExam(text){
   for (var i=0;i<attempts.length;i++){ try { return { ok:true, data: JSON.parse(attempts[i]) }; } catch(e){ lastErr = e.message; } }
   return { ok:false, err: lastErr, snippet: (s.slice(0,160) || '(ריק)') };
 }
-function examImportBuild(jsonText){
+function examImportBuild(jsonText, mode){
+  var struct = (mode==='structure');
   var _m=$('exam-imp-msg'); if(_m){ _m.style.display='none'; _m.textContent=''; }
   var _r = examParseExam(jsonText);
   if (!_r.ok){ examImportError('לא הצלחתי לקרוא את ה-JSON.\nשגיאה: ' + _r.err + '\n\nהתחלת מה שהתקבל:\n' + _r.snippet); return; }
@@ -3741,7 +3742,7 @@ function examImportBuild(jsonText){
   if (hasExisting && !confirm('הייבוא יחליף את הבחינה הקיימת. להמשיך?')) return;
   examEnsure();
   quiz.examMode = true;
-  if (data.title){ quiz.title = String(data.title).slice(0,40); var ti=$('quiz-title'); if (ti) ti.value = quiz.title; }
+  if (data.title && !struct){ quiz.title = String(data.title).slice(0,40); var ti=$('quiz-title'); if (ti) ti.value = quiz.title; }
   quiz.examTime = Math.max(1, parseInt(data.examTime,10)||45);
   quiz.bonus = Math.max(0, parseInt(data.bonus,10)||0);
   quiz.parts = [];
@@ -3755,22 +3756,22 @@ function examImportBuild(jsonText){
     qlist.forEach(function(qq){
       qq = qq||{};
       if (type==='open'){
-        var subs = (Array.isArray(qq.subs) && qq.subs.length)
-          ? qq.subs.map(function(s){ s=s||{}; return { text:String(s.text||''), points: Math.max(0, Math.round((Number(s.points)||0)*2)/2) }; })
-          : [{text:'',points:0},{text:'',points:0}];
-        quiz.questions.push({ text:String(qq.text||''), subs:subs, partId:part.id, points:0 });
+        var rawSubs = (Array.isArray(qq.subs) && qq.subs.length) ? qq.subs : [{},{}];
+        var subs = rawSubs.map(function(s){ s=s||{}; return { text: struct?'':String(s.text||''), points: Math.max(0, Math.round((Number(s.points)||0)*2)/2) }; });
+        quiz.questions.push({ text: struct?'':String(qq.text||''), subs:subs, partId:part.id, points:0 });
       } else {
-        var answers = (Array.isArray(qq.answers) && qq.answers.length>=2) ? qq.answers.map(function(a){ return String(a==null?'':a); }) : ['',''];
+        var rawAns = (Array.isArray(qq.answers) && qq.answers.length>=2) ? qq.answers : ['',''];
+        var answers = rawAns.map(function(a){ return struct?'':String(a==null?'':a); });
         if (answers.length>4) answers = answers.slice(0,4);
         var correct = parseInt(qq.correct,10); if (isNaN(correct) || correct<0 || correct>=answers.length) correct = 0;
-        quiz.questions.push({ text:String(qq.text||''), answers:answers, correct:correct, partId:part.id, points:0 });
+        quiz.questions.push({ text: struct?'':String(qq.text||''), answers:answers, correct: struct?0:correct, partId:part.id, points:0 });
       }
     });
   });
   // ניקוד: אם חלק חסר ניקוד-שאלות (ה-AI לא נתן) — מלא אוטומטית שווה. אחרת — שמור את מה שהגיע.
   quiz.parts.forEach(function(part){ if (examPartSum(part)===0 && (Number(part.score)||0)>0) examAutofill(part); });
   var ov=$('exam-imp-overlay'); if (ov) ov.remove();
-  renderQuestions(); touch();
+  renderQuestions(); touch(); syncExamToggle();
   setTimeout(function(){ if (!examIsValid()) showToast('הבחינה יובאה — יש הערות-אימות לתיקון (ראו אדום).'); else showToast('הבחינה יובאה בהצלחה ✓'); }, 60);
 }
 function openExamImport(){
@@ -3807,9 +3808,16 @@ function openExamImport(){
   box.appendChild(paste);
   var msg = document.createElement('div'); msg.id='exam-imp-msg'; msg.style.cssText='display:none; white-space:pre-wrap; color:#ff8a8a; background:rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.35); border-radius:10px; padding:10px 13px; font-size:13px; line-height:1.5; margin-top:12px; font-family:Heebo;';
   box.appendChild(msg);
+  var modeWrap = document.createElement('label'); modeWrap.style.cssText='display:flex; align-items:center; gap:9px; cursor:pointer; margin:14px 0 2px; font-size:14px; color:var(--ink); font-weight:700;';
+  var modeChk = document.createElement('input'); modeChk.type='checkbox'; modeChk.id='exam-imp-content'; modeChk.checked=true; modeChk.style.cssText='width:18px; height:18px; accent-color:var(--teal); cursor:pointer; flex:0 0 auto;';
+  var modeTxt = document.createElement('span'); modeTxt.textContent='כלול גם את תוכן השאלות (לא רק את המבנה)';
+  modeWrap.appendChild(modeChk); modeWrap.appendChild(modeTxt); box.appendChild(modeWrap);
+  var modeSub = document.createElement('div'); modeSub.style.cssText='font-size:12px; color:var(--ink-dim); margin-bottom:6px; line-height:1.5;';
+  modeSub.textContent='בלי סימון — ייבנה רק השלד (חלקים, מספר שאלות, ניקוד ובחירה) עם שאלות ריקות למילוי.';
+  box.appendChild(modeSub);
   var actions = document.createElement('div'); actions.style.cssText='display:flex; gap:10px; margin-top:14px;';
   var doBtn = document.createElement('button'); doBtn.className='btn teal'; doBtn.textContent='✓ בנה בחינה'; doBtn.style.flex='1';
-  doBtn.onclick = function(){ examImportBuild(paste.value); };
+  doBtn.onclick = function(){ examImportBuild(paste.value, modeChk.checked ? 'full' : 'structure'); };
   var closeBtn = document.createElement('button'); closeBtn.className='btn ghost sm'; closeBtn.textContent='ביטול';
   closeBtn.onclick = function(){ ov.remove(); };
   actions.appendChild(doBtn); actions.appendChild(closeBtn);
