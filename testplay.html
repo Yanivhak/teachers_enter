@@ -649,7 +649,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 6</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 7</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -3735,11 +3735,13 @@ function examParseExam(text){
   function noTrail(x){ return x.replace(/,(\s*[}\]])/g,'$1'); }
   function noCmt(x){ return x.replace(/\/\/[^\n\r]*/g,'').replace(/\/\*[\s\S]*?\*\//g,''); }
   function fixCurly(x){
-    x = x.replace(/([{\[,:]\s*)[\u201C\u201D\u201E\u201F]/g,'$1"');
-    x = x.replace(/[\u201C\u201D\u201E\u201F](\s*[:,}\]])/g,'"$1');
+    x = x.replace(/([{\[,:]\s*)[\u201C\u201D\u201E\u201F]/g, function(m,p1){ return p1+'"'; });
+    x = x.replace(/[\u201C\u201D\u201E\u201F](\s*[:,}\]])/g, function(m,p1){ return '"'+p1; });
     return x;
   }
-  var attempts = [ s, noTrail(s), noTrail(noCmt(s)), noTrail(fixCurly(s)), noTrail(noCmt(fixCurly(s))) ];
+  function escInner(x){ return x.replace(/([^\s"{}\[\],:\\])"(?=[^\s"{}\[\],:])/g, function(m,p1){ return p1+'\\"'; }); }
+  function repair(x){ return escInner(fixCurly(x)); }
+  var attempts = [ s, noTrail(s), noTrail(noCmt(s)), noTrail(escInner(s)), noTrail(repair(s)), noTrail(noCmt(repair(s))) ];
   var lastErr='';
   for (var i=0;i<attempts.length;i++){ try { return { ok:true, data: JSON.parse(attempts[i]) }; } catch(e){ lastErr = e.message; } }
   return { ok:false, err: lastErr, snippet: (s.slice(0,160) || '(ריק)') };
@@ -3808,7 +3810,7 @@ function openExamImport(mode){
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:600px; width:100%; text-align:right; margin:auto;';
   var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent = (mode==='structure') ? '📐 ייבוא בחינה — מבנה בלבד (ללא תוכן)' : '🤖 ייבוא בחינה — כולל תוכן השאלות';
   box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 6';
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 7';
   box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;';
   desc.textContent='העתיקו את ההנחיה, פתחו את ChatGPT / Gemini / Claude, וצרפו שם את קובץ-הבחינה (Word/PDF) או הדביקו את הטקסט שלה. הדביקו כאן את התשובה — והמערכת תבנה את הבחינה: חלקים, סוגים, ניקוד ובחירה.';
@@ -3851,13 +3853,14 @@ function renderExamEditor(){
   var list = $('q-list'); list.innerHTML = '';
   examEnsure();
   var _impWrap = document.createElement('div'); _impWrap.style.cssText='margin-bottom:14px;';
-  var _impBtn = document.createElement('button'); _impBtn.className='btn'; _impBtn.style.cssText='width:100%; background:rgba(243,200,90,.2); border:1px solid rgba(243,200,90,.55); color:var(--gold); font-weight:800; font-size:18px; padding:15px;'; _impBtn.textContent='🤖 ייבוא בחינה באמצעות AI';
-  _impWrap.appendChild(_impBtn);
-  var _impModeLbl = document.createElement('label'); _impModeLbl.style.cssText='display:flex; align-items:flex-start; gap:8px; cursor:pointer; margin:8px 6px 0; font-size:12px; color:var(--ink-dim); line-height:1.45;';
-  var _impModeChk = document.createElement('input'); _impModeChk.type='checkbox'; _impModeChk.id='exam-imp-mode-chk'; _impModeChk.checked=true; _impModeChk.style.cssText='width:17px; height:17px; accent-color:var(--teal); cursor:pointer; flex:0 0 auto; margin-top:1px;';
-  var _impModeTxt = document.createElement('span'); _impModeTxt.textContent='כלול גם את תוכן השאלות. בלי סימון — ייבנה רק המבנה (חלקים, מספר שאלות, ניקוד ובחירה) עם שאלות ריקות למילוי.';
-  _impModeLbl.appendChild(_impModeChk); _impModeLbl.appendChild(_impModeTxt); _impWrap.appendChild(_impModeLbl);
-  _impBtn.onclick = function(){ openExamImport(_impModeChk.checked ? 'full' : 'structure'); };
+  var _impHead = document.createElement('div'); _impHead.style.cssText='font-size:17px; font-weight:800; color:var(--gold); margin-bottom:3px;'; _impHead.textContent='🤖 ייבוא בחינה באמצעות AI';
+  _impWrap.appendChild(_impHead);
+  var _impSub = document.createElement('div'); _impSub.style.cssText='font-size:12.5px; color:var(--ink-dim); margin-bottom:9px; line-height:1.5;'; _impSub.textContent='בחרו אם לייבא עם תוכן השאלות, או רק את המבנה (חלקים, מספר שאלות, ניקוד ובחירה):';
+  _impWrap.appendChild(_impSub);
+  var _impRow = document.createElement('div'); _impRow.style.cssText='display:flex; gap:8px; flex-wrap:wrap;';
+  var _impFull = document.createElement('button'); _impFull.className='btn sm'; _impFull.style.cssText='flex:1 1 auto; background:rgba(243,200,90,.18); border:1px solid rgba(243,200,90,.5); color:var(--gold); font-weight:700;'; _impFull.textContent='עם תוכן השאלות'; _impFull.onclick=function(){ openExamImport('full'); };
+  var _impStruct = document.createElement('button'); _impStruct.className='btn sm'; _impStruct.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _impStruct.textContent='מבנה בלבד (ללא תוכן)'; _impStruct.onclick=function(){ openExamImport('structure'); };
+  _impRow.appendChild(_impFull); _impRow.appendChild(_impStruct); _impWrap.appendChild(_impRow);
   list.appendChild(_impWrap);
   var total = examTotal(), cap = examCap(), over = total > cap;
 
