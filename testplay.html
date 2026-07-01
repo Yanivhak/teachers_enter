@@ -649,7 +649,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 8</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 9</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -742,7 +742,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <div id="logged-in-home" style="display:none;">
       <!-- שלוש פעולות ראשיות — אותו גודל, היררכיה לפי צבע -->
       <div style="max-width:420px; margin:0 auto; display:flex; flex-direction:column; gap:10px;">
-        <button class="btn teal" onclick="goNewQuiz()" style="width:100%;">➕ חידון חדש</button>
+        <button class="btn teal" onclick="goNewQuiz()" style="width:100%;">➕ בחינה חדשה</button>
         <button class="btn" onclick="goShowList()" style="width:100%;">🗂️ החידונים שלי</button>
         <a href="teacher-library.html" class="btn navy" style="width:100%; display:block; text-align:center; text-decoration:none; box-sizing:border-box;">📚 ספרייה ציבורית</a>
       </div>
@@ -785,14 +785,14 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   <div class="wrap">
     <h2 id="mylist-title">החידונים שלי</h2>
     <div class="row" style="margin-bottom:18px;">
-      <button class="btn teal" onclick="newQuiz()">➕ חידון חדש</button>
+      <button class="btn teal" onclick="newQuiz()">➕ בחינה חדשה</button>
     </div>
     <div id="quiz-search-wrap" style="display:none; margin-bottom:14px;">
       <input type="text" id="quiz-search" placeholder="🔍 חיפוש לפי שם החידון" oninput="filterQuizList()" style="width:100%; padding:11px 14px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); font-family:'Heebo'; font-size:16px;">
     </div>
     <!-- v104 שלב ב': לשוניות חידונים/טיוטות -->
     <div class="list-tabs" id="list-tabs">
-      <button class="list-tab active" id="tab-quizzes" onclick="switchTab('quizzes')">חידונים<span class="cnt" id="cnt-quizzes"></span></button>
+      <button class="list-tab active" id="tab-quizzes" onclick="switchTab('quizzes')">בחינות<span class="cnt" id="cnt-quizzes"></span></button>
       <button class="list-tab" id="tab-drafts" onclick="switchTab('drafts')">טיוטות<span class="cnt" id="cnt-drafts"></span></button>
     </div>
     <!-- v104 שלב ב': סרגל בחירה ומחיקה קבוצתית (מוסתר עד כניסה למצב בחירה) -->
@@ -835,7 +835,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
       <span class="save-state" id="save-state" style="margin:0;">✓ נשמר אוטומטית — אין צורך לשמור</span>
     </div>
     <div id="draft-toggle-wrap" style="text-align:center; margin:10px 0 4px;">
-      <span class="draft-toggle" id="draft-toggle-top" onclick="setDraft(!(quiz&&quiz.isDraft))" title="חידון שמסומן כטיוטה יופיע בלשונית הטיוטות ולא בין החידונים">
+      <span class="draft-toggle" id="draft-toggle-top" onclick="setDraft(!(quiz&&quiz.isDraft))" title="בחינה שמסומנת כטיוטה תופיע בלשונית הטיוטות ולא בין הבחינות">
         <span class="sw"></span><span>סימון כטיוטה</span>
       </span>
     </div>
@@ -852,8 +852,8 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     </div>
 
     <div class="field">
-      <label>שם החידון</label>
-      <input type="text" id="quiz-title" maxlength="40" placeholder="לדוגמה: חידון סוף שנה" oninput="touch()">
+      <label>שם הבחינה</label>
+      <input type="text" id="quiz-title" maxlength="40" placeholder="לדוגמה: בחינת סוף שנה" oninput="touch()">
     </div>
 
     <div class="field">
@@ -902,7 +902,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
     <!-- ───── מצב החידון: טיוטה/חידון (מתג תחתון, מסונכרן עם העליון). v107: הועלה לכאן —
          מתחת ל"הוספת שאלה" ומעל אזור הפעולות (משחק/שיתוף/ספרייה), לבקשת המשתמש. ───── -->
     <div class="draft-bottom" id="draft-bottom-wrap">
-      <span class="dbl" id="draft-bottom-label">מצב החידון: חידון</span>
+      <span class="dbl" id="draft-bottom-label">מצב הבחינה: בחינה</span>
       <button id="draft-bottom-btn" onclick="setDraft(!(quiz&&quiz.isDraft))">העברה לטיוטות</button>
     </div>
 
@@ -920,19 +920,19 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
 
     <!-- ───── שורה 1: הפעלה ובדיקה ───── -->
     <div class="action-grid">
-      <div class="action-box" onclick="tpEnterPlay()"><span class="ab-ico">▶️</span><span>התחל משחק</span></div>
+      <div class="action-box" onclick="tpEnterPlay()"><span class="ab-ico">▶️</span><span>התחל בחינה</span></div>
       <div class="action-box" onclick="previewQuiz()"><span class="ab-ico">👁️</span><span>בדיקה</span></div>
     </div>
 
     <!-- ───── שורה 2: שיתוף וספרייה (פותחים חלון צף) ───── -->
     <div class="action-grid">
-      <div class="action-box" id="act-share" onclick="openShareOverlayFromEditor()"><span class="ab-ico">🔗</span><span>שיתוף חידון</span></div>
+      <div class="action-box" id="act-share" onclick="openShareOverlayFromEditor()"><span class="ab-ico">🔗</span><span>שיתוף בחינה</span></div>
       <div class="action-box" id="act-library" onclick="openLibraryOverlayFromEditor()"><span class="ab-ico">📚</span><span>הוספה לספרייה הציבורית</span></div>
     </div>
 
     <!-- ───── ניקוי: קישור מאופק, נפרד ───── -->
     <div class="action-clear" id="clear-all-wrap" style="display:none;">
-      <button onclick="clearAllQuiz()">🗑️ ניקוי החידון</button>
+      <button onclick="clearAllQuiz()">🗑️ ניקוי הבחינה</button>
     </div>
 
     <!-- פאנלים מוסתרים: renderSharePanel/renderLibraryPanel עדיין כותבים אליהם מקריאות קיימות -->
@@ -1269,7 +1269,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
         <button class="btn ghost sm" onclick="backToEditor()">→ חזרה לעריכה</button>
       </div>
       <div class="row" style="margin-top:10px;">
-        <button class="btn sm" onclick="newQuizFromGame()" style="background:var(--violet); color:#0b0b2a;">➕ חידון חדש</button>
+        <button class="btn sm" onclick="newQuizFromGame()" style="background:var(--violet); color:#0b0b2a;">➕ בחינה חדשה</button>
         <button class="btn ghost sm" onclick="finishToList()">📂 החידונים שלי</button>
       </div>
     </div>
@@ -1993,10 +1993,14 @@ function renderQuizList(all){
 }
 
 function _renderQuizListMerged(all, pinnedMap){
-  // ממזגים את דגל ההצמדה לכל חידון מתוך המפה הנפרדת
+  // TestPlay — רשימת-בחינות בלבד: מסננים כל פריט שאינו בחינה (חידוני-QuizPlay חולקים את אותו ארון)
+  var _exOnly = {};
+  Object.keys(all||{}).forEach(function(c){ if (all[c] && all[c].examMode === true) _exOnly[c] = all[c]; });
+  all = _exOnly;
+  // ממזגים את דגל ההצמדה לכל בחינה מתוך המפה הנפרדת
   Object.keys(all).forEach(code => { all[code].pinned = !!pinnedMap[code]; });
   _quizListData = all;
-  $('mylist-title').textContent = 'החידונים של ' + myEmail;
+  $('mylist-title').textContent = 'הבחינות של ' + myEmail;
   const codes = Object.keys(_quizListData);
   if (!codes.length){
     $('quiz-list').innerHTML = '';
@@ -2004,7 +2008,7 @@ function _renderQuizListMerged(all, pinnedMap){
     if ($('list-tabs')) $('list-tabs').style.display = 'none';
     if ($('select-mode-btn')) $('select-mode-btn').style.display = 'none';
     exitSelectMode();
-    $('mylist-msg').textContent = 'עדיין אין חידונים. לחצו על "חידון חדש" כדי להתחיל.';
+    $('mylist-msg').textContent = 'עדיין אין בחינות. לחצו על "בחינה חדשה" כדי להתחיל.';
     return;
   }
   $('mylist-msg').textContent = '';
@@ -2300,7 +2304,8 @@ function openShareModal(code, data){
     title: data.title || '', time: data.time || 20,
     teamCount: data.teamCount || 0, teamNames: data.teamNames || [],
     questions: data.questions || [],
-    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
+    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
+    examMode: true, parts: (Array.isArray(data.parts) ? data.parts : []), examTime: (data.examTime != null ? data.examTime : 45), bonus: (data.bonus != null ? data.bonus : 0)
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
   if (data.aiMeta) quiz.aiMeta = data.aiMeta;
@@ -2398,7 +2403,7 @@ function _openLibraryOverlayCore(){
 async function newQuiz(){
   editCode = await genUniqueStoreKey();
   const displayCode = await genDisplayCode();   // קוד-תצוגה אנושי קבוע, נוצר פעם אחת
-  quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], hasExplanations:false, displayCode: displayCode, originalAuthor: (myAuthName || ''), isDraft:false, share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
+  quiz = { title:'', time:20, teamCount:0, teamNames:[], questions:[], hasExplanations:false, examMode:true, examTime:45, bonus:0, parts:[], displayCode: displayCode, originalAuthor: (myAuthName || ''), isDraft:false, share:{ mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null } };
   resetAiMeta();             // חידון חדש — בחירות AI מתאפסות (פריט 1)
   aiCardDismissed = false;   // חידון חדש — הכרטיס יוצג שוב
   quiz.questions.push({ text:'', answers:['',''], correct:0 });  // שאלה ריקה ראשונה — לפני הרינדור, כדי לרנדר פעם אחת בלבד
@@ -2440,7 +2445,8 @@ function openExisting(code, data){
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
     isDraft: data.isDraft || false,   // v104 שלב ב': ברירת מחדל=חידון; טיוטה היא סימון אקטיבי
-    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
+    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
+    examMode: true, parts: (Array.isArray(data.parts) ? data.parts : []), examTime: (data.examTime != null ? data.examTime : 45), bonus: (data.bonus != null ? data.bonus : 0)
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
   if (data.aiMeta) quiz.aiMeta = data.aiMeta;   // משמרים את ה-meta באובייקט
@@ -2462,7 +2468,8 @@ function playExisting(code, data){
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
     isDraft: data.isDraft || false,   // v104 שלב ב': ברירת מחדל=חידון; טיוטה היא סימון אקטיבי
-    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
+    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
+    examMode: true, parts: (Array.isArray(data.parts) ? data.parts : []), examTime: (data.examTime != null ? data.examTime : 45), bonus: (data.bonus != null ? data.bonus : 0)
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
   if (data.aiMeta){ quiz.aiMeta = data.aiMeta; loadAiMeta(data.aiMeta); }   // v118: שימור קדם-מילוי ה-AI גם בנתיב משחק/בדיקה
@@ -2503,7 +2510,8 @@ function testExisting(code, data){
     originalAuthor: data.originalAuthor || null,
     isConfirmed: data.isConfirmed || false,
     isDraft: data.isDraft || false,   // v104 שלב ב': ברירת מחדל=חידון; טיוטה היא סימון אקטיבי
-    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null }
+    share: data.share || { mode:'none', emails:[], inLibrary:false, shareId:null, libraryId:null },
+    examMode: true, parts: (Array.isArray(data.parts) ? data.parts : []), examTime: (data.examTime != null ? data.examTime : 45), bonus: (data.bonus != null ? data.bonus : 0)
   };
   if (data.copiedFrom) quiz.copiedFrom = data.copiedFrom;
   if (data.aiMeta){ quiz.aiMeta = data.aiMeta; loadAiMeta(data.aiMeta); }   // v118: שימור קדם-מילוי ה-AI גם בנתיב משחק/בדיקה
@@ -3549,10 +3557,21 @@ function doPrintQuiz(opts, targetQuiz){
 /* ═══════════════ TestPlay — שכבת-בחינה (מבנה), צעד-1: חלקים + אמריקאי + ניקוד-משוקלל ═══════════════
    בידוד: כל הקוד כאן רץ רק כש-quiz.examMode דלוק. חידון רגיל — מסלול נפרד ב-renderQuestions, נגוע-אפס. */
 function examEnsure(){
-  if (typeof quiz.examMode === 'undefined') quiz.examMode = false;
+  if (!quiz) return;
+  quiz.examMode = true;   // TestPlay — תמיד מצב-בחינה, אין חידון שטוח
   if (typeof quiz.examTime === 'undefined') quiz.examTime = 45;
   if (typeof quiz.bonus === 'undefined') quiz.bonus = 0;
   if (!Array.isArray(quiz.parts)) quiz.parts = [];
+  if (!Array.isArray(quiz.questions)) quiz.questions = [];
+  if (!quiz.parts.length){
+    var _p = { id: examNewId(), type:'mc', score:100, choiceCount:0 };
+    quiz.parts = [_p];
+    quiz.questions.forEach(function(q){ q.partId = _p.id; });
+    if (quiz.questions.length) examAutofill(_p);
+  } else {
+    var _ids = quiz.parts.map(function(p){ return p.id; });
+    quiz.questions.forEach(function(q){ if (_ids.indexOf(q.partId)<0) q.partId = quiz.parts[0].id; });
+  }
 }
 function examPartLabel(i){ return 'חלק ' + String.fromCharCode('א'.charCodeAt(0)+i); }
 function examNewId(){ return 'p' + Date.now().toString(36) + Math.floor(Math.random()*1e4).toString(36); }
@@ -3813,7 +3832,7 @@ function openExamImport(mode){
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:600px; width:100%; text-align:right; margin:auto;';
   var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent = (mode==='structure') ? '📐 ייבוא בחינה — מבנה בלבד (ללא תוכן)' : '🤖 ייבוא בחינה — כולל תוכן השאלות';
   box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 8';
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 9';
   box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;';
   desc.textContent='העתיקו את ההנחיה, פתחו את ChatGPT / Gemini / Claude, וצרפו שם את קובץ-הבחינה (Word/PDF) או הדביקו את הטקסט שלה. הדביקו כאן את התשובה — והמערכת תבנה את הבחינה: חלקים, סוגים, ניקוד ובחירה.';
@@ -3855,6 +3874,7 @@ function openExamImport(mode){
 function renderExamEditor(){
   var list = $('q-list'); list.innerHTML = '';
   examEnsure();
+  { var _etw=$('exam-toggle-wrap'); if(_etw) _etw.style.display='none'; var _fab=$('flat-addq-btn'); if(_fab) _fab.style.display='none'; }
   var _impWrap = document.createElement('div'); _impWrap.style.cssText='margin-bottom:14px;';
   var _impHead = document.createElement('div'); _impHead.style.cssText='font-size:17px; font-weight:800; color:var(--gold); margin-bottom:3px;'; _impHead.textContent='🤖 ייבוא בחינה באמצעות AI';
   _impWrap.appendChild(_impHead);
@@ -4093,6 +4113,7 @@ function examQCard(q, gi){
 }
 
 function renderQuestions(){
+  if (quiz) quiz.examMode = true;   // TestPlay — תמיד-בחינה
   if (quiz && quiz.examMode){ renderExamEditor(); return; }
   const list = $('q-list'); list.innerHTML = '';
   // v185: סרגל-כלים — בדיקת-כפילויות + הדפסה (כשיש לפחות שאלה אחת עם נוסח)
@@ -4261,7 +4282,7 @@ function syncDraftToggles(){
   // מתג תחתון — שורת-מצב בהקשר-יציאה: "מצב החידון: חידון/טיוטה · [העברה]"
   const botLabel = $('draft-bottom-label');
   const botBtn = $('draft-bottom-btn');
-  if (botLabel) botLabel.textContent = isD ? 'מצב החידון: טיוטה' : 'מצב החידון: חידון';
+  if (botLabel) botLabel.textContent = isD ? 'מצב הבחינה: טיוטה' : 'מצב הבחינה: בחינה';
   if (botBtn) botBtn.textContent = isD ? 'העברה לחידונים' : 'העברה לטיוטות';
 }
 
