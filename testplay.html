@@ -649,7 +649,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 27</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 28</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -744,9 +744,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
       <div style="max-width:440px; margin:0 auto;">
         <div style="font-size:13px; color:var(--ink-dim); font-weight:700; margin-bottom:8px; text-align:right;">יצירת בחינה חדשה</div>
         <div style="display:flex; flex-direction:column; gap:9px; margin-bottom:18px;">
-          <button class="btn teal" onclick="goNewQuiz()" style="width:100%;">✍️ בנייה ידנית</button>
-          <button class="btn navy" onclick="openExamCreate('create')" style="width:100%;">✨ בנייה עם AI</button>
-          <button class="btn navy" onclick="openExamImport('full')" style="width:100%;">📄 ייבוא בחינה קיימת</button>
+          <button class="btn teal" onclick="goNewQuiz()" style="width:100%;">✍️ בניית בחינה</button>
         </div>
         <div style="display:flex; flex-direction:column; gap:9px;">
           <button class="btn" onclick="goShowList()" style="width:100%;">📋 הבחינות שלי</button>
@@ -4046,7 +4044,7 @@ function openExamImport(mode){
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:600px; width:100%; text-align:right; margin:auto;';
   var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent = (mode==='structure') ? '📐 ייבוא בחינה — מבנה בלבד (ללא תוכן)' : '🤖 ייבוא בחינה — כולל תוכן השאלות';
   box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 27';
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 28';
   box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;';
   desc.textContent='העתיקו את ההנחיה, פתחו את ChatGPT / Gemini / Claude, וצרפו שם את קובץ-הבחינה (Word/PDF) או הדביקו את הטקסט שלה. הדביקו כאן את התשובה — והמערכת תבנה את הבחינה: פרקים, סוגים, ניקוד ובחירה.';
@@ -4200,7 +4198,7 @@ function openExamCreate(){
   var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;';
   title.textContent = '✨ בניית בחינה חדשה עם AI';
   box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:8px;'; _vtag.textContent='גרסה: tp-בדיקה 27'; box.appendChild(_vtag);
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:8px;'; _vtag.textContent='גרסה: tp-בדיקה 28'; box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:12px;';
   desc.textContent = 'תארו את הנושא (או צרפו חומר), העתיקו את ההנחיה ל-ChatGPT / Gemini / Claude, והדביקו כאן את התשובה. ה-AI יקבע את המבנה — ותכווננו אותו בעורך.';
   box.appendChild(desc);
@@ -4425,7 +4423,7 @@ function openExamAi(){
     examSyncBatchNote('צור שאלות');
   };
   var title = document.createElement('div'); title.style.cssText='font-size:22px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent='🤖 שאלות עם AI'; box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:8px;'; _vtag.textContent='גרסה: tp-בדיקה 27'; box.appendChild(_vtag);
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:8px;'; _vtag.textContent='גרסה: tp-בדיקה 28'; box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:13.5px; color:var(--ink-dim); line-height:1.6; margin-bottom:12px;';
   desc.textContent='סמנו שאלות למילוי או להחלפה, ו/או קבעו כמה שאלות חדשות להוסיף לכל פרק — הכל בסבב-AI אחד. המבנה (סוג, סעיפים, ניקוד) נקבע בעורך ונשמר.';
   box.appendChild(desc);
@@ -4520,17 +4518,23 @@ function openExamAi(){
 function renderExamEditor(){
   var list = $('q-list'); list.innerHTML = '';
   examEnsure();
+  // בחינה "בתולית": אפס שאלות + רק פרק-ברירת-המחדל האוטומטי ללא שום נגיעה. קובע הדרכה-ריקה ואת נראות כפתור שאלות-ה-AI.
+  var _pristine = (!quiz.questions.length) && (quiz.parts.length===1) && (function(p){ return p && p.type==='mc' && !p.title && !p.passage && !(Number(p.choiceCount)||0) && (Number(p.score)||0)===100; })(quiz.parts[0]);
   { var _etw=$('exam-toggle-wrap'); if(_etw) _etw.style.display='none'; var _fab=$('flat-addq-btn'); if(_fab) _fab.style.display='none'; }
   var _aiWrap = document.createElement('div'); _aiWrap.style.cssText='margin-bottom:14px;';
   var _aiHead = document.createElement('div'); _aiHead.style.cssText='font-size:17px; font-weight:800; color:var(--gold); margin-bottom:3px;'; _aiHead.textContent='🤖 AI וייבוא';
   _aiWrap.appendChild(_aiHead);
   var _aiSub = document.createElement('div'); _aiSub.style.cssText='font-size:12.5px; color:var(--ink-dim); margin-bottom:9px; line-height:1.5;'; _aiSub.textContent='מומלץ: קבעו קודם את מבנה הבחינה (פרקים, סוגים, ניקוד), מלאו תוכן — ידנית או עם AI — ושכללו את המבנה ידנית בהמשך במקרה הצורך.';
   _aiWrap.appendChild(_aiSub);
-  var _aiQBtn = document.createElement('button'); _aiQBtn.className='btn teal sm'; _aiQBtn.style.cssText='width:100%; margin-bottom:8px; font-weight:800;';
-  _aiQBtn.textContent='🤖 שאלות עם AI — מילוי, החלפה והוספה';
-  _aiQBtn.onclick = function(){ openExamAi(); };
-  _aiWrap.appendChild(_aiQBtn);
+  if (!_pristine){
+    var _aiQBtn = document.createElement('button'); _aiQBtn.className='btn teal sm'; _aiQBtn.style.cssText='width:100%; margin-bottom:8px; font-weight:800;';
+    _aiQBtn.textContent='🤖 שאלות עם AI — מילוי, החלפה והוספה';
+    _aiQBtn.onclick = function(){ openExamAi(); };
+    _aiWrap.appendChild(_aiQBtn);
+  }
   var _impRow = document.createElement('div'); _impRow.style.cssText='display:flex; gap:8px; flex-wrap:wrap;';
+  var _aiCreate = document.createElement('button'); _aiCreate.className='btn sm'; _aiCreate.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _aiCreate.textContent='✨ בנייה עם AI'; _aiCreate.onclick=function(){ openExamCreate(); };
+  _impRow.appendChild(_aiCreate);
   var _impFull = document.createElement('button'); _impFull.className='btn sm'; _impFull.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _impFull.textContent='📄 ייבוא עם תוכן'; _impFull.onclick=function(){ openExamImport('full'); };
   var _impStruct = document.createElement('button'); _impStruct.className='btn sm'; _impStruct.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _impStruct.textContent='📐 ייבוא מבנה בלבד'; _impStruct.onclick=function(){ openExamImport('structure'); };
   _impRow.appendChild(_impFull); _impRow.appendChild(_impStruct); _aiWrap.appendChild(_impRow);
@@ -4575,11 +4579,11 @@ function renderExamEditor(){
   }
   list.appendChild(cfg);
 
-  // מצב-ריק מודרך — מוצג רק כשאין עדיין פרקים
-  if (!quiz.parts.length){
+  // מצב-ריק מודרך — מוצג רק בבחינה בתולית (לפני כל צעד-מבנה/תוכן)
+  if (_pristine){
     var _empty = document.createElement('div');
     _empty.style.cssText='border:1.5px dashed rgba(255,209,102,.45); border-radius:14px; padding:16px 18px; margin-bottom:16px; background:rgba(255,209,102,.07); font-size:14px; color:var(--ink); line-height:1.7;';
-    _empty.innerHTML='<b>🧭 מאיפה מתחילים?</b><br>קבעו קודם את המבנה: <b>➕ הוסף פרק</b> (למטה) — או ייבאו למעלה <b>📐 מבנה</b> מבחינה קיימת / <b>📄 בחינה שלמה</b>. אחר-כך מלאו את השאלות בתוכן.';
+    _empty.innerHTML='<b>🧭 מאיפה מתחילים?</b><br>קבעו קודם את המבנה: <b>➕ הוסף פרק</b> (למטה), ייבאו למעלה <b>📐 מבנה</b> / <b>📄 בחינה שלמה</b> — או תנו ל-AI לבנות הכול (<b>✨ בנייה עם AI</b>). אחר-כך מלאו את השאלות בתוכן.';
     list.appendChild(_empty);
   }
 
