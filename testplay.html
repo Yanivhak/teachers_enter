@@ -4404,6 +4404,10 @@ function examAiBuild(text){
   var msg = 'נוצרו/עודכנו ' + usedN + ' שאלות ✓';
   if (items.length > usedN) msg += ' (ה-AI החזיר ' + (items.length-usedN) + ' שאלות עודפות — הן לא נכנסו)';
   else if (usedN < wanted) msg = 'התקבלו רק ' + usedN + ' מתוך ' + wanted + ' — נותרו שאלות שלא מולאו. אפשר לפתוח שוב ולסמן את הנותרות.';
+  if (typeof findSimilarPairs==='function'){
+    var _dp = findSimilarPairs(quiz.questions);   // כל הבחינה — חוצה-פרקים וחוצה-סוגים
+    if (_dp && _dp.length) msg += ' ⚠️ ייתכנו ' + _dp.length + ' כפילויות — לחצו "🔁 בדוק כפילויות" לפירוט.';
+  }
   if (typeof showToast==='function') showToast(msg);
 }
 function openExamAi(){
@@ -4522,22 +4526,18 @@ function renderExamEditor(){
   var _pristine = (!quiz.questions.length) && (quiz.parts.length===1) && (function(p){ return p && p.type==='mc' && !p.title && !p.passage && !(Number(p.choiceCount)||0) && (Number(p.score)||0)===100; })(quiz.parts[0]);
   { var _etw=$('exam-toggle-wrap'); if(_etw) _etw.style.display='none'; var _fab=$('flat-addq-btn'); if(_fab) _fab.style.display='none'; }
   var _aiWrap = document.createElement('div'); _aiWrap.style.cssText='margin-bottom:14px;';
-  var _aiHead = document.createElement('div'); _aiHead.style.cssText='font-size:17px; font-weight:800; color:var(--gold); margin-bottom:3px;'; _aiHead.textContent='🤖 AI וייבוא';
+  var _aiHead = document.createElement('div'); _aiHead.style.cssText='font-size:17px; font-weight:800; color:var(--gold); margin-bottom:3px;'; _aiHead.textContent='🎯 קודם — מבנה הבחינה';
   _aiWrap.appendChild(_aiHead);
-  var _aiSub = document.createElement('div'); _aiSub.style.cssText='font-size:12.5px; color:var(--ink-dim); margin-bottom:9px; line-height:1.5;'; _aiSub.textContent='מומלץ: קבעו קודם את מבנה הבחינה (פרקים, סוגים, ניקוד), מלאו תוכן — ידנית או עם AI — ושכללו את המבנה ידנית בהמשך במקרה הצורך.';
+  var _aiSub = document.createElement('div'); _aiSub.style.cssText='font-size:12.5px; color:var(--ink-dim); margin-bottom:10px; line-height:1.6;'; _aiSub.textContent='בנו את מבנה הבחינה קודם — פרקים, סוגים, מספרי-שאלות, סעיפים וניקוד — ידנית (➕ הוסף פרק, למטה) או בייבוא-מבנה מבחינה קיימת. רק אחר-כך מלאו את השאלות בתוכן. את המבנה אפשר תמיד לשכלל ידנית בעורך.';
   _aiWrap.appendChild(_aiSub);
-  if (!_pristine){
-    var _aiQBtn = document.createElement('button'); _aiQBtn.className='btn teal sm'; _aiQBtn.style.cssText='width:100%; margin-bottom:8px; font-weight:800;';
-    _aiQBtn.textContent='🤖 שאלות עם AI — מילוי, החלפה והוספה';
-    _aiQBtn.onclick = function(){ openExamAi(); };
-    _aiWrap.appendChild(_aiQBtn);
-  }
   var _impRow = document.createElement('div'); _impRow.style.cssText='display:flex; gap:8px; flex-wrap:wrap;';
-  var _aiCreate = document.createElement('button'); _aiCreate.className='btn sm'; _aiCreate.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _aiCreate.textContent='✨ בנייה עם AI'; _aiCreate.onclick=function(){ openExamCreate(); };
+  var _impStruct = document.createElement('button'); _impStruct.className='btn sm'; _impStruct.style.cssText='flex:1 1 auto; background:rgba(46,196,182,.14); border:1px solid rgba(46,196,182,.4); color:var(--ink); font-weight:800;'; _impStruct.textContent='📐 ייבוא מבנה בחינה'; _impStruct.onclick=function(){ openExamImport('structure'); };
+  _impRow.appendChild(_impStruct);
+  var _impFull = document.createElement('button'); _impFull.className='btn sm'; _impFull.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _impFull.textContent='📄 ייבוא בחינה שלמה'; _impFull.onclick=function(){ openExamImport('full'); };
+  _impRow.appendChild(_impFull);
+  var _aiCreate = document.createElement('button'); _aiCreate.className='btn sm'; _aiCreate.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _aiCreate.textContent='✨ בנייה מלאה עם AI'; _aiCreate.onclick=function(){ openExamCreate(); };
   _impRow.appendChild(_aiCreate);
-  var _impFull = document.createElement('button'); _impFull.className='btn sm'; _impFull.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _impFull.textContent='📄 ייבוא עם תוכן'; _impFull.onclick=function(){ openExamImport('full'); };
-  var _impStruct = document.createElement('button'); _impStruct.className='btn sm'; _impStruct.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _impStruct.textContent='📐 ייבוא מבנה בלבד'; _impStruct.onclick=function(){ openExamImport('structure'); };
-  _impRow.appendChild(_impFull); _impRow.appendChild(_impStruct); _aiWrap.appendChild(_impRow);
+  _aiWrap.appendChild(_impRow);
   list.appendChild(_aiWrap);
   var total = examTotal(), cap = examCap(), over = total > cap;
 
@@ -4686,6 +4686,12 @@ function renderExamEditor(){
   var addP = document.createElement('button'); addP.className='btn'; addP.style.cssText='background:var(--violet); color:#0b0b2a; font-weight:800; margin-top:4px;';
   addP.textContent='➕ הוסף פרק'; addP.onclick=examAddPart;
   list.appendChild(addP);
+  if (!_pristine){
+    var _aiFill = document.createElement('button'); _aiFill.className='btn teal'; _aiFill.style.cssText='width:100%; margin-top:10px; font-weight:800;';
+    _aiFill.textContent='🤖 שאלות עם AI — מילוי, החלפה והוספה';
+    _aiFill.onclick = function(){ openExamAi(); };
+    list.appendChild(_aiFill);
+  }
 
   if ($('clear-all-wrap')) $('clear-all-wrap').style.display='block';
 }

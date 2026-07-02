@@ -1880,7 +1880,7 @@ function _renderQuizListMerged(all, pinnedMap){
 function updateTabCounts(){
   const all = _quizListData || {};
   let nQ = 0, nD = 0;
-  Object.keys(all).forEach(c => { if (all[c].isDraft) nD++; else nQ++; });
+  Object.keys(all).forEach(c => { if (all[c].examMode) return; if (all[c].isDraft) nD++; else nQ++; });   // v189: מדלגים על בחינות (TestPlay)
   if ($('cnt-quizzes')) $('cnt-quizzes').textContent = '(' + nQ + ')';
   if ($('cnt-drafts')) $('cnt-drafts').textContent = '(' + nD + ')';
 }
