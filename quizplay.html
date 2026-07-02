@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <!--
   יומן גרסאות (quizplay):
+  v188 (בדיקה — טרם נחתם) - מנגנון-המנות הוחלף במנגנון הדינמי של TestPlay:
+  ── (א) פועל בכל צירוף-חומר, בלי סף מספר-שאלות: בוטל התנאי askCount>15 ב-impBatchMode, ובוטלה מנת-ה-10 הקבועה בפרומפט (promptCount) — הפרומפט מבקש תמיד את מלוא-הכמות.
+  ── (ב) הפרומפט מנחה את ה-AI לפצל את התשובה בעצמו: אחרי השאלה האחרונה שנתן — שורת ---עוד--- ; "עוד" בצ'אט ממשיך; היעדר הסימן = סיום. שאלה לא מתפצלת בין תשובות.
+  ── (ג) הערת-ההנחיה יושרה לנוסח TestPlay ("קובץ גדול או כמה קבצים?"), עם תווית-כפתור דינמית (צור/עדכן חידון) וסימון ---עוד--- ב-code מבודד-RTL.
+  ── הפרסר (parseImport) לא שונה במכוון: הוא מבוסס-שורות ומתעלם משורות לא-מזוהות, ולכן שורת ---עוד--- נבלעת מעצמה.
   v187 - תיקון באג: הדפסה מתוך העורך החזירה "אין שאלות בחידון להדפסה" למרות שיש שאלות. הסיבה (רגרסיה מ-v186): כפתור-העורך נכתב prBtn.onclick=openPrintDialog — הצבעה ישירה, אז הדפדפן העביר את אירוע-הלחיצה כארגומנט הראשון, וב-v186 הוא נתפס כ-targetQuiz (ל-event אין .questions → הבדיקה נכשלה). מהכרטיס לא נפגע כי שם openPrintDialog(q) מפורש.
   ── תיקון: prBtn.onclick=()=>openPrintDialog() — נקרא בלי ארגומנט, Q חוזר ל-quiz הגלובלי (החידון בעריכה).
   ── חיזוק: הבדיקה סופרת עכשיו שאלות-עם-נוסח (כמו realQCount) במקום questions.length, כדי שלא ייפתח דיאלוג ריק על שאלות-בלי-טקסט.
@@ -634,7 +639,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v187</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">v188-בדיקה</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -2592,9 +2597,7 @@ function buildImportPrompt(){
   if (editingExisting && askCount <= 0){
     return 'לא נבחרו שאלות לעדכון.\n• כדי להחליף שאלות — סמנו אותן ברשימה.\n• כדי למחוק שאלות — השתמשו בעורך החידון.';
   }
-  // v182: מצב-חלוקה מבקש מנה של 10; הבורר (impQCount) נשאר היעד
-  const promptCount = impBatchMode() ? 10 : askCount;
-  p += '. ' + promptCount + ' שאלות, ולכל שאלה ' + impACount + ' תשובות.';
+  p += '. ' + askCount + ' שאלות, ולכל שאלה ' + impACount + ' תשובות.';
   if (age) p += (impTrack==='fun' ? ' קהל היעד: ' : ' שכבת הגיל: ') + age + '.';
   if (traits.length) p += ' מאפייני המשתתפים: ' + traits.join(', ') + '. התאם את רמת השאלות, אורך הניסוח ומורכבות התשובות בהתאם.';
   if (goals.length) p += ' מטרת החידון: ' + goals.join(', ') + '. התאם את אופי החידון למטרה.';
@@ -2634,6 +2637,14 @@ function buildImportPrompt(){
     '(וכך הלאה ' + impACount + ' תשובות בסך הכול לכל שאלה — אחת בשורת "נכונה" והשאר בשורות "תשובה")\n\n' +
     'הפרד בין שאלות בשורה ריקה.';
   if (!topics.length && !editingExisting) p += ' כתוב את הנושא של החידון במקום שבחרתי.';
+  // v188: מנגנון-מנות דינמי (כמו TestPlay) — ה-AI מפצל את התשובה בעצמו עם ---עוד---. הפרסר מתעלם משורת-הסימון, אז אין צורך בשינוי-פענוח.
+  if (impBatchMode()){
+    p += '\n\nחשוב — הקובץ ארוך, אז אל תנסה להחזיר את כל השאלות בבת-אחת. עבוד במנות:' +
+         '\n• בכל תשובה: כמה שאלות שלמות בפורמט שביקשתי, לפי הסדר.' +
+         '\n• מיד אחרי השאלה האחרונה שנתת, בשורה נפרדת, כתוב בדיוק: ---עוד---' +
+         '\n• כשאכתוב "עוד": המשך מהשאלה הבאה בתור, באותו פורמט. שוב ---עוד--- אם נשאר; בלי הסימן = סיימת.' +
+         '\n• אל תפצל שאלה אחת בין שתי תשובות — כל שאלה נשלמת בתשובה שבה התחילה.';
+  }
   return p;
 }
 
@@ -2752,9 +2763,8 @@ function refreshImpAfterChange(){
 }
 // v182: מצב-חלוקה — מתג-הקובץ דלוק וגם מבוקשות מעל 15 שאלות. אז הפרומפט מבקש מנה של 10 וההערה מוצגת.
 function impBatchMode(){
-  const attachOn = ($('imp-attach') ? $('imp-attach').checked : false);
-  const askCount = quizHasRealContent() ? impNewQuestionsNeeded() : impQCount;
-  return attachOn && askCount > 15;
+  // v188: מצב-מנות דינמי (יושר ל-TestPlay) — פועל בכל צירוף-חומר, בלי תלות במספר השאלות. ה-AI מפצל בעצמו עם ---עוד---.
+  return ($('imp-attach') ? $('imp-attach').checked : false);
 }
 function syncBatchNote(){
   const note = $('imp-batch-note');
@@ -2762,12 +2772,12 @@ function syncBatchNote(){
   const on = impBatchMode();
   note.style.display = on ? 'block' : 'none';
   if (!on) return;
-  // v184: מספר ה"המשך" והמקבצים נגזר מהבורר — 16–20 → פעם אחת/שני מקבצים; מעל 20 → פעמיים/שלושה מקבצים.
-  const askCount = quizHasRealContent() ? impNewQuestionsNeeded() : impQCount;
-  const twice = askCount > 20;
-  const contTxt  = twice ? 'פעמיים' : 'פעם אחת';
-  const batchTxt = twice ? 'שלושת' : 'שני';
-  note.innerHTML = '📎 <b>קובץ גדול (מעל 50 עמודים בערך)?</b> הבינה המלאכותית לא תמיד מסתדרת עם הרבה שאלות בבת אחת, אז עובדים במנות:<br>שלחו את ההנחיה כרגיל, ואז כתבו בצ׳אט "המשך" ' + contTxt + '. העתיקו את ' + batchTxt + ' המקבצים שתקבלו לתיבה למטה — אחד אחרי השני — ולחצו "צור חידון".';
+  // v188: נוסח-TestPlay — מנות דינמיות עם ---עוד---, בלי חישוב מספר-המשכים. תווית-הכפתור דינמית (צור/עדכן).
+  const MK = '<code style="unicode-bidi:isolate;">---עוד---</code>';
+  const BTN = quizHasRealContent() ? 'עדכן חידון' : 'צור חידון';
+  note.innerHTML = '📎 <b>קובץ גדול או כמה קבצים?</b> הבינה המלאכותית לא תמיד מסתדרת עם הכול בבת-אחת, אז היא עשויה להחזיר את התשובה בכמה מנות:<br>' +
+         'שלחו את ההנחיה כרגיל. אם בסוף התשובה מופיע ' + MK + ' — כתבו בצ׳אט "<b>עוד</b>", והמשיכו כך עד שהסימון ' + MK + ' ייעלם.<br>' +
+         'בסיום, העתיקו את <b>כל</b> מקטעי-התשובה (אחד אחרי השני, לפי הסדר) לתיבה למטה, ולחצו "<b>' + BTN + '</b>".';
 }
 
 /* בונה סעיף אקורדיון: כותרת שנלחצת + תוכן שנפתח/נסגר */
@@ -2936,7 +2946,7 @@ function openImport(){
   const atRemind = document.createElement('div'); atRemind.id='imp-attach-remind'; atRemind.style.cssText='display:none; background:rgba(255,209,102,.12); border:1px solid rgba(255,209,102,.3); border-radius:10px; padding:11px 14px; margin:-8px 0 16px; font-size:14px; color:var(--ink); line-height:1.5;';
   atRemind.textContent='📎 אם אתם מצרפים קבצים — צרפו אותם יחד עם ההנחיה באותה הודעה.';
   box.appendChild(atRemind);
-  // v182: הערת-חלוקה — מוצגת רק כשמתג-הקובץ דלוק וגם מבוקשות מעל 15 שאלות. v184: הטקסט נבנה דינמית ב-syncBatchNote לפי הבורר.
+  // v188: הערת-חלוקה — מוצגת בכל צירוף-חומר (בוטל סף מספר-השאלות). v184: הטקסט נבנה דינמית ב-syncBatchNote לפי הבורר.
   const batchNote = document.createElement('div'); batchNote.id='imp-batch-note';
   batchNote.style.cssText='display:none; background:rgba(255,209,102,.12); border:1px solid rgba(255,209,102,.3); border-radius:10px; padding:12px 14px; margin:-8px 0 16px; font-size:13.5px; color:var(--ink); line-height:1.6;';
   box.appendChild(batchNote);
