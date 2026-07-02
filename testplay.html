@@ -649,7 +649,7 @@ body.tts-student .pbtn.sel::after{content:' \2713'; font-weight:900;}
   </div>
 </div>
 
-<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 28</span></div>
+<div class="conn"><span class="dot" id="conn-dot"></span><span id="conn-txt">לא מחובר</span> <span style="opacity:.5; margin-inline-start:6px;">tp-בדיקה 30</span></div>
 <!-- v114: שם-החשבון קבוע למעלה-במרכז, נראה בכל מסך כשמחובר. מידע בלבד (לא לחיץ) — לדעת באיזה חשבון נמצאים. -->
 <div id="user-badge" style="display:none; position:fixed; top:12px; left:50%; transform:translateX(-50%); z-index:50; font-size:13px; color:var(--ink-dim); background:rgba(10,16,32,.82); padding:4px 14px; border-radius:12px; max-width:55vw; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">🟢 <b id="user-badge-name" style="color:var(--gold); font-weight:700;"></b></div>
 
@@ -4044,7 +4044,7 @@ function openExamImport(mode){
   box.style.cssText='background:#0d1426; border:1px solid rgba(255,255,255,.18); border-radius:18px; padding:22px; max-width:600px; width:100%; text-align:right; margin:auto;';
   var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent = (mode==='structure') ? '📐 ייבוא בחינה — מבנה בלבד (ללא תוכן)' : '🤖 ייבוא בחינה — כולל תוכן השאלות';
   box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 28';
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:10px;'; _vtag.textContent='גרסה: tp-בדיקה 30';
   box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:14px;';
   desc.textContent='העתיקו את ההנחיה, פתחו את ChatGPT / Gemini / Claude, וצרפו שם את קובץ-הבחינה (Word/PDF) או הדביקו את הטקסט שלה. הדביקו כאן את התשובה — והמערכת תבנה את הבחינה: פרקים, סוגים, ניקוד ובחירה.';
@@ -4198,7 +4198,7 @@ function openExamCreate(){
   var title = document.createElement('div'); title.style.cssText='font-size:23px; font-weight:800; color:var(--gold); margin-bottom:6px;';
   title.textContent = '✨ בניית בחינה חדשה עם AI';
   box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:8px;'; _vtag.textContent='גרסה: tp-בדיקה 28'; box.appendChild(_vtag);
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:8px;'; _vtag.textContent='גרסה: tp-בדיקה 30'; box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:14px; color:var(--ink-dim); line-height:1.6; margin-bottom:12px;';
   desc.textContent = 'תארו את הנושא (או צרפו חומר), העתיקו את ההנחיה ל-ChatGPT / Gemini / Claude, והדביקו כאן את התשובה. ה-AI יקבע את המבנה — ותכווננו אותו בעורך.';
   box.appendChild(desc);
@@ -4287,12 +4287,12 @@ function examAiPrompt(){
   if (attach && sample) {
     L.push('מצורפים שני קבצים, כל אחד בתפקיד שונה:');
     L.push('• חומר-הלימוד — ממנו קח את התוכן (נושאים, מושגים, עובדות).');
-    L.push('• הבחינה-לדוגמה — רמה בלבד: חקה את רמת-הקושי, אורך-השאלות והסגנון, אך אל תיקח ממנה תוכן ואל תחזור על שאלותיה.');
+    L.push('• הבחינה-לדוגמה מגדירה את סוג-החשיבה הנדרש. נתחו אותה: אם השאלות בה הן שאלות-יישום, תרחישים מהחיים, אינטגרציה בין נושאים והסקת-מסקנות (ולא שאלות-ידע/הסבר ישירות) — חקו בדיוק את סוג-החשיבה הזה. אל תפיקו שאלות-ידע פשוטות ("הסבירו מהו X", "תארו את Y") אם הדוגמה דורשת יישום. חקו גם את רמת-הקושי, אורך-השאלות והסגנון — אך אל תיקחו ממנה תוכן ואל תחזרו על שאלותיה.');
     L.push('כדי לזהות מי-מה: הקובץ בעל מבנה-בחינה (ניקוד, "ענו על X מתוך Y", חלוקה לפרקים), או ששמו מרמז על מבחן/בחינה/דוגמה — הוא הבחינה-לדוגמה. השני הוא חומר-הלימוד.');
   } else if (attach) {
     L.push('מצורף חומר-לימוד (קובץ אחד או יותר). בסס את השאלות על תוכן החומר המצורף.');
   } else if (sample) {
-    L.push('מצורפת בחינה-לדוגמה — לרמה בלבד: חקה את רמת-הקושי, אורך-השאלות והסגנון שלה, אך אל תיקח ממנה תוכן ואל תחזור על שאלותיה.');
+    L.push('• הבחינה-לדוגמה מגדירה את סוג-החשיבה הנדרש. נתחו אותה: אם השאלות בה הן שאלות-יישום, תרחישים מהחיים, אינטגרציה בין נושאים והסקת-מסקנות (ולא שאלות-ידע/הסבר ישירות) — חקו בדיוק את סוג-החשיבה הזה. אל תפיקו שאלות-ידע פשוטות ("הסבירו מהו X", "תארו את Y") אם הדוגמה דורשת יישום. חקו גם את רמת-הקושי, אורך-השאלות והסגנון — אך אל תיקחו ממנה תוכן ואל תחזרו על שאלותיה.');
   }
   var used = {};
   st.sel.forEach(function(idx){ var q=quiz.questions[idx]; if(q) used[q.partId]=true; });
@@ -4427,7 +4427,7 @@ function openExamAi(){
     examSyncBatchNote('צור שאלות');
   };
   var title = document.createElement('div'); title.style.cssText='font-size:22px; font-weight:800; color:var(--gold); margin-bottom:6px;'; title.textContent='🤖 שאלות עם AI'; box.appendChild(title);
-  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:8px;'; _vtag.textContent='גרסה: tp-בדיקה 28'; box.appendChild(_vtag);
+  var _vtag = document.createElement('div'); _vtag.style.cssText='font-size:11px; color:var(--ink-dim); opacity:.7; margin-bottom:8px;'; _vtag.textContent='גרסה: tp-בדיקה 30'; box.appendChild(_vtag);
   var desc = document.createElement('div'); desc.style.cssText='font-size:13.5px; color:var(--ink-dim); line-height:1.6; margin-bottom:12px;';
   desc.textContent='סמנו שאלות למילוי או להחלפה, ו/או קבעו כמה שאלות חדשות להוסיף לכל פרק — הכל בסבב-AI אחד. המבנה (סוג, סעיפים, ניקוד) נקבע בעורך ונשמר.';
   box.appendChild(desc);
@@ -4535,8 +4535,6 @@ function renderExamEditor(){
   _impRow.appendChild(_impStruct);
   var _impFull = document.createElement('button'); _impFull.className='btn sm'; _impFull.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _impFull.textContent='📄 ייבוא בחינה שלמה'; _impFull.onclick=function(){ openExamImport('full'); };
   _impRow.appendChild(_impFull);
-  var _aiCreate = document.createElement('button'); _aiCreate.className='btn sm'; _aiCreate.style.cssText='flex:1 1 auto; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.2); color:var(--ink); font-weight:700;'; _aiCreate.textContent='✨ בנייה מלאה עם AI'; _aiCreate.onclick=function(){ openExamCreate(); };
-  _impRow.appendChild(_aiCreate);
   _aiWrap.appendChild(_impRow);
   list.appendChild(_aiWrap);
   var total = examTotal(), cap = examCap(), over = total > cap;
@@ -4696,6 +4694,20 @@ function renderExamEditor(){
   if ($('clear-all-wrap')) $('clear-all-wrap').style.display='block';
 }
 /* כרטיס-שאלה במצב-בחינה (אמריקאי) — כולל שדה-ניקוד; בלי חצי-הזזה (בהמשך) */
+// textarea גדל-אוטומטית לפי-תוכן — לנוסחי-שאלה/סעיף/תשובה ארוכים בבחינה (במקום input שורה-אחת שגוזם). עיצוב זהה ל-input הגלובלי.
+var EXAM_TA_CSS = "font-family:'Heebo'; font-size:17px; padding:12px 16px; border-radius:12px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); color:var(--ink); width:100%; text-align:right; box-sizing:border-box; resize:none; overflow:hidden; line-height:1.5; display:block;";
+function examAutoGrow(ta){
+  ta.style.height='auto';
+  ta.style.height=(ta.scrollHeight)+'px';
+}
+function examMakeTextarea(value, placeholder, extraCss){
+  var ta=document.createElement('textarea');
+  ta.rows=1; ta.value=value||''; ta.placeholder=placeholder||'';
+  ta.style.cssText=EXAM_TA_CSS+(extraCss||'');
+  ta.addEventListener('input', function(){ examAutoGrow(ta); });
+  setTimeout(function(){ examAutoGrow(ta); }, 0);   // גובה התחלתי לפי-תוכן אחרי שהוכנס ל-DOM
+  return ta;
+}
 function examQCard(q, gi, qNum){
   var part = quiz.parts.find(function(p){ return p.id===q.partId; });
   var isOpen = !!(part && part.type==='open');
@@ -4720,8 +4732,8 @@ function examQCard(q, gi, qNum){
   }
   var del = document.createElement('button'); del.className='del'; del.textContent='🗑 מחיקה'; del.style.marginInlineStart='auto'; del.onclick=function(){ examDelQuestion(gi); };
   top.appendChild(lbl); top.appendChild(ptsWrap); top.appendChild(del); card.appendChild(top);
-  var qin = document.createElement('input'); qin.type='text'; qin.placeholder='נוסח השאלה'; qin.value=q.text||''; qin.style.marginBottom='10px';
-  qin.oninput=function(){ q.text = qin.value; touch(); };
+  var qin = examMakeTextarea(q.text||'', 'נוסח השאלה', 'margin-bottom:10px;');
+  qin.oninput=function(){ q.text = qin.value; examAutoGrow(qin); touch(); };
   card.appendChild(qin);
   if (isOpen){
     var tipO = document.createElement('div'); tipO.style.cssText='font-size:13px; color:var(--teal); font-weight:700; margin-bottom:8px;';
@@ -4733,8 +4745,8 @@ function examQCard(q, gi, qNum){
     subs.forEach(function(sub, si){
       var r = document.createElement('div'); r.className='ans-row';
       var slbl = document.createElement('span'); slbl.textContent=String.fromCharCode('א'.charCodeAt(0)+si); slbl.style.cssText='min-width:22px; text-align:center; color:var(--violet); font-weight:800; font-size:14px;';
-      var sin = document.createElement('input'); sin.type='text'; sin.placeholder='תת-סעיף '+(si+1)+' (טקסט חופשי — אפשר להשאיר ריק)'; sin.value=sub.text||'';
-      sin.oninput=function(){ sub.text=sin.value; touch(); };
+      var sin = examMakeTextarea(sub.text||'', 'תת-סעיף '+(si+1)+' (טקסט חופשי — אפשר להשאיר ריק)', 'flex:1 1 auto;');
+      sin.oninput=function(){ sub.text=sin.value; examAutoGrow(sin); touch(); };
       var spWrap = document.createElement('span'); spWrap.style.cssText='display:inline-flex; align-items:center; gap:3px; flex:0 0 auto;';
       if (lockPts){
         var spBox=document.createElement('span'); spBox.textContent=String(Number(sub.points)||0);
@@ -4765,8 +4777,8 @@ function examQCard(q, gi, qNum){
       var r = document.createElement('div'); r.className='ans-row';
       var pick = document.createElement('button'); pick.className='pick'+(q.correct===ai?' on':''); pick.textContent='✓';
       pick.onclick=function(){ q.correct=ai; renderExamEditor(); touch(); };
-      var ain = document.createElement('input'); ain.type='text'; ain.placeholder='תשובה '+(ai+1); ain.value=a;
-      ain.oninput=function(){ q.answers[ai]=ain.value; touch(); };
+      var ain = examMakeTextarea(a, 'תשובה '+(ai+1), 'flex:1 1 auto;');
+      ain.oninput=function(){ q.answers[ai]=ain.value; examAutoGrow(ain); touch(); };
       var rem = document.createElement('button'); rem.className='rem'; rem.textContent='✕';
       rem.onclick=function(){ if (q.answers.length<=2) return; q.answers.splice(ai,1); if (q.correct>=q.answers.length) q.correct=0; renderExamEditor(); touch(); };
       r.appendChild(pick); r.appendChild(ain); if (q.answers.length>2) r.appendChild(rem);
